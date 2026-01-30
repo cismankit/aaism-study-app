@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Green circular arc -->
+  <path d="M60 8C31.3 8 8 31.3 8 60s23.3 52 52 52 52-23.3 52-52S88.7 8 60 8z" stroke="#7CB342" stroke-width="10" stroke-linecap="round" fill="none" stroke-dasharray="280 50"/>
+  <!-- AAISM text -->
+  <text x="60" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1a365d">AAISM</text>
+  <!-- TM symbol -->
+  <text x="102" y="52" font-family="Arial, sans-serif" font-size="8" fill="#1a365d">™</text>
+</svg>
