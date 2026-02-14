@@ -132,8 +132,34 @@ function QuizTab() {
   const [showExp, setShowExp] = useState(false);
   const [earnedXP, setEarnedXP] = useState(0);
   const [questions, setQuestions] = useState<ShuffledQuestion[]>([]);
+  const [examTimer, setExamTimer] = useState(0); // seconds remaining
 
   const allQuestions = getAllQuestions();
+
+  // Exam timer countdown
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (quizMode === 'exam' && quizState === 'active' && examTimer > 0) {
+      interval = setInterval(() => {
+        setExamTimer(prev => {
+          if (prev <= 1) {
+            // Time's up - auto-submit
+            finishQuiz(answers);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [quizMode, quizState, examTimer > 0]); // eslint-disable-line
+
+  const formatTimer = (s: number) => {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${h}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+  };
 
   // Update background based on state
   useEffect(() => {
@@ -178,8 +204,8 @@ function QuizTab() {
     // Shuffle questions
     const shuffledQs = [...qs].sort(() => Math.random() - 0.5);
     
-    // Limit to 10 for practice, 50 for exam sim
-    const count = quizMode === 'exam' ? Math.min(50, shuffledQs.length) : Math.min(10, shuffledQs.length);
+    // Limit to 10 for practice, 90 for exam sim (real AAISM exam = 90 questions)
+    const count = quizMode === 'exam' ? Math.min(90, shuffledQs.length) : Math.min(10, shuffledQs.length);
     const selectedQs = shuffledQs.slice(0, count);
     
     // Shuffle answer options for each question
@@ -191,6 +217,10 @@ function QuizTab() {
     setSelected(null);
     setShowExp(false);
     setEarnedXP(0);
+    // Set timer for exam mode: ~1.67 min per question (real exam: 150 min / 90 questions)
+    if (quizMode === 'exam') {
+      setExamTimer(Math.round(preparedQs.length * 100)); // 100 seconds per question
+    }
     setQuizState('active');
   };
 
@@ -259,10 +289,10 @@ function QuizTab() {
   // SETUP STATE
   if (quizState === 'setup') {
     const domainInfo = [
-      { id: 1, name: 'AI Governance', icon: '🏛️' },
-      { id: 2, name: 'AI Risk Management', icon: '⚠️' },
-      { id: 3, name: 'AI Development', icon: '⚙️' },
-      { id: 4, name: 'AI Operations', icon: '📊' },
+      { id: 1, name: 'AI Governance & Program Mgmt (31%)', icon: '🏛️' },
+      { id: 2, name: 'AI Risk Management (31%)', icon: '⚠️' },
+      { id: 3, name: 'AI Technologies & Controls (38%)', icon: '⚙️' },
+      { id: 4, name: 'AI Operations (Part of D3)', icon: '📊' },
     ];
 
     return (
@@ -341,7 +371,7 @@ function QuizTab() {
           disabled={getQuestionsForSelection().length === 0}
           className="w-full max-w-md mx-auto block py-4 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50"
         >
-          Start {quizMode === 'exam' ? 'Exam Simulation' : 'Quiz'} ({Math.min(quizMode === 'exam' ? 50 : 10, getQuestionsForSelection().length)} questions)
+          Start {quizMode === 'exam' ? 'Exam Simulation' : 'Quiz'} ({Math.min(quizMode === 'exam' ? 90 : 10, getQuestionsForSelection().length)} questions)
         </button>
       </div>
     );
@@ -353,7 +383,7 @@ function QuizTab() {
     
     return (
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        {/* Progress */}
+        {/* Progress + Timer */}
         <div className="flex items-center gap-4 mb-6">
           <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
             <div 
@@ -361,9 +391,18 @@ function QuizTab() {
               style={{ width: `${((currentQ + 1) / questions.length) * 100}%` }}
             />
           </div>
-          <span className="text-sm font-medium text-gray-600">
+          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
             {currentQ + 1} / {questions.length}
           </span>
+          {quizMode === 'exam' && examTimer > 0 && (
+            <span className={`text-sm font-mono font-bold px-3 py-1 rounded-full ${
+              examTimer < 300 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 animate-pulse' : 
+              examTimer < 600 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+              'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+            }`}>
+              {formatTimer(examTimer)}
+            </span>
+          )}
         </div>
 
         {/* Question */}
@@ -448,14 +487,25 @@ function QuizTab() {
     count + (ans === questions[i].correctAnswer ? 1 : 0), 0);
   const score = Math.round((correct / questions.length) * 100);
 
+  // Calculate exam-equivalent score (out of 800, pass = 450)
+  const examScore = Math.round((score / 100) * 800);
+  const passed = examScore >= 450;
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
+      {/* Pass/Fail Banner */}
+      <div className={`inline-block px-6 py-2 rounded-full text-sm font-bold mb-4 ${
+        passed ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+      }`}>
+        {passed ? 'PASS' : 'NEEDS IMPROVEMENT'} — {examScore}/800 (pass = 450)
+      </div>
+
       <div className={`text-6xl font-bold mb-2 ${
         score >= 80 ? 'text-green-600' : score >= 60 ? 'text-yellow-600' : 'text-red-500'
       }`}>
         {score}%
       </div>
-      <p className="text-gray-600 mb-4">
+      <p className="text-gray-600 dark:text-gray-400 mb-4">
         {correct} of {questions.length} correct
       </p>
 
@@ -467,9 +517,16 @@ function QuizTab() {
       )}
 
       {score === 100 && (
-        <div className="mb-6 p-4 bg-gradient-to-r from-purple-100 to-pink-100 rounded-xl inline-block">
+        <div className="mb-6 p-4 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 rounded-xl inline-block">
           <span className="text-2xl">🏆</span>
-          <p className="text-purple-700 font-semibold">Perfect Score!</p>
+          <p className="text-purple-700 dark:text-purple-300 font-semibold">Perfect Score!</p>
+        </div>
+      )}
+
+      {!passed && (
+        <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 text-sm text-amber-700 dark:text-amber-300 max-w-md mx-auto">
+          <p className="font-semibold mb-1">Exam Readiness Tip:</p>
+          <p>The AAISM pass score is 450/800 (~56%). Focus on your weakest domain and review the Cheat Sheet for key frameworks. Remember: governance answers beat technical answers.</p>
         </div>
       )}
 

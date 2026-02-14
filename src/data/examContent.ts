@@ -2,6 +2,7 @@
 // Based on ISACA AAISM (AI Security Manager) Certification
 
 import { ADDITIONAL_QUESTIONS } from './additionalQuestions';
+import { SCENARIO_QUESTIONS } from './expandedQuestions';
 
 export interface ExamTopic {
   id: string;
@@ -47,9 +48,9 @@ export interface ExamQuestion {
 // ============================================
 export const DOMAIN_1: Domain = {
   id: 1,
-  name: "AI Governance",
-  weight: "25%",
-  description: "Establishing and maintaining an AI governance framework aligned with organizational objectives, regulatory requirements, and ethical principles.",
+  name: "AI Governance & Program Management",
+  weight: "31%",
+  description: "Advise stakeholders on implementing AI security solutions through appropriate and effective policy, data governance, program management and incident response.",
   keyFrameworks: [
     "NIST AI RMF (Risk Management Framework)",
     "ISO/IEC 42001 AI Management System",
@@ -479,8 +480,8 @@ export const DOMAIN_1: Domain = {
 export const DOMAIN_2: Domain = {
   id: 2,
   name: "AI Risk Management",
-  weight: "25%",
-  description: "Identifying, assessing, and managing risks associated with AI systems throughout their lifecycle.",
+  weight: "31%",
+  description: "Assess and manage risks, threats, vulnerabilities and supply chain issues related to the enterprise-wide adoption of AI.",
   keyFrameworks: [
     "NIST AI RMF",
     "ISO/IEC 23894 AI Risk Management",
@@ -909,9 +910,9 @@ export const DOMAIN_2: Domain = {
 // ============================================
 export const DOMAIN_3: Domain = {
   id: 3,
-  name: "AI Development & Implementation",
-  weight: "25%",
-  description: "Secure development, testing, and deployment of AI systems following best practices.",
+  name: "AI Technologies & Controls",
+  weight: "38%",
+  description: "Optimize AI security through security technologies, techniques, and controls tailored to AI systems including development, deployment, monitoring, and operations.",
   keyFrameworks: [
     "CRISP-DM",
     "MLOps Maturity Model",
@@ -1297,11 +1298,13 @@ export const DOMAIN_3: Domain = {
 // ============================================
 // DOMAIN 4: AI OPERATIONS & MONITORING (25%)
 // ============================================
+// Domain 4 content is kept for backwards compatibility and merged into Domain 3 for exam alignment
+// The real AAISM exam has 3 domains (31%/31%/38%), with D3 covering technologies, controls, and operations
 export const DOMAIN_4: Domain = {
   id: 4,
-  name: "AI Operations & Monitoring",
-  weight: "25%",
-  description: "Managing, monitoring, and maintaining AI systems in production.",
+  name: "AI Operations & Monitoring (Part of D3)",
+  weight: "(included in D3's 38%)",
+  description: "Managing, monitoring, and maintaining AI systems in production. NOTE: In the real AAISM exam, this content falls under Domain 3: AI Technologies and Controls.",
   keyFrameworks: [
     "MLOps",
     "ITIL for AI",
@@ -1682,7 +1685,7 @@ export const DOMAIN_4: Domain = {
 // Export all domains
 export const ALL_DOMAINS: Domain[] = [DOMAIN_1, DOMAIN_2, DOMAIN_3, DOMAIN_4];
 
-// Get all practice questions (including additional expanded question bank)
+// Get all practice questions (including additional + scenario question banks)
 export function getAllQuestions(): ExamQuestion[] {
   const questions: ExamQuestion[] = [];
   ALL_DOMAINS.forEach(domain => {
@@ -1690,8 +1693,9 @@ export function getAllQuestions(): ExamQuestion[] {
       questions.push(...chapter.practiceQuestions);
     });
   });
-  // Add the expanded question bank
+  // Add the expanded question banks
   questions.push(...ADDITIONAL_QUESTIONS);
+  questions.push(...SCENARIO_QUESTIONS);
   return questions;
 }
 
@@ -1709,6 +1713,10 @@ export function getQuestionsByDomain(domainId: number): ExamQuestion[] {
   const additionalForDomain = ADDITIONAL_QUESTIONS.filter(q => q.domain === domainId);
   questions.push(...additionalForDomain);
   
+  // Add scenario questions for this domain
+  const scenarioForDomain = SCENARIO_QUESTIONS.filter(q => q.domain === domainId);
+  questions.push(...scenarioForDomain);
+  
   return questions;
 }
 
@@ -1717,8 +1725,8 @@ export function getQuestionsByDifficulty(difficulty: 'easy' | 'medium' | 'hard')
   return getAllQuestions().filter(q => q.difficulty === difficulty);
 }
 
-// Get random exam simulation (150 questions like real exam)
-export function getExamSimulation(questionCount: number = 150): ExamQuestion[] {
+// Get random exam simulation (90 questions like real AAISM exam)
+export function getExamSimulation(questionCount: number = 90): ExamQuestion[] {
   const allQuestions = getAllQuestions();
   const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, Math.min(questionCount, shuffled.length));

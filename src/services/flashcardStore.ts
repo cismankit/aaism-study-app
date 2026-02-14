@@ -1,5 +1,6 @@
 // Flashcard Store Service - Spaced Repetition System
 import { Flashcard, FlashcardDeck } from '../types';
+import { DEFAULT_FLASHCARDS } from '../data/defaultFlashcards';
 
 const CARDS_KEY = 'aaism_flashcards';
 const DECKS_KEY = 'aaism_flashcard_decks';
@@ -9,10 +10,32 @@ const DECKS_KEY = 'aaism_flashcard_decks';
 export function loadFlashcards(): Flashcard[] {
   try {
     const stored = localStorage.getItem(CARDS_KEY);
-    return stored ? JSON.parse(stored) : [];
+    if (stored) {
+      const cards = JSON.parse(stored);
+      if (cards.length > 0) return cards;
+    }
+    // Auto-populate with default flashcards on first load
+    const defaultCards = getDefaultFlashcards();
+    saveFlashcards(defaultCards);
+    return defaultCards;
   } catch {
     return [];
   }
+}
+
+function getDefaultFlashcards(): Flashcard[] {
+  return DEFAULT_FLASHCARDS.map((card, index) => ({
+    id: `default_${index}_${Date.now()}`,
+    front: card.front,
+    back: card.back,
+    domainId: card.domainId,
+    tags: card.tags,
+    difficulty: 'medium' as const,
+    createdAt: new Date().toISOString(),
+    easeFactor: 2.5,
+    interval: 0,
+    repetitions: 0,
+  }));
 }
 
 export function saveFlashcards(cards: Flashcard[]): void {

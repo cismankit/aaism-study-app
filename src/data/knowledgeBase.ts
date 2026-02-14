@@ -21,9 +21,9 @@ export interface Term {
 export const domains = [
   {
     id: 1,
-    name: 'AI Governance',
-    description: 'Establishing the structures, policies, and processes for responsible AI management within an organization.',
-    weight: '~25%',
+    name: 'AI Governance & Program Management',
+    description: 'Advise stakeholders on implementing AI security solutions through policy, data governance, program management, and incident response.',
+    weight: '31%',
     topics: [
       'AI Governance Frameworks',
       'AI Strategy and Alignment',
@@ -37,8 +37,8 @@ export const domains = [
   {
     id: 2,
     name: 'AI Risk Management',
-    description: 'Identifying, assessing, and mitigating risks specific to AI systems throughout their lifecycle.',
-    weight: '~25%',
+    description: 'Assess and manage risks, threats, vulnerabilities and supply chain issues related to enterprise AI adoption.',
+    weight: '31%',
     topics: [
       'AI Risk Identification',
       'AI Risk Assessment',
@@ -52,9 +52,9 @@ export const domains = [
   },
   {
     id: 3,
-    name: 'AI Development & Implementation',
-    description: 'Secure and responsible practices for building, testing, and deploying AI systems.',
-    weight: '~25%',
+    name: 'AI Technologies & Controls',
+    description: 'Security technologies, techniques and controls tailored to AI systems including architecture, data controls, privacy, and monitoring.',
+    weight: '38%',
     topics: [
       'AI Development Lifecycle',
       'Data Management',
@@ -67,9 +67,9 @@ export const domains = [
   },
   {
     id: 4,
-    name: 'AI Operations & Monitoring',
-    description: 'Managing AI systems in production, including monitoring, maintenance, and continuous improvement.',
-    weight: '~25%',
+    name: 'AI Operations & Monitoring (Part of D3)',
+    description: 'Managing AI systems in production including monitoring, maintenance, and continuous improvement. In the real AAISM exam, this falls under Domain 3.',
+    weight: '(in D3 38%)',
     topics: [
       'MLOps',
       'Performance Monitoring',
