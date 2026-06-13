@@ -1685,7 +1685,19 @@ export const DOMAIN_4: Domain = {
 // Export all domains
 export const ALL_DOMAINS: Domain[] = [DOMAIN_1, DOMAIN_2, DOMAIN_3, DOMAIN_4];
 
-// Get all practice questions (including additional + scenario question banks)
+// Load agent-discovered approved questions from localStorage
+function getAgentApprovedQuestions(): ExamQuestion[] {
+  try {
+    const saved = localStorage.getItem('aaism_agent_pipeline');
+    if (saved) {
+      const state = JSON.parse(saved);
+      return state.approvedQuestions || [];
+    }
+  } catch { /* ignore */ }
+  return [];
+}
+
+// Get all practice questions (including additional + scenario + agent-discovered banks)
 export function getAllQuestions(): ExamQuestion[] {
   const questions: ExamQuestion[] = [];
   ALL_DOMAINS.forEach(domain => {
@@ -1696,6 +1708,8 @@ export function getAllQuestions(): ExamQuestion[] {
   // Add the expanded question banks
   questions.push(...ADDITIONAL_QUESTIONS);
   questions.push(...SCENARIO_QUESTIONS);
+  // Add agent-discovered approved questions
+  questions.push(...getAgentApprovedQuestions());
   return questions;
 }
 

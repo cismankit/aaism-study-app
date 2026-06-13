@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AppState, StudyResource, QuizAttempt, StudySession, Note } from '../types';
+import { AppState, QuizAttempt, StudySession, Note } from '../types';
 import { loadState, saveState, initialState } from '../data/initialData';
 
 interface AppContextType {

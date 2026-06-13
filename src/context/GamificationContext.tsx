@@ -8,7 +8,6 @@ import {
 import { 
   initialGamificationState, 
   BADGES, 
-  LEVELS, 
   XP_REWARDS,
   getLevelFromXP,
   generateDailyChallenge 
@@ -47,7 +46,6 @@ function gamificationReducer(state: GamificationState, action: GamificationActio
   switch (action.type) {
     case 'ADD_XP': {
       const newXP = state.xp + action.payload.amount;
-      const oldLevel = getLevelFromXP(state.xp);
       const newLevel = getLevelFromXP(newXP);
       
       return {

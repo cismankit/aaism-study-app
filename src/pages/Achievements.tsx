@@ -220,7 +220,7 @@ export default function Achievements() {
         </div>
         
         <div className="space-y-3">
-          {LEVELS.map((level, index) => {
+          {LEVELS.map((level) => {
             const isCurrentLevel = level.level === currentLevel.level;
             const isUnlocked = state.xp >= level.minXp;
             

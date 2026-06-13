@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>AAISM Study App</title>
+    <script>
+      // GitHub Pages SPA fallback: redirect to index.html with path preserved
+      const segment = '/aaism-study-app';
+      const l = window.location;
+      const redirect = l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        segment + '/?p=' + encodeURIComponent(l.pathname.slice(segment.length) + l.search + l.hash);
+      l.replace(redirect);
+    </script>
+  </head>
+  <body></body>
+</html>

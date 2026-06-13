@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
-import { usePerformance } from '../components/Layout';
+import { usePerformance } from '../components/OSINTLayout';
 import { getAllQuestions, getQuestionsByDomain, ExamQuestion } from '../data/examContent';
 import { 
   loadFlashcards,
@@ -44,8 +44,10 @@ type QuizMode = 'practice' | 'exam';
 
 export default function Study() {
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>('tutor');
   const { setBgColor } = usePerformance();
+  const [quizBootstrap, setQuizBootstrap] = useState<{ domainId?: number } | null>(null);
 
   // Handle URL params for quiz generation
   useEffect(() => {
@@ -54,6 +56,16 @@ export default function Study() {
       setActiveTab('quiz');
     }
   }, [searchParams]);
+
+  // Handle navigation state from Command Center domain readiness
+  useEffect(() => {
+    const state = location.state as { startQuiz?: boolean; domainId?: number } | null;
+    if (state?.startQuiz) {
+      setActiveTab('quiz');
+      setQuizBootstrap({ domainId: state.domainId });
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Reset background color when entering study page
   useEffect(() => {
@@ -95,7 +107,7 @@ export default function Study() {
           {activeTab === 'tutor' && <TutorTab />}
           {activeTab === 'notes' && <NotesTab />}
           {activeTab === 'flashcards' && <FlashcardsTab />}
-          {activeTab === 'quiz' && <QuizTab />}
+          {activeTab === 'quiz' && <QuizTab bootstrap={quizBootstrap} onBootstrapConsumed={() => setQuizBootstrap(null)} />}
           {activeTab === 'exam' && <ExamSimTab />}
         </div>
       </div>
@@ -119,7 +131,7 @@ interface ShuffledQuestion extends ExamQuestion {
 }
 
 // ============ QUIZ TAB ============
-function QuizTab() {
+function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: number } | null; onBootstrapConsumed?: () => void }) {
   const { addQuizAttempt } = useApp();
   const { completeQuiz } = useGamification();
   const { setBgColor } = usePerformance();
@@ -161,39 +173,53 @@ function QuizTab() {
     return `${h}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
+  // Shuffle answer options and track new correct index
+  const shuffleAnswerOptions = (q: ExamQuestion): ShuffledQuestion => {
+    const correctOption = q.options[q.correctAnswer];
+    const indices = q.options.map((_, i) => i);
+    for (let i = indices.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    const shuffledOptions = indices.map(i => q.options[i]);
+    const shuffledCorrectAnswer = shuffledOptions.indexOf(correctOption);
+    return { ...q, shuffledOptions, shuffledCorrectAnswer };
+  };
+
   // Update background based on state
   useEffect(() => {
     if (quizState === 'setup') setBgColor('white');
     else if (quizState === 'active') setBgColor('blue');
   }, [quizState, setBgColor]);
 
+  // Auto-start quiz when navigated from Command Center domain readiness
+  useEffect(() => {
+    if (!bootstrap?.domainId || quizState !== 'setup') return;
+    setSelectedDomain(bootstrap.domainId);
+    onBootstrapConsumed?.();
+    // Defer start until domain state is applied
+    const timer = setTimeout(() => {
+      const qs = getQuestionsByDomain(bootstrap.domainId!);
+      const shuffledQs = [...qs].sort(() => Math.random() - 0.5);
+      const count = Math.min(10, shuffledQs.length);
+      const preparedQs = shuffledQs.slice(0, count).map(shuffleAnswerOptions);
+      setQuestions(preparedQs);
+      setAnswers(new Array(preparedQs.length).fill(null));
+      setCurrentQ(0);
+      setSelected(null);
+      setShowExp(false);
+      setEarnedXP(0);
+      setQuizState('active');
+    }, 0);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bootstrap?.domainId]);
+
   const getQuestionsForSelection = () => {
     if (selectedDomain === 'all') {
       return allQuestions;
     }
     return getQuestionsByDomain(selectedDomain);
-  };
-
-  // Shuffle answer options and track new correct index
-  const shuffleAnswerOptions = (q: ExamQuestion): ShuffledQuestion => {
-    const correctOption = q.options[q.correctAnswer];
-    
-    // Create array of indices and shuffle them
-    const indices = q.options.map((_, i) => i);
-    for (let i = indices.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
-    
-    // Reorder options based on shuffled indices
-    const shuffledOptions = indices.map(i => q.options[i]);
-    const shuffledCorrectAnswer = shuffledOptions.indexOf(correctOption);
-    
-    return {
-      ...q,
-      shuffledOptions,
-      shuffledCorrectAnswer,
-    };
   };
 
   const current = questions[currentQ];

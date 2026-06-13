@@ -7,6 +7,36 @@ body {
   @apply bg-gray-50 text-gray-900 transition-colors duration-200;
 }
 
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+/* Keyboard accessibility */
+:focus-visible {
+  outline: 2px solid rgb(16 185 129);
+  outline-offset: 2px;
+}
+
+/* Smooth, predictable scrolling for long pages and panels */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(156 163 175) transparent;
+}
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Dark mode */
 .dark body,
 body.dark,
@@ -165,4 +195,34 @@ html.dark body {
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+/* Slide-in panel */
+@keyframes slide-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in {
+  animation: slide-in 0.25s ease-out forwards;
+}
+
+/* Sidebar nav collapse */
+.sidebar-collapsed { width: 64px; }
+.sidebar-expanded { width: 240px; }
+
+/* OSINT grid transitions */
+.osint-widget {
+  @apply transition-all duration-200 ease-out;
+}
+.osint-widget:hover {
+  @apply shadow-lg scale-[1.01];
+}
+
+/* Pulse dot for live indicators */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s ease-in-out infinite;
 }

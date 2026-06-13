@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Calendar, Clock, Plus, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Plus } from 'lucide-react';
 
 export default function Schedule() {
   const { state, setExamDate, addStudySession } = useApp();

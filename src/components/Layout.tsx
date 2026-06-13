@@ -1,5 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom';
-import { Home, BookOpen, Flame, Sun, Moon, FileText, Zap, Eye } from 'lucide-react';
+import { Home, BookOpen, Flame, Sun, Moon, FileText, Zap, Eye, Bot, Radar, Theater } from 'lucide-react';
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { AppProvider } from '../context/AppContext';
 import { GamificationProvider, useGamification } from '../context/GamificationContext';
@@ -36,7 +36,10 @@ function PerformanceProvider({ children }: { children: ReactNode }) {
 const navItems = [
   { to: '/', icon: Home, label: 'Dashboard' },
   { to: '/study', icon: BookOpen, label: 'Study' },
+  { to: '/intel', icon: Radar, label: 'Intel' },
+  { to: '/scenarios', icon: Theater, label: 'Scenarios' },
   { to: '/knowledge', icon: Eye, label: 'Knowledge Hub' },
+  { to: '/agent', icon: Bot, label: 'Agent' },
   { to: '/cheatsheet', icon: FileText, label: 'Cheat Sheet' },
   { to: '/cram', icon: Zap, label: '24h Cram' },
 ];

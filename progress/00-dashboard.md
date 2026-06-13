@@ -67,8 +67,12 @@
 - [QAE Database Progress](02-qae-database-progress.md)
 - [Online Course Progress](03-online-course-progress.md)
 - [Additional Resources](04-additional-resources-progress.md)
+- [Retake Baseline and Gap Report](05-retake-baseline-and-gap-report.md)
+- [Mixed Timed Practice Tracker](06-mixed-timed-practice-tracker.md)
+- [Retake Readiness Gate](07-retake-readiness-gate.md)
 - [Study Schedule](../schedule/study-schedule.md)
+- [4-Week Remediation Plan](../schedule/retake-4-week-remediation-plan.md)
 
 ---
 
-*Last Updated: December 23, 2024*
+*Last Updated: June 13, 2026*

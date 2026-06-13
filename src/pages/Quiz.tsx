@@ -167,8 +167,6 @@ export default function Quiz() {
   }
 
   if (quizState === 'active') {
-    const isAnswered = answers[currentQuestionIndex] !== null;
-
     return (
       <div className="max-w-3xl mx-auto space-y-8">
         {/* Progress */}

@@ -12,6 +12,13 @@
 | **Days Until Exam** | *Calculate* |
 | **Study Start Date** | December 23, 2024 |
 
+### Retake Resources
+
+- [Retake Baseline and Gap Report](../progress/05-retake-baseline-and-gap-report.md)
+- [4-Week Remediation Plan](retake-4-week-remediation-plan.md)
+- [Mixed Timed Practice Tracker](../progress/06-mixed-timed-practice-tracker.md)
+- [Retake Readiness Gate](../progress/07-retake-readiness-gate.md)
+
 ---
 
 ## 📊 Recommended Study Timeline
