@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   BookOpen, Eye, Zap, ExternalLink,
   ChevronDown, ChevronUp, Star, Search,
@@ -524,6 +525,12 @@ export default function KnowledgeHub() {
         <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
           Curated diagrams, concept maps, GitHub repos, official docs & interactive tools
         </p>
+        <Link
+          to="/knowledge"
+          className="inline-flex items-center gap-1 mt-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+        >
+          ← Back to Domain Guides & Learning Paths
+        </Link>
       </div>
 
       {/* Stats */}

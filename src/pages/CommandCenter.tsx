@@ -13,6 +13,8 @@ import { TOPIC_HEAT_MAP, TRAP_PATTERNS, QUESTION_PATTERNS } from '../data/commun
 import { getPipelineStats } from '../services/agentService';
 import { loadInsights, analyzeQuestionPatterns } from '../services/intelligenceAgent';
 import { PLAYBOOKS } from '../data/playbooks';
+import { LEARNING_PATH_WIDGET } from '../data/platformMeta';
+import { AAISM_DOMAIN_GUIDES } from '../data/aaismDomainGuide';
 import SlidePanel from '../components/SlidePanel';
 
 export default function CommandCenter() {
@@ -268,6 +270,39 @@ export default function CommandCenter() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Learning Paths */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget">
+            <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
+              <Lightbulb className="w-4 h-4 text-yellow-500" />
+              {LEARNING_PATH_WIDGET.title}
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{LEARNING_PATH_WIDGET.description}</p>
+            <div className="space-y-2">
+              {AAISM_DOMAIN_GUIDES.map(guide => (
+                <button
+                  key={guide.id}
+                  onClick={() => navigate(`/knowledge?domain=${guide.id}`)}
+                  className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors text-left group"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    D{guide.id}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium truncate">{guide.shortName}</div>
+                    <div className="text-[10px] text-gray-400">{guide.weight} · {guide.coreConcepts.length} concepts</div>
+                  </div>
+                  <ChevronRight className="w-3 h-3 text-gray-300 group-hover:text-emerald-500" />
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => navigate(LEARNING_PATH_WIDGET.ctaRoute)}
+              className="w-full mt-2 text-xs text-emerald-500 hover:text-emerald-400 flex items-center justify-center gap-1"
+            >
+              {LEARNING_PATH_WIDGET.ctaLabel} <ChevronRight className="w-3 h-3" />
+            </button>
           </div>
 
           {/* Playbook Previews */}

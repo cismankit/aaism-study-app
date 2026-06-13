@@ -190,6 +190,8 @@ export default function Support() {
             <h3 className="font-semibold">Support development</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Enjoying AAISM? Voluntary donations help keep the app free and updated.
+              Payment options are available by region — UPI for India, PayPal/Stripe for US,
+              SEPA/Wise for Europe, and crypto worldwide.
             </p>
           </div>
         </div>
@@ -197,7 +199,7 @@ export default function Support() {
           to="/donate"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-purple-400/50 text-sm font-medium hover:bg-purple-500/10 transition-colors flex-shrink-0"
         >
-          Donate
+          Regional payment options
           <ChevronRight className="w-4 h-4" />
         </Link>
       </section>

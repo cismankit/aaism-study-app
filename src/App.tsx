@@ -5,6 +5,7 @@ import Study from './pages/Study'
 import CheatSheet from './pages/CheatSheet'
 import CramMode from './pages/CramMode'
 import KnowledgeHub from './pages/KnowledgeHub'
+import KnowledgeBase from './pages/KnowledgeBase'
 import AgentDiscovery from './pages/AgentDiscovery'
 import IntelHub from './pages/IntelHub'
 import ScenarioLab from './pages/ScenarioLab'
@@ -24,7 +25,8 @@ function App() {
         <Route path="scenarios" element={<ScenarioLab />} />
         <Route path="agent" element={<AgentDiscovery />} />
         <Route path="playbooks" element={<Playbooks />} />
-        <Route path="knowledge" element={<KnowledgeHub />} />
+        <Route path="knowledge" element={<KnowledgeBase />} />
+        <Route path="knowledge/visual" element={<KnowledgeHub />} />
         <Route path="cheatsheet" element={<CheatSheet />} />
         <Route path="cram" element={<CramMode />} />
         <Route path="settings" element={<Dashboard />} />
