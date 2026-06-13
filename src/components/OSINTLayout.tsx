@@ -3,6 +3,7 @@ import {
   LayoutDashboard, Radar, Theater, Eye, Bot, Zap,
   Sun, Moon, Flame, ChevronRight, Settings, Menu, X,
   Activity, Shield, Map, Crosshair, Radio, Briefcase, PanelLeftClose,
+  HelpCircle, LifeBuoy, Heart,
 } from 'lucide-react';
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { AppProvider } from '../context/AppContext';
@@ -65,6 +66,14 @@ const navSections: NavSection[] = [
       { to: '/knowledge', icon: Eye, label: 'Knowledge Base' },
       { to: '/cheatsheet', icon: Map, label: 'Quick Ref' },
       { to: '/cram', icon: Zap, label: '24h Cram Mode' },
+    ],
+  },
+  {
+    label: 'SUPPORT',
+    items: [
+      { to: '/help', icon: HelpCircle, label: 'Help Center' },
+      { to: '/support', icon: LifeBuoy, label: 'Support' },
+      { to: '/donate', icon: Heart, label: 'Donate' },
     ],
   },
 ];

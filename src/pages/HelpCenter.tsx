@@ -1,0 +1,325 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  HelpCircle, ChevronDown, ChevronUp, Rocket, Settings, ClipboardCheck,
+  Crosshair, Theater, Bot, Briefcase, Radar, ExternalLink, MessageSquarePlus,
+  BookOpen, Lightbulb, Mail,
+} from 'lucide-react';
+import { GITHUB_NEW_ISSUE_URL } from '../data/donations';
+
+interface FAQItem {
+  question: string;
+  answer: string;
+}
+
+const faqs: FAQItem[] = [
+  {
+    question: 'What is AAISM?',
+    answer:
+      'AAISM is an AI Security Intelligence study platform built for AAISM exam prep. It combines practice questions, scenario labs, agent discovery workflows, playbooks, and intel feeds in one OSINT-themed workspace.',
+  },
+  {
+    question: 'Do I need an account or internet connection?',
+    answer:
+      'No account is required. Progress, flashcards, and settings are stored locally in your browser. AI features need an API key and network access when you enable them in Settings.',
+  },
+  {
+    question: 'How do I configure AI features?',
+    answer:
+      'Open Settings from the top bar or sidebar footer, go to the Settings tab, and enter your provider API key (OpenAI, Anthropic, etc.). AI powers tutoring, scenario feedback, and agent discovery — all optional.',
+  },
+  {
+    question: 'Where does my study progress live?',
+    answer:
+      'Quiz attempts, XP, streaks, and achievements are saved in browser local storage on your device. Clearing site data will reset progress — export or note scores if you need a backup.',
+  },
+  {
+    question: 'Can I request a custom feature?',
+    answer:
+      'Yes. Use the feature request form below or open a GitHub issue. Include what you want, why it helps your exam prep, and any examples from other tools you like.',
+  },
+  {
+    question: 'Is this affiliated with ISACA or the official AAISM exam?',
+    answer:
+      'No. AAISM Study App is an independent community project. Always verify against official ISACA materials and exam policies.',
+  },
+];
+
+const appAreas = [
+  { to: '/study', icon: Crosshair, label: 'Study Ops', desc: 'Domain quizzes, flashcards, and exam mode' },
+  { to: '/scenarios', icon: Theater, label: 'Scenario Lab', desc: 'Interactive case studies and pattern drills' },
+  { to: '/agent', icon: Bot, label: 'Agent Discovery', desc: 'Review AI-generated question leads' },
+  { to: '/playbooks', icon: Briefcase, label: 'Playbooks', desc: 'Org-level AI security implementation guides' },
+  { to: '/intel', icon: Radar, label: 'Intel Hub', desc: 'Community intelligence and topic heat maps' },
+];
+
+const gettingStartedSteps = [
+  { step: 1, title: 'Take a baseline quiz', body: 'Start in Study Ops → pick a domain and run a short quiz to see where you stand.' },
+  { step: 2, title: 'Explore Scenario Lab', body: 'Work through case studies to connect concepts to real-world AI security decisions.' },
+  { step: 3, title: 'Skim a Playbook', body: 'Pick a starter playbook to understand how exam topics map to enterprise workflows.' },
+  { step: 4, title: 'Enable AI (optional)', body: 'Add your API key in Settings for tutoring and deeper scenario feedback.' },
+  { step: 5, title: 'Use Cram Mode before exam day', body: 'Run 24h Cram Mode for a focused last-minute review pass.' },
+];
+
+const examChecklist = [
+  'Review all five AAISM domains at least once',
+  'Complete at least two full timed practice sessions',
+  'Memorize key distinctions (training vs inference attacks, governance vs technical controls)',
+  'Run through Quick Ref / Cheat Sheet the night before',
+  'Confirm exam logistics (ID, time zone, proctoring rules) via ISACA',
+  'Get sleep — cramming all night hurts recall more than one more quiz',
+];
+
+function FAQAccordion() {
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
+
+  return (
+    <div className="space-y-2">
+      {faqs.map((faq, idx) => {
+        const isOpen = openIndex === idx;
+        return (
+          <div
+            key={faq.question}
+            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden osint-widget"
+          >
+            <button
+              onClick={() => setOpenIndex(isOpen ? null : idx)}
+              className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+            >
+              <span className="font-medium text-sm sm:text-base">{faq.question}</span>
+              {isOpen ? (
+                <ChevronUp className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              )}
+            </button>
+            {isOpen && (
+              <div className="px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed border-t border-gray-100 dark:border-gray-700 pt-3">
+                {faq.answer}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function FeatureRequestForm() {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('feature');
+
+  function buildIssueUrl() {
+    const labels = category === 'bug' ? 'bug' : 'enhancement';
+    const body = [
+      '## Description',
+      description || '(Describe your request here)',
+      '',
+      '## Why this helps exam prep',
+      '',
+      '## Additional context',
+      `- Category: ${category}`,
+      '- Submitted from: AAISM Help Center',
+    ].join('\n');
+    const params = new URLSearchParams({
+      title: title || 'Feature request from Help Center',
+      body,
+      labels,
+    });
+    return `${GITHUB_NEW_ISSUE_URL}?${params.toString()}`;
+  }
+
+  return (
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 osint-widget space-y-4">
+      <div className="flex items-center gap-2">
+        <MessageSquarePlus className="w-5 h-5 text-emerald-500" />
+        <h3 className="font-semibold">Request a Feature or Report an Issue</h3>
+      </div>
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        Fill in the details below — you&apos;ll be taken to GitHub to submit. No account needed to browse; signing in is required to post.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <label htmlFor="fr-title" className="block text-xs font-medium text-gray-500 mb-1">Title</label>
+          <input
+            id="fr-title"
+            type="text"
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="e.g. Add export for flashcard decks"
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          />
+        </div>
+        <div>
+          <label htmlFor="fr-category" className="block text-xs font-medium text-gray-500 mb-1">Category</label>
+          <select
+            id="fr-category"
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          >
+            <option value="feature">Feature request</option>
+            <option value="bug">Bug report</option>
+            <option value="content">Content / question fix</option>
+            <option value="docs">Documentation</option>
+          </select>
+        </div>
+        <div className="sm:col-span-2">
+          <label htmlFor="fr-desc" className="block text-xs font-medium text-gray-500 mb-1">Description</label>
+          <textarea
+            id="fr-desc"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            rows={4}
+            placeholder="What would you like to see? How would you use it?"
+            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-y"
+          />
+        </div>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <a
+          href={buildIssueUrl()}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
+        >
+          Open GitHub Issue
+          <ExternalLink className="w-3.5 h-3.5" />
+        </a>
+        <a
+          href={`mailto:?subject=${encodeURIComponent(title || 'AAISM feedback')}&body=${encodeURIComponent(description)}`}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        >
+          <Mail className="w-3.5 h-3.5" />
+          Email draft
+        </a>
+      </div>
+    </div>
+  );
+}
+
+export default function HelpCenter() {
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-2xl font-bold flex items-center gap-3">
+          <HelpCircle className="w-7 h-7 text-emerald-500" />
+          Help Center
+        </h1>
+        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
+          Getting started, FAQs, exam prep tips, and how to reach the team
+        </p>
+      </div>
+
+      {/* Getting Started */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Rocket className="w-5 h-5 text-cyan-500" />
+          <h2 className="text-lg font-semibold">Getting Started</h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {gettingStartedSteps.map(item => (
+            <div
+              key={item.step}
+              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget"
+            >
+              <div className="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center text-xs font-bold mb-2">
+                {item.step}
+              </div>
+              <h3 className="font-medium text-sm mb-1">{item.title}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{item.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* App Areas */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-blue-500" />
+          <h2 className="text-lg font-semibold">Key App Areas</h2>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {appAreas.map(area => {
+            const Icon = area.icon;
+            return (
+              <Link
+                key={area.to}
+                to={area.to}
+                className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-500 transition-all group osint-widget"
+              >
+                <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center group-hover:bg-emerald-500/15 transition-colors">
+                  <Icon className="w-4 h-4 text-gray-500 group-hover:text-emerald-500" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-medium text-sm">{area.label}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{area.desc}</div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* AI Settings */}
+      <section className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-xl border border-emerald-500/20 p-5">
+        <div className="flex items-start gap-3">
+          <Settings className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <h2 className="text-lg font-semibold mb-1">Configure AI in Settings</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              AI features are opt-in. Navigate to Settings → Settings tab, choose your provider, and paste your API key.
+              Keys stay in your browser only — never sent to our servers.
+            </p>
+            <Link
+              to="/settings"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
+            >
+              Open Settings
+              <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Exam Checklist */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <ClipboardCheck className="w-5 h-5 text-orange-500" />
+          <h2 className="text-lg font-semibold">Exam Day Checklist</h2>
+        </div>
+        <ul className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-2 osint-widget">
+          {examChecklist.map(item => (
+            <li key={item} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-400 mt-2 flex-shrink-0" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* FAQ */}
+      <section className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Lightbulb className="w-5 h-5 text-yellow-500" />
+          <h2 className="text-lg font-semibold">Frequently Asked Questions</h2>
+        </div>
+        <FAQAccordion />
+      </section>
+
+      {/* Contact / Feature Request */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold">Contact &amp; Support</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          Need more help? Visit the{' '}
+          <Link to="/support" className="text-emerald-600 dark:text-emerald-400 hover:underline">
+            Support page
+          </Link>{' '}
+          for bug reports, community links, and exam prep resources.
+        </p>
+        <FeatureRequestForm />
+      </section>
+    </div>
+  );
+}

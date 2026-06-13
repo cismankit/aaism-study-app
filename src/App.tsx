@@ -10,6 +10,9 @@ import IntelHub from './pages/IntelHub'
 import ScenarioLab from './pages/ScenarioLab'
 import Playbooks from './pages/Playbooks'
 import Dashboard from './pages/Dashboard'
+import HelpCenter from './pages/HelpCenter'
+import Support from './pages/Support'
+import Donate from './pages/Donate'
 
 function App() {
   return (
@@ -25,6 +28,9 @@ function App() {
         <Route path="cheatsheet" element={<CheatSheet />} />
         <Route path="cram" element={<CramMode />} />
         <Route path="settings" element={<Dashboard />} />
+        <Route path="help" element={<HelpCenter />} />
+        <Route path="support" element={<Support />} />
+        <Route path="donate" element={<Donate />} />
       </Route>
     </Routes>
   )
