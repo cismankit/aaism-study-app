@@ -27,6 +27,8 @@ import {
 } from '../services/systemHealthService';
 import { startLLMHealthPolling } from '../services/llmHealthService';
 import { hasUnseenReleases } from '../data/releaseFeed';
+import SidebarJourneyHint from './SidebarJourneyHint';
+import { useSidebarDock } from '../hooks/useSidebarDock';
 
 interface PerformanceContextType {
   bgColor: MatrixColor;
@@ -52,50 +54,58 @@ function PerformanceProvider({ children }: { children: ReactNode }) {
 
 // ============ NAV STRUCTURE ============
 
+interface NavItem {
+  to: string;
+  icon: typeof LayoutDashboard;
+  label: string;
+  subtitle: string;
+  badge?: string;
+}
+
 interface NavSection {
   label: string;
-  items: Array<{ to: string; icon: typeof LayoutDashboard; label: string; badge?: string }>;
-  moreItems?: Array<{ to: string; icon: typeof LayoutDashboard; label: string }>;
+  items: NavItem[];
+  moreItems?: Array<{ to: string; icon: typeof LayoutDashboard; label: string; subtitle: string }>;
 }
 
 const navSections: NavSection[] = [
   {
     label: 'COMMAND',
     items: [
-      { to: '/', icon: LayoutDashboard, label: 'Command Center' },
+      { to: '/', icon: LayoutDashboard, label: 'Command Center', subtitle: 'Mission overview & daily ops' },
     ],
   },
   {
     label: 'INTELLIGENCE',
     items: [
-      { to: '/intel', icon: Radar, label: 'Intel Hub' },
-      { to: '/osint', icon: Globe, label: 'OSINT Arsenal' },
-      { to: '/scenarios', icon: Theater, label: 'Scenario Lab' },
-      { to: '/agent', icon: Bot, label: 'Agent Discovery' },
-      { to: '/studio', icon: PenLine, label: 'Content Studio', badge: 'NEW' },
-      { to: '/playbooks', icon: Briefcase, label: 'Playbooks' },
+      { to: '/intel', icon: Radar, label: 'Intel Hub', subtitle: 'Live threat intel & feeds' },
+      { to: '/osint', icon: Globe, label: 'OSINT Arsenal', subtitle: 'Open-source tool library' },
+      { to: '/scenarios', icon: Theater, label: 'Scenario Lab', subtitle: 'Hands-on practice scenarios' },
+      { to: '/agent', icon: Bot, label: 'Agent Discovery', subtitle: 'AI-powered OSINT assistant' },
+      { to: '/studio', icon: PenLine, label: 'Content Studio', subtitle: 'Create & refine study materials', badge: 'NEW' },
+      { to: '/playbooks', icon: Briefcase, label: 'Playbooks', subtitle: 'Step-by-step workflows' },
     ],
   },
   {
     label: 'OPERATIONS',
     items: [
-      { to: '/study', icon: Crosshair, label: 'Study Ops' },
-      { to: '/exam', icon: Zap, label: 'Timed Exam', badge: 'NEW' },
-      { to: '/knowledge', icon: Eye, label: 'Knowledge Base' },
-      { to: '/cheatsheet', icon: Map, label: 'Quick Ref' },
-      { to: '/cram', icon: Zap, label: '24h Cram Mode' },
+      { to: '/study', icon: Crosshair, label: 'Study Ops', subtitle: 'Practice 312+ questions' },
+      { to: '/exam', icon: Zap, label: 'Timed Exam', subtitle: '90Q timed exam simulation', badge: 'NEW' },
+      { to: '/knowledge', icon: Eye, label: 'Knowledge Base', subtitle: 'Deep-dive reference docs' },
+      { to: '/cheatsheet', icon: Map, label: 'Quick Ref', subtitle: 'Cheat sheets & mnemonics' },
+      { to: '/cram', icon: Zap, label: '24h Cram Mode', subtitle: 'Last-minute review sprint' },
     ],
   },
   {
     label: 'SUPPORT',
     items: [
-      { to: '/help', icon: HelpCircle, label: 'Help & Support' },
-      { to: '/feature-request', icon: Sparkles, label: 'Feature Request' },
-      { to: '/donate', icon: Heart, label: 'Donate' },
+      { to: '/help', icon: HelpCircle, label: 'Help & Support', subtitle: 'Guides, FAQs & troubleshooting' },
+      { to: '/feature-request', icon: Sparkles, label: 'Feature Request', subtitle: 'Shape the platform' },
+      { to: '/donate', icon: Heart, label: 'Donate', subtitle: 'Support development' },
     ],
     moreItems: [
-      { to: '/support', icon: LifeBuoy, label: 'Bug Reports' },
-      { to: '/my-updates', icon: Radio, label: 'My Updates' },
+      { to: '/support', icon: LifeBuoy, label: 'Bug Reports', subtitle: 'Report issues & feedback' },
+      { to: '/my-updates', icon: Radio, label: 'My Updates', subtitle: 'Release notes & changelog' },
     ],
   },
 ];
@@ -128,6 +138,8 @@ function Sidebar({
   const isSupportMoreActive = navSections
     .find(s => s.label === 'SUPPORT')
     ?.moreItems?.some(item => location.pathname.startsWith(item.to)) ?? false;
+
+  const { getDockStyle, dockHandlers, navRef } = useSidebarDock(collapsed, location.pathname);
 
   return (
     <aside
@@ -169,7 +181,7 @@ function Sidebar({
       </div>
 
       {/* Nav sections */}
-      <nav className="flex-1 overflow-y-auto py-2 px-1.5 space-y-1">
+      <nav ref={navRef} className="sidebar-dock-nav flex-1 overflow-y-auto py-2 px-1.5 space-y-1" {...dockHandlers}>
         {navSections.map((section, sIdx) => (
           <div key={section.label}>
             {sIdx > 0 && collapsed && (
@@ -180,25 +192,33 @@ function Sidebar({
                 {section.label}
               </div>
             )}
-            <div className="space-y-0.5">
+            <div className={`space-y-0.5 ${collapsed ? 'sidebar-dock-items' : ''}`}>
               {section.items.map(item => {
                 const Icon = item.icon;
                 const isActive = item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);
                 const showUpdateDot = item.to === '/' && unseenUpdates;
+                const dockStyle = collapsed ? getDockStyle(item.to) : undefined;
                 return (
                   <NavLink
                     key={item.to}
                     to={item.to}
                     onClick={onCloseMobile}
                     end={item.to === '/'}
-                    className={`relative flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${collapsed ? 'px-0 py-2' : 'px-2.5 py-2'} rounded-lg text-sm font-medium transition-all group ${
+                    data-dock-item={collapsed ? item.to : undefined}
+                    data-dock-active={collapsed ? String(isActive) : undefined}
+                    className={`sidebar-dock-item relative flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${collapsed ? 'px-0 py-2.5' : 'px-2.5 py-2'} rounded-lg text-sm font-medium group ${
                       isActive
-                        ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+                        ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 sidebar-dock-active'
                         : 'text-cockpit-muted hover:text-cockpit dark:hover:text-gray-200 hover:bg-cockpit-track dark:hover:bg-gray-800'
                     }`}
-                    title={collapsed ? item.label : undefined}
+                    title={undefined}
                   >
-                    <Icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-theme-muted group-hover:text-theme-secondary dark:group-hover:text-gray-300'}`} />
+                    <span
+                      className={`sidebar-dock-icon-wrap inline-flex items-center justify-center ${collapsed ? 'origin-bottom' : ''}`}
+                      style={dockStyle}
+                    >
+                      <Icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-250 ${isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-theme-muted group-hover:text-theme-secondary dark:group-hover:text-gray-300'}`} />
+                    </span>
                     {!collapsed && (
                       <span className="sidebar-label truncate">{item.label}</span>
                     )}
@@ -212,6 +232,15 @@ function Sidebar({
                     )}
                     {collapsed && showUpdateDot && (
                       <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-amber-500" title="New platform updates" />
+                    )}
+                    {collapsed && (
+                      <div className="sidebar-dock-tooltip" role="tooltip">
+                        <span className="sidebar-dock-tooltip-title">{item.label}</span>
+                        <span className="sidebar-dock-tooltip-sub">{item.subtitle}</span>
+                        {item.badge && (
+                          <span className="sidebar-dock-tooltip-badge">{item.badge}</span>
+                        )}
+                      </div>
                     )}
                   </NavLink>
                 );
@@ -467,6 +496,7 @@ function LayoutContent() {
         mobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
       />
+      <SidebarJourneyHint collapsed={sidebarCollapsed} />
 
       <div className="flex-1 flex flex-col min-w-0 relative z-10">
         <TopBar

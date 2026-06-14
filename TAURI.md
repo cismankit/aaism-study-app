@@ -5,8 +5,14 @@ Run AAISM as a native macOS `.app` instead of in the browser. Built with [Tauri 
 ## Prerequisites (macOS)
 
 1. **Node.js** 18+ and npm
-2. **Rust** — install via [rustup](https://rustup.rs/): `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh`
-3. **Xcode Command Line Tools** — `xcode-select --install`
+2. **Rust** — install via [rustup](https://rustup.rs/):
+   ```bash
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+   source "$HOME/.cargo/env"   # add to ~/.zshrc for new shells
+   ```
+3. **Xcode Command Line Tools** — `xcode-select --install` (verify with `xcode-select -p`)
+
+First `npm run tauri:build` downloads Rust crates and may take several minutes.
 
 ## Development
 
@@ -27,6 +33,14 @@ Output:
 
 - **`.app` bundle:** `src-tauri/target/release/bundle/macos/AAISM Intelligence.app`
 - **`.dmg` installer:** `src-tauri/target/release/bundle/dmg/`
+
+Launch the `.app` from Finder, or:
+
+```bash
+open "src-tauri/target/release/bundle/macos/AAISM Intelligence.app"
+```
+
+Unsigned builds: first launch requires **right-click → Open** (macOS Gatekeeper).
 
 ## Notes
 
