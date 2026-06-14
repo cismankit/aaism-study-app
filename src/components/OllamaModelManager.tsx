@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   AAISM_OFFLINE_MODELS,
+  AGENT_MODEL_PREFERENCE,
+  GEMMA4_STATUS_NOTE,
   pullOllamaModel,
   checkOllamaStatus,
+  pickBestInstalledModel,
   type OllamaModel,
   type ModelCapability,
 } from '../services/aiService';
 import { detectGpuHint, isLocalhost } from '../services/gpuDetection';
 import {
   Download, Copy, Check, Loader2, Server, Cpu, ExternalLink,
-  AlertTriangle, Star, Terminal,
+  AlertTriangle, Star, Terminal, Sparkles, Info,
 } from 'lucide-react';
 
 interface OllamaModelManagerProps {
@@ -30,6 +33,102 @@ function jsonBadge(score: number): { label: string; className: string } {
   return { label: 'Poor for JSON', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' };
 }
 
+function ModelRow({
+  model,
+  selectedModel,
+  isInstalled,
+  onSelectModel,
+  handlePull,
+  pulling,
+  copied,
+  localMode,
+  ollamaRunning,
+}: {
+  model: ModelCapability;
+  selectedModel?: string;
+  isInstalled: (name: string) => boolean;
+  onSelectModel?: (model: string) => void;
+  handlePull: (model: ModelCapability) => void;
+  pulling: string | null;
+  copied: string | null;
+  localMode: boolean;
+  ollamaRunning: boolean;
+}) {
+  const badge = jsonBadge(model.jsonReliability);
+  const installed = isInstalled(model.name);
+  const isSelected = selectedModel === model.name;
+
+  return (
+    <tr
+      className={`${isSelected ? 'bg-emerald-50 dark:bg-emerald-900/10' : 'bg-white dark:bg-gray-800'}`}
+    >
+      <td className="px-3 py-2.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {model.tierS && <Star className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />}
+          {model.recommended && !model.tierS && <Star className="w-3 h-3 text-cyan-500 fill-cyan-500 shrink-0" />}
+          <span className="font-mono text-xs font-medium text-gray-900 dark:text-white">{model.name}</span>
+          {model.tierS && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400">
+              Tier S
+            </span>
+          )}
+          {installed && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+              installed
+            </span>
+          )}
+          {model.fallbackOnly && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+              avoid
+            </span>
+          )}
+        </div>
+        <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 hidden sm:block">{model.description}</p>
+      </td>
+      <td className="px-3 py-2.5 text-gray-600 dark:text-gray-400 hidden sm:table-cell">{model.sizeGb}</td>
+      <td className="px-3 py-2.5">
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${badge.className}`}>
+          {badge.label}
+        </span>
+      </td>
+      <td className="px-3 py-2.5 text-gray-600 dark:text-gray-400 hidden md:table-cell">{model.gpuRam}</td>
+      <td className="px-3 py-2.5">
+        <div className="flex items-center gap-1">
+          {onSelectModel && (
+            <button
+              onClick={() => onSelectModel(model.name)}
+              className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
+                isSelected
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
+            >
+              Use
+            </button>
+          )}
+          <button
+            onClick={() => handlePull(model)}
+            disabled={pulling === model.name}
+            className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 disabled:opacity-50"
+            title={localMode && ollamaRunning ? 'Pull via Ollama API' : 'Copy pull command'}
+          >
+            {pulling === model.name ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : copied === model.name ? (
+              <Check className="w-3 h-3" />
+            ) : localMode && ollamaRunning ? (
+              <Download className="w-3 h-3" />
+            ) : (
+              <Copy className="w-3 h-3" />
+            )}
+            {localMode && ollamaRunning ? 'Pull' : 'Copy'}
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
 export default function OllamaModelManager({
   baseUrl = 'http://localhost:11434',
   selectedModel,
@@ -42,6 +141,10 @@ export default function OllamaModelManager({
   const [pullStatus, setPullStatus] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
   const gpu = detectGpuHint();
+
+  const tierSModels = AAISM_OFFLINE_MODELS.filter(m => m.tierS);
+  const fallbackModels = AAISM_OFFLINE_MODELS.filter(m => !m.tierS);
+  const autoPickModel = installedModels.length > 0 ? pickBestInstalledModel(installedModels) : null;
 
   const refreshModels = useCallback(async () => {
     if (!localMode) return;
@@ -103,12 +206,31 @@ export default function OllamaModelManager({
               <p>
                 Ollama auto-detects GPU (Metal on Mac, CUDA on NVIDIA, ROCm on AMD).
                 Run <code className="bg-cyan-100 dark:bg-cyan-900/40 px-1 rounded">ollama ps</code> to verify GPU layers.
-                Tune with <code className="bg-cyan-100 dark:bg-cyan-900/40 px-1 rounded">OLLAMA_NUM_GPU</code> env var.
               </p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Gemma 4 note */}
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800">
+        <Info className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" />
+        <p className="text-xs text-violet-800 dark:text-violet-300">
+          <strong>Gemma 4?</strong> {GEMMA4_STATUS_NOTE}
+        </p>
+      </div>
+
+      {/* Auto-pick banner */}
+      {autoPickModel && (
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+          <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+          <p className="text-xs text-emerald-800 dark:text-emerald-300">
+            Agent Discovery auto-selects the best installed Tier S model:{' '}
+            <strong className="font-mono">{autoPickModel}</strong>
+            {' '}(preference: {AGENT_MODEL_PREFERENCE.slice(0, 4).join(' → ')}…)
+          </p>
+        </div>
+      )}
 
       {/* Localhost status */}
       <div className="flex items-center gap-2 text-sm">
@@ -140,8 +262,13 @@ export default function OllamaModelManager({
         )}
       </div>
 
-      {/* Recommended models table */}
+      {/* Tier S models */}
       <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+        <div className="px-3 py-2 bg-violet-50 dark:bg-violet-900/20 border-b border-gray-200 dark:border-gray-700">
+          <p className="text-xs font-semibold text-violet-800 dark:text-violet-300">
+            Tier S — Best for JSON &amp; Agent Discovery
+          </p>
+        </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 dark:bg-gray-800/80 text-left text-xs text-gray-500 dark:text-gray-400">
@@ -153,78 +280,52 @@ export default function OllamaModelManager({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-            {AAISM_OFFLINE_MODELS.map(model => {
-              const badge = jsonBadge(model.jsonReliability);
-              const installed = isInstalled(model.name);
-              const isSelected = selectedModel === model.name;
-              return (
-                <tr
-                  key={model.name}
-                  className={`${isSelected ? 'bg-emerald-50 dark:bg-emerald-900/10' : 'bg-white dark:bg-gray-800'}`}
-                >
-                  <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-1.5">
-                      {model.recommended && <Star className="w-3 h-3 text-amber-500 fill-amber-500" />}
-                      <span className="font-mono text-xs font-medium text-gray-900 dark:text-white">{model.name}</span>
-                      {installed && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
-                          installed
-                        </span>
-                      )}
-                      {model.fallbackOnly && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-                          fallback
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 hidden sm:block">{model.description}</p>
-                  </td>
-                  <td className="px-3 py-2.5 text-gray-600 dark:text-gray-400 hidden sm:table-cell">{model.sizeGb}</td>
-                  <td className="px-3 py-2.5">
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${badge.className}`}>
-                      {badge.label}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5 text-gray-600 dark:text-gray-400 hidden md:table-cell">{model.gpuRam}</td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-1">
-                      {onSelectModel && (
-                        <button
-                          onClick={() => onSelectModel(model.name)}
-                          className={`px-2 py-1 rounded text-[11px] font-medium transition-colors ${
-                            isSelected
-                              ? 'bg-emerald-600 text-white'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                          }`}
-                        >
-                          Use
-                        </button>
-                      )}
-                      <button
-                        onClick={() => handlePull(model)}
-                        disabled={pulling === model.name}
-                        className="flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 disabled:opacity-50"
-                        title={localMode && ollamaRunning ? 'Pull via Ollama API' : 'Copy pull command'}
-                      >
-                        {pulling === model.name ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : copied === model.name ? (
-                          <Check className="w-3 h-3" />
-                        ) : localMode && ollamaRunning ? (
-                          <Download className="w-3 h-3" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                        {localMode && ollamaRunning ? 'Pull' : 'Copy'}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+            {tierSModels.map(model => (
+              <ModelRow
+                key={model.name}
+                model={model}
+                selectedModel={selectedModel}
+                isInstalled={isInstalled}
+                onSelectModel={onSelectModel}
+                handlePull={handlePull}
+                pulling={pulling}
+                copied={copied}
+                localMode={localMode}
+                ollamaRunning={ollamaRunning}
+              />
+            ))}
           </tbody>
         </table>
       </div>
+
+      {/* Fallback / avoid models */}
+      {fallbackModels.length > 0 && (
+        <div className="overflow-x-auto rounded-xl border border-amber-200 dark:border-amber-800/50">
+          <div className="px-3 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800/50">
+            <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">
+              Not recommended for agents
+            </p>
+          </div>
+          <table className="w-full text-sm">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              {fallbackModels.map(model => (
+                <ModelRow
+                  key={model.name}
+                  model={model}
+                  selectedModel={selectedModel}
+                  isInstalled={isInstalled}
+                  onSelectModel={onSelectModel}
+                  handlePull={handlePull}
+                  pulling={pulling}
+                  copied={copied}
+                  localMode={localMode}
+                  ollamaRunning={ollamaRunning}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {pullStatus && pulling && (
         <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
@@ -247,7 +348,9 @@ export default function OllamaModelManager({
                 className={`text-[11px] font-mono px-2 py-0.5 rounded ${
                   selectedModel === m.name
                     ? 'bg-emerald-600 text-white'
-                    : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                    : autoPickModel === m.name
+                      ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 ring-1 ring-violet-400/50'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
                 }`}
               >
                 {m.name} ({formatSize(m.size)})
@@ -260,7 +363,7 @@ export default function OllamaModelManager({
       {/* Quick setup commands */}
       <div className="p-3 rounded-lg bg-gray-900 text-gray-300 font-mono text-xs space-y-2">
         <p className="text-gray-500"># Recommended setup for Agent Discovery</p>
-        {['ollama pull llama3.1:8b', 'ollama pull qwen2.5:7b'].map(cmd => (
+        {['ollama pull qwen2.5:7b', 'ollama pull llama3.1:8b', 'ollama pull gemma2:9b'].map(cmd => (
           <div key={cmd} className="flex items-center justify-between gap-2">
             <code>{cmd}</code>
             <button
@@ -279,7 +382,7 @@ export default function OllamaModelManager({
           <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <p className="text-xs text-amber-800 dark:text-amber-300">
             <strong>{selectedModel}</strong> is too small for reliable JSON in Agent Discovery.
-            Switch to <strong>llama3.1:8b</strong> for best results.
+            Switch to <strong>qwen2.5:7b</strong> or <strong>llama3.1:8b</strong> for best results.
           </p>
         </div>
       )}

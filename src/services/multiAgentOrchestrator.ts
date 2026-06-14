@@ -6,6 +6,7 @@
 import {
   chatJson,
   loadAIConfig,
+  resolveAgentConfig,
   AAISM_CONTEXT,
   getModelCapability,
   getRecommendedFallbackModel,
@@ -363,7 +364,7 @@ export async function runMultiAgentDiscovery(
   discovered: Array<ParsedQuestion & { similarityScore: number }>;
   coverage: ReturnType<typeof analyzeCoverage>;
 }> {
-  const aiConfig = config || loadAIConfig();
+  const aiConfig = config || await resolveAgentConfig(loadAIConfig());
   const ctx: OrchestratorContext = { strategy, config: aiConfig, callbacks, signal };
 
   const { coverage, topGaps } = runAnalystAgent(ctx);

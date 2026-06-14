@@ -235,3 +235,19 @@ html.dark body {
 .animate-pulse-dot {
   animation: pulse-dot 1.5s ease-in-out infinite;
 }
+
+/* Logo hover — neural node pulse */
+@keyframes logo-node-pulse {
+  0%, 100% { opacity: 0.65; }
+  50% { opacity: 1; }
+}
+.aaism-logo:hover .aaism-logo-node {
+  animation: logo-node-pulse 1.8s ease-in-out infinite;
+}
+.aaism-logo:hover .aaism-logo-ring {
+  opacity: 0.85;
+  transition: opacity 0.3s ease;
+}
+.aaism-logo:hover .aaism-logo-hex {
+  opacity: 1;
+}

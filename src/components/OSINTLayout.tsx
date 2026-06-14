@@ -113,14 +113,16 @@ function Sidebar({
     >
       {/* Logo + toggle */}
       <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} px-3 py-3 border-b border-gray-800 relative`}>
-        <div className={`${collapsed ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg overflow-hidden flex-shrink-0 shadow-lg shadow-emerald-500/20 transition-all`}>
-          <Logo size={collapsed ? 32 : 40} />
+        <div className={`${collapsed ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg overflow-hidden flex-shrink-0 shadow-lg shadow-emerald-500/15 transition-all group-hover/sidebar:shadow-emerald-500/25`}>
+          <Logo size={collapsed ? 32 : 40} className="transition-transform duration-300 group-hover/sidebar:scale-[1.03]" />
         </div>
         {!collapsed && (
           <>
             <div className="overflow-hidden flex-1">
-              <div className="text-sm font-bold text-white leading-tight tracking-wide">AAISM</div>
-              <div className="text-[10px] text-emerald-400 leading-tight">Intelligence Platform</div>
+              <div className="text-sm font-bold text-white leading-tight tracking-[0.12em] font-sans">AAISM</div>
+              <div className="text-[10px] text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 leading-tight tracking-wide font-medium">
+                Intelligence Platform
+              </div>
             </div>
             <button
               onClick={onToggle}

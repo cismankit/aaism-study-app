@@ -30,6 +30,8 @@ export interface ModelCapability {
   description: string;
   recommended?: boolean;
   fallbackOnly?: boolean;
+  /** Tier S — preferred for Agent Discovery JSON work */
+  tierS?: boolean;
 }
 
 export interface Message {
@@ -51,7 +53,7 @@ export interface ChatOptions {
 export const defaultConfigs: Record<AIProvider, Partial<AIConfig>> = {
   ollama: {
     baseUrl: 'http://localhost:11434',
-    model: 'llama3.1:8b',
+    model: 'qwen2.5:7b',
   },
   groq: {
     baseUrl: 'https://api.groq.com/openai',
@@ -67,14 +69,45 @@ export const defaultConfigs: Record<AIProvider, Partial<AIConfig>> = {
   },
 };
 
-/** Top offline models for AAISM Agent Discovery */
+/** Agent auto-selection order — first installed match wins */
+export const AGENT_MODEL_PREFERENCE: readonly string[] = [
+  'qwen2.5:7b',
+  'qwen2.5:14b',
+  'qwen3:8b',
+  'qwen3:latest',
+  'llama3.1:8b',
+  'gemma2:9b',
+  'gemma2:27b',
+  'gemma3:4b',
+  'gemma3:12b',
+  'mistral-small',
+  'mistral:7b',
+  'deepseek-r1:7b',
+  'phi4',
+  'phi3:medium',
+  'llama3.3:70b',
+];
+
+export const GEMMA4_STATUS_NOTE =
+  'Gemma 4 is not yet available in Ollama. Use gemma3 or gemma2 tags for the latest Google models.';
+
+/** Top offline models for AAISM Agent Discovery — Tier S first */
 export const AAISM_OFFLINE_MODELS: ModelCapability[] = [
-  { name: 'llama3.1:8b', tier: 'medium', jsonReliability: 92, sizeGb: '~4.7GB', gpuRam: '8GB+', description: 'Best balance of quality and JSON reliability', recommended: true },
-  { name: 'qwen2.5:7b', tier: 'medium', jsonReliability: 90, sizeGb: '~4.4GB', gpuRam: '8GB+', description: 'Excellent structured output, strong reasoning', recommended: true },
-  { name: 'mistral:7b', tier: 'medium', jsonReliability: 85, sizeGb: '~4.1GB', gpuRam: '8GB+', description: 'Good JSON, fast inference' },
-  { name: 'phi3:medium', tier: 'medium', jsonReliability: 82, sizeGb: '~7.9GB', gpuRam: '8GB+', description: 'Microsoft model, good instruction following' },
-  { name: 'gemma2:9b', tier: 'medium', jsonReliability: 80, sizeGb: '~5.4GB', gpuRam: '10GB+', description: 'Google model, quality responses' },
-  { name: 'llama3.2:3b', tier: 'small', jsonReliability: 35, sizeGb: '~2GB', gpuRam: '4GB', description: 'Too small for reliable JSON — fallback only', fallbackOnly: true },
+  { name: 'qwen2.5:7b', tier: 'medium', jsonReliability: 94, sizeGb: '~4.4GB', gpuRam: '8GB+', description: 'Top pick — excellent JSON and reasoning', recommended: true, tierS: true },
+  { name: 'qwen2.5:14b', tier: 'medium', jsonReliability: 96, sizeGb: '~8.9GB', gpuRam: '12GB+', description: 'Stronger Qwen variant, very reliable structured output', recommended: true, tierS: true },
+  { name: 'qwen3:8b', tier: 'medium', jsonReliability: 93, sizeGb: '~5.0GB', gpuRam: '8GB+', description: 'Latest Qwen generation — great for agents (text; not qwen3-vl)', tierS: true },
+  { name: 'llama3.1:8b', tier: 'medium', jsonReliability: 92, sizeGb: '~4.7GB', gpuRam: '8GB+', description: 'Proven balance of quality and JSON reliability', recommended: true, tierS: true },
+  { name: 'gemma2:9b', tier: 'medium', jsonReliability: 88, sizeGb: '~5.4GB', gpuRam: '10GB+', description: 'Google Gemma 2 — solid agent responses', tierS: true },
+  { name: 'gemma2:27b', tier: 'large', jsonReliability: 95, sizeGb: '~16GB', gpuRam: '24GB+', description: 'Large Gemma 2 — premium local quality', tierS: true },
+  { name: 'gemma3:4b', tier: 'medium', jsonReliability: 90, sizeGb: '~3.3GB', gpuRam: '8GB+', description: 'Latest Gemma 3 (Gemma 4 not in Ollama yet)', tierS: true },
+  { name: 'gemma3:12b', tier: 'medium', jsonReliability: 93, sizeGb: '~8.1GB', gpuRam: '12GB+', description: 'Gemma 3 mid-size — strong instruction following', tierS: true },
+  { name: 'mistral-small', tier: 'medium', jsonReliability: 90, sizeGb: '~14GB', gpuRam: '16GB+', description: 'Mistral Small — enterprise-grade JSON', tierS: true },
+  { name: 'mistral:7b', tier: 'medium', jsonReliability: 85, sizeGb: '~4.1GB', gpuRam: '8GB+', description: 'Fast Mistral 7B, good JSON', tierS: true },
+  { name: 'deepseek-r1:7b', tier: 'medium', jsonReliability: 88, sizeGb: '~4.7GB', gpuRam: '8GB+', description: 'Reasoning-focused — strong for complex agent steps', tierS: true },
+  { name: 'phi4', tier: 'medium', jsonReliability: 91, sizeGb: '~8.2GB', gpuRam: '10GB+', description: 'Microsoft Phi-4 — reliable structured output', tierS: true },
+  { name: 'phi3:medium', tier: 'medium', jsonReliability: 82, sizeGb: '~7.9GB', gpuRam: '8GB+', description: 'Phi-3 medium — good instruction following', tierS: true },
+  { name: 'llama3.3:70b', tier: 'large', jsonReliability: 97, sizeGb: '~40GB', gpuRam: '48GB+', description: 'Llama 3.3 70B — best local quality if you have VRAM', tierS: true },
+  { name: 'llama3.2:3b', tier: 'small', jsonReliability: 35, sizeGb: '~2GB', gpuRam: '4GB', description: 'Too small for reliable JSON — avoid for agents', fallbackOnly: true },
 ];
 
 export const RECOMMENDED_OLLAMA_MODELS = AAISM_OFFLINE_MODELS.map(m => ({
@@ -83,11 +116,64 @@ export const RECOMMENDED_OLLAMA_MODELS = AAISM_OFFLINE_MODELS.map(m => ({
 }));
 
 const MODEL_TIER_PATTERNS: Array<{ pattern: RegExp; tier: ModelTier; jsonReliability: number }> = [
-  { pattern: /llama3\.2:1b|1b|tiny|mini/i, tier: 'small', jsonReliability: 20 },
-  { pattern: /llama3\.2:3b|llama3\.2$|3b|phi3:mini|gemma2:2b/i, tier: 'small', jsonReliability: 35 },
-  { pattern: /llama3\.1:8b|llama3\.1$|mistral|qwen2\.5|phi3:medium|gemma2:9b|7b|8b|9b/i, tier: 'medium', jsonReliability: 85 },
-  { pattern: /70b|13b|mixtral|large|405b/i, tier: 'large', jsonReliability: 95 },
+  { pattern: /llama3\.2:1b|1b|tiny|mini|embed|nomic|vl|vision/i, tier: 'small', jsonReliability: 20 },
+  { pattern: /llama3\.2:3b|llama3\.2$|phi3:mini|gemma2:2b/i, tier: 'small', jsonReliability: 35 },
+  { pattern: /llama3\.1|llama3\.3|mistral|qwen2\.5|qwen3|phi3:medium|phi4|gemma2|gemma3|deepseek-r1|7b|8b|9b|12b|14b/i, tier: 'medium', jsonReliability: 85 },
+  { pattern: /70b|27b|13b|mixtral|large|405b|mistral-small/i, tier: 'large', jsonReliability: 95 },
 ];
+
+const AVOID_AGENT_PATTERNS = [/llama3\.2:3b|llama3\.2$|:1b|:2b|tiny|mini|vl|vision|embed|nomic/i];
+
+function modelBaseName(name: string): string {
+  return name.split(':')[0].toLowerCase();
+}
+
+function matchesPreferredTag(installedName: string, preferredName: string): boolean {
+  if (installedName === preferredName) return true;
+  const preferredBase = modelBaseName(preferredName);
+  const installedBase = modelBaseName(installedName);
+  if (preferredBase !== installedBase) return false;
+  const preferredTag = preferredName.includes(':') ? preferredName.split(':')[1] : null;
+  if (!preferredTag || preferredTag === 'latest') return true;
+  return installedName.startsWith(`${preferredBase}:`) &&
+    (installedName.includes(`:${preferredTag}`) || installedName.endsWith(`:${preferredTag}`));
+}
+
+export function pickBestInstalledModel(installed: OllamaModel[] | string[]): string | null {
+  const names = installed.map(m => (typeof m === 'string' ? m : m.name));
+
+  for (const preferred of AGENT_MODEL_PREFERENCE) {
+    const match = names.find(n => {
+      if (AVOID_AGENT_PATTERNS.some(p => p.test(n))) return false;
+      return matchesPreferredTag(n, preferred);
+    });
+    if (match) return match;
+  }
+
+  let best: { name: string; score: number } | null = null;
+  for (const name of names) {
+    if (AVOID_AGENT_PATTERNS.some(p => p.test(name))) continue;
+    const cap = getModelCapability(name);
+    if (cap.fallbackOnly || cap.tier === 'small') continue;
+    if (!best || cap.jsonReliability > best.score) {
+      best = { name, score: cap.jsonReliability };
+    }
+  }
+  return best?.name ?? null;
+}
+
+/** Resolve best installed Ollama model for Agent Discovery at runtime */
+export async function resolveAgentConfig(config?: AIConfig): Promise<AIConfig> {
+  const base = config || loadAIConfig();
+  if (base.provider !== 'ollama') return base;
+
+  const models = await detectOllamaModels(base.baseUrl);
+  const best = pickBestInstalledModel(models);
+  if (best && best !== base.model) {
+    return { ...base, model: best };
+  }
+  return base;
+}
 
 export function getModelCapability(modelName: string): ModelCapability {
   const known = AAISM_OFFLINE_MODELS.find(m =>
@@ -125,16 +211,19 @@ export function isSmallModel(modelName: string): boolean {
 export function getModelWarning(modelName: string): string | null {
   const cap = getModelCapability(modelName);
   if (cap.tier === 'small') {
-    return `Model "${modelName}" is too small for reliable JSON output in Agent Discovery. Switch to llama3.1:8b or qwen2.5:7b for best results.`;
+    return `Model "${modelName}" is too small for reliable JSON output in Agent Discovery. Switch to qwen2.5:7b or llama3.1:8b for best results.`;
+  }
+  if (/vl|vision/i.test(modelName)) {
+    return `Model "${modelName}" is vision-only — use a text model like qwen2.5:7b for Agent Discovery.`;
   }
   if (cap.jsonReliability < 70) {
-    return `Model "${modelName}" has low JSON reliability (${cap.jsonReliability}%). Consider llama3.1:8b for Agent Discovery.`;
+    return `Model "${modelName}" has low JSON reliability (${cap.jsonReliability}%). Consider qwen2.5:7b for Agent Discovery.`;
   }
   return null;
 }
 
 export function getRecommendedFallbackModel(): string {
-  return 'llama3.1:8b';
+  return AGENT_MODEL_PREFERENCE[0];
 }
 
 // Check if Ollama is running and get available models
@@ -556,7 +645,7 @@ export function loadAIConfig(): AIConfig {
       const parsed = JSON.parse(saved) as AIConfig;
       // Migrate legacy default
       if (parsed.provider === 'ollama' && (parsed.model === 'llama3.2' || parsed.model === 'llama3.2:3b')) {
-        parsed.model = 'llama3.1:8b';
+        parsed.model = 'qwen2.5:7b';
       }
       return parsed;
     }

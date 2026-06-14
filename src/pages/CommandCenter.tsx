@@ -21,6 +21,7 @@ import {
 } from '../data/releaseFeed';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
+import { PLATFORM_ROADMAP, ROADMAP_STATUS_LABEL } from '../data/platformRoadmap';
 import { OSINT_SOURCES } from '../data/osintSources';
 
 export default function CommandCenter() {
@@ -42,6 +43,7 @@ export default function CommandCenter() {
   const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [newReleases, setNewReleases] = useState<ReturnType<typeof getNewReleasesSince>>([]);
   const [showMore, setShowMore] = useState(false);
+  const [showRoadmap, setShowRoadmap] = useState(false);
 
   useEffect(() => {
     const lastSeen = localStorage.getItem(LAST_SEEN_RELEASE_KEY);
@@ -234,10 +236,7 @@ export default function CommandCenter() {
             })}
           </SectionCard>
 
-          <SectionCard
-            title="OSINT Arsenal"
-            icon={Globe}
-            iconClassName="text-cyan-500"
+          <SectionCard title="OSINT Arsenal" icon={Globe} iconClassName="text-cyan-500"
             action={
               <button
                 onClick={() => navigate('/osint')}
@@ -256,6 +255,40 @@ export default function CommandCenter() {
             >
               Open OSINT Arsenal →
             </button>
+          </SectionCard>
+
+          <SectionCard
+            title="What's Next"
+            icon={Sparkles}
+            iconClassName="text-violet-500"
+            compact
+            action={
+              <button
+                onClick={() => setShowRoadmap(!showRoadmap)}
+                className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-0.5"
+              >
+                {showRoadmap ? 'Less' : 'All'}
+                <ChevronDown className={`w-3 h-3 transition-transform ${showRoadmap ? 'rotate-180' : ''}`} />
+              </button>
+            }
+          >
+            <p className="text-xs text-gray-400 mb-2">Platform roadmap — upcoming capabilities.</p>
+            <div className="space-y-2">
+              {(showRoadmap ? PLATFORM_ROADMAP : PLATFORM_ROADMAP.slice(0, 3)).map(item => (
+                <div
+                  key={item.id}
+                  className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/40 border border-gray-100 dark:border-gray-700/60"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-0.5">
+                    <span className="text-xs font-medium text-gray-800 dark:text-gray-200">{item.title}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 shrink-0">
+                      {ROADMAP_STATUS_LABEL[item.status]}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-snug">{item.summary}</p>
+                </div>
+              ))}
+            </div>
           </SectionCard>
         </div>
       </div>

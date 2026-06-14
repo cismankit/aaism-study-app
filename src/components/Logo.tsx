@@ -4,7 +4,7 @@ interface LogoProps {
   showBackground?: boolean;
 }
 
-/** AAISM Intelligence Platform mark — shield + radar sweep + AI node network */
+/** AAISM Intelligence Platform mark — hex intel badge + geometric A monogram + neural arc */
 export default function Logo({ size = 32, className = '', showBackground = true }: LogoProps) {
   return (
     <svg
@@ -12,73 +12,88 @@ export default function Logo({ size = 32, className = '', showBackground = true 
       viewBox="0 0 48 48"
       width={size}
       height={size}
-      className={className}
+      className={`aaism-logo group ${className}`}
       aria-hidden
     >
       <defs>
-        <linearGradient id="aaism-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#10b981" />
-          <stop offset="100%" stopColor="#06b6d4" />
+        <linearGradient id="aaism-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#0c1222" />
+          <stop offset="100%" stopColor="#162032" />
         </linearGradient>
-        <linearGradient id="aaism-shield" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.75" />
+        <linearGradient id="aaism-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#34d399" />
+          <stop offset="45%" stopColor="#2dd4bf" />
+          <stop offset="100%" stopColor="#22d3ee" />
+        </linearGradient>
+        <linearGradient id="aaism-glow" x1="50%" y1="0%" x2="50%" y2="100%">
+          <stop offset="0%" stopColor="#6ee7b7" stopOpacity="0.9" />
+          <stop offset="100%" stopColor="#22d3ee" stopOpacity="0.4" />
         </linearGradient>
       </defs>
 
       {showBackground && (
-        <rect width="48" height="48" rx="10" fill="url(#aaism-grad)" />
+        <rect width="48" height="48" rx="11" fill="url(#aaism-bg)" />
       )}
 
-      {/* Shield outline */}
+      {/* Hexagonal intel frame */}
       <path
-        d="M24 6 L38 12 L38 24 C38 32 32 38 24 42 C16 38 10 32 10 24 L10 12 Z"
+        d="M24 4.5 L38.5 12.8 V31.2 L24 39.5 L9.5 31.2 V12.8 Z"
         fill="none"
-        stroke="url(#aaism-shield)"
-        strokeWidth="1.8"
+        stroke="url(#aaism-accent)"
+        strokeWidth="1.15"
         strokeLinejoin="round"
-        opacity={showBackground ? 1 : 0.9}
+        opacity={0.88}
+        className="aaism-logo-hex transition-opacity duration-300 group-hover:opacity-100"
       />
 
-      {/* Radar sweep arc */}
+      {/* Geometric A monogram */}
       <path
-        d="M24 24 L24 14 A10 10 0 0 1 32 20 Z"
+        d="M24 11.5 L31.5 34 H28.2 L26.4 28.5 H21.6 L19.8 34 H16.5 L24 11.5 Z"
         fill="white"
-        fillOpacity={showBackground ? 0.25 : 0.35}
+        fillOpacity={showBackground ? 0.96 : 0.92}
+      />
+      <path
+        d="M22.1 25.5 H25.9 L24 19.2 Z"
+        fill="url(#aaism-bg)"
+        fillOpacity={showBackground ? 1 : 0.85}
+      />
+
+      {/* Intelligence iris — focal point */}
+      <circle
+        cx="24"
+        cy="20.5"
+        r="1.6"
+        fill="url(#aaism-accent)"
+        className="aaism-logo-iris transition-transform duration-500 group-hover:scale-125"
+        style={{ transformOrigin: '24px 20.5px' }}
       />
       <circle
         cx="24"
-        cy="24"
-        r="10"
+        cy="20.5"
+        r="3.2"
         fill="none"
-        stroke="white"
-        strokeWidth="0.8"
-        strokeOpacity={showBackground ? 0.4 : 0.55}
-      />
-      <circle
-        cx="24"
-        cy="24"
-        r="6"
-        fill="none"
-        stroke="white"
+        stroke="url(#aaism-glow)"
         strokeWidth="0.6"
-        strokeOpacity={showBackground ? 0.3 : 0.45}
+        opacity={0.55}
+        className="aaism-logo-ring"
       />
 
-      {/* AI node network */}
-      <circle cx="24" cy="24" r="2.2" fill="white" />
-      <circle cx="18" cy="18" r="1.4" fill="white" fillOpacity="0.85" />
-      <circle cx="30" cy="18" r="1.4" fill="white" fillOpacity="0.85" />
-      <circle cx="20" cy="30" r="1.2" fill="white" fillOpacity="0.7" />
-      <circle cx="28" cy="30" r="1.2" fill="white" fillOpacity="0.7" />
-
-      <line x1="24" y1="24" x2="18" y2="18" stroke="white" strokeWidth="0.7" strokeOpacity="0.6" />
-      <line x1="24" y1="24" x2="30" y2="18" stroke="white" strokeWidth="0.7" strokeOpacity="0.6" />
-      <line x1="24" y1="24" x2="20" y2="30" stroke="white" strokeWidth="0.7" strokeOpacity="0.5" />
-      <line x1="24" y1="24" x2="28" y2="30" stroke="white" strokeWidth="0.7" strokeOpacity="0.5" />
-
-      {/* Radar blip */}
-      <circle cx="30" cy="20" r="1" fill="#6ee7b7" />
+      {/* Neural network arc */}
+      <g className="aaism-logo-neural" opacity={showBackground ? 0.85 : 0.95}>
+        <path
+          d="M33 14 Q37 18 36.5 24 Q36 30 33 33"
+          fill="none"
+          stroke="url(#aaism-accent)"
+          strokeWidth="0.75"
+          strokeLinecap="round"
+          opacity={0.65}
+        />
+        <circle cx="33" cy="14" r="1.3" fill="#34d399" className="aaism-logo-node" />
+        <circle cx="36.5" cy="21" r="1.1" fill="#2dd4bf" className="aaism-logo-node" style={{ animationDelay: '0.15s' }} />
+        <circle cx="33.5" cy="28" r="1.2" fill="#22d3ee" className="aaism-logo-node" style={{ animationDelay: '0.3s' }} />
+        <line x1="31" y1="18" x2="33" y2="14" stroke="#34d399" strokeWidth="0.5" opacity={0.5} />
+        <line x1="30.5" y1="22" x2="36.5" y2="21" stroke="#2dd4bf" strokeWidth="0.5" opacity={0.45} />
+      </g>
     </svg>
   );
 }
