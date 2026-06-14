@@ -16,6 +16,7 @@ import MatrixRain, { MatrixColor } from './MatrixRain';
 import LiveIntelFeed from './LiveIntelFeed';
 import GlobalSearch, { useGlobalSearchShortcut } from './GlobalSearch';
 import OnboardingWizard, { useOnboarding } from './OnboardingWizard';
+import PwaInstallBanner from './PwaInstallBanner';
 import {
   checkLLMHealth,
   getFixSteps,
@@ -430,6 +431,8 @@ function LayoutContent() {
         />
 
         <LLMHealthBanner />
+
+        <PwaInstallBanner />
 
         <div className="flex-1 flex overflow-hidden">
           {/* Main content */}

@@ -49,15 +49,39 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
     status: 'shipped',
   },
   {
-    id: 'mobile-pwa',
-    title: 'Mobile PWA',
-    summary: 'Installable offline shell with cached study content and push-ready architecture.',
-    status: 'exploring',
-  },
-  {
     id: 'community-voting',
     title: 'Community question voting',
     summary: 'Upvote agent-discovered leads and flag weak questions for review.',
+    status: 'shipped',
+  },
+  {
+    id: 'mobile-pwa',
+    title: 'Mobile PWA',
+    summary: 'Installable offline shell with cached study content, service worker, and dismissible install banner.',
+    status: 'shipped',
+  },
+  {
+    id: 'content-queue',
+    title: 'Content Studio queue',
+    summary: 'Draft → approved → exported workflow with localStorage queue panel in Content Studio.',
+    status: 'shipped',
+  },
+  {
+    id: 'playbook-export',
+    title: 'Playbook audit export',
+    summary: 'Structured audit evidence checklist as markdown bundle or print-ready PDF from playbook phases.',
+    status: 'shipped',
+  },
+  {
+    id: 'groq-rate-limit',
+    title: 'Groq client rate limit',
+    summary: 'Client-side throttle (30 calls/min) in aiService to prevent free-tier burst errors.',
+    status: 'shipped',
+  },
+  {
+    id: 'route-code-split',
+    title: 'Route code splitting',
+    summary: 'React.lazy for Exam, Content Studio, and Agent Discovery to reduce initial bundle size.',
     status: 'shipped',
   },
 ];
@@ -70,7 +94,7 @@ export const ROADMAP_STATUS_LABEL: Record<RoadmapItem['status'], string> = {
   partial: 'Partial',
 };
 
-/** Phase 2 backlog — ready for next implementation agent */
+/** Remaining backlog — ready for next implementation agent */
 export const PHASE_2_ITEMS: RoadmapItem[] = PLATFORM_ROADMAP.filter(
   item => item.status === 'planned' || item.status === 'exploring',
 );

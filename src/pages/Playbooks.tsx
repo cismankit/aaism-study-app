@@ -2,9 +2,10 @@ import { useState } from 'react';
 import {
   Briefcase, ChevronRight, ChevronDown, ChevronUp, Clock,
   CheckCircle, Users, AlertTriangle, BarChart3, Shield,
-  BookOpen, Target, ArrowLeft, Lightbulb, Layers,
+  BookOpen, Target, ArrowLeft, Lightbulb, Layers, Download, FileText,
 } from 'lucide-react';
 import { PLAYBOOKS, PLAYBOOK_CATEGORIES, type Playbook } from '../data/playbooks';
+import { downloadPlaybookMarkdownBundle, openPlaybookAuditPdf } from '../services/playbookExportService';
 
 type ViewMode = 'list' | 'detail';
 
@@ -151,6 +152,20 @@ function PlaybookDetail({
           <span className="flex items-center gap-1"><Layers className="w-3 h-3" /> {pb.phases.length} phases</span>
           <span className="px-2 py-0.5 rounded-full bg-white/20">{pb.difficulty}</span>
           <span className="px-2 py-0.5 rounded-full bg-white/20">Domain {pb.domain}</span>
+        </div>
+        <div className="flex flex-wrap gap-2 mt-4">
+          <button
+            onClick={() => openPlaybookAuditPdf(pb)}
+            className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-medium flex items-center gap-1.5"
+          >
+            <FileText className="w-3.5 h-3.5" /> Export audit evidence PDF
+          </button>
+          <button
+            onClick={() => downloadPlaybookMarkdownBundle(pb)}
+            className="px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-xs font-medium flex items-center gap-1.5"
+          >
+            <Download className="w-3.5 h-3.5" /> Download markdown bundle
+          </button>
         </div>
       </div>
 

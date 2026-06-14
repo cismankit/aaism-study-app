@@ -4,10 +4,12 @@ import {
   PenLine, ChevronRight, ChevronDown, Copy, Check, Download,
   Loader2, Server, Sparkles, Settings, Layers, FileText,
   ExternalLink, AlertCircle, RefreshCw, XCircle, CheckCircle2,
+  ListOrdered,
 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
 import ContentPreview from '../components/ContentPreview';
+import ContentQueuePanel from '../components/ContentQueuePanel';
 import {
   type ContentFormatId,
   BATCH_FORMAT_IDS,
@@ -31,6 +33,7 @@ import {
   type GeneratedContent,
 } from '../services/contentStudioService';
 import { checkLLMHealth, getFixSteps, subscribeLLMHealth, type LLMHealthReport } from '../services/llmHealthService';
+import { addToContentQueue } from '../services/contentQueueService';
 import { AAISM_DOMAIN_GUIDES } from '../data/aaismDomainGuide';
 import { topics } from '../data/knowledgeBase';
 
@@ -62,6 +65,7 @@ export default function ContentStudio() {
   const [copied, setCopied] = useState(false);
   const [showFreeOptions, setShowFreeOptions] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [queueOpen, setQueueOpen] = useState(false);
 
   const refreshProvider = useCallback(async () => {
     const report = await checkLLMHealth();
@@ -165,6 +169,18 @@ export default function ContentStudio() {
     downloadExportBundle(withEdits, source);
   }
 
+  function addCurrentToQueue() {
+    const current = outputs.find(o => o.formatId === activeTab);
+    if (!current) return;
+    addToContentQueue({
+      formatId: current.formatId,
+      formatLabel: current.formatLabel,
+      content: getDisplayContent(current),
+      source,
+    });
+    setQueueOpen(true);
+  }
+
   const activeOutput = outputs.find(o => o.formatId === activeTab);
   const activeContent = activeOutput ? getDisplayContent(activeOutput) : '';
   const charStats = activeOutput ? getCharCount(activeContent, activeOutput.formatId) : null;
@@ -173,7 +189,8 @@ export default function ContentStudio() {
   const fixSteps = getFixSteps(health);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="flex gap-4 max-w-7xl mx-auto">
+      <div className="flex-1 min-w-0 space-y-6">
       <PageHeader
         icon={PenLine}
         iconClassName="text-violet-500"
@@ -181,6 +198,12 @@ export default function ContentStudio() {
         subtitle="Turn AAISM study intel into LinkedIn posts, YouTube scripts, GitHub READMEs, and more — powered by free LLMs."
         action={
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setQueueOpen(!queueOpen)}
+              className="text-xs px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 hover:bg-violet-200 flex items-center gap-1"
+            >
+              <ListOrdered className="w-3 h-3" /> Queue
+            </button>
             <ProviderBadge provider={provider} health={health} onRefresh={refreshProvider} />
             <Link
               to="/settings"
@@ -528,6 +551,9 @@ export default function ContentStudio() {
             <button onClick={() => { setStep(1); setOutputs([]); setEditedContent({}); }} className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
               New source
             </button>
+            <button onClick={addCurrentToQueue} className="px-4 py-2 rounded-lg border border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-400 text-sm font-medium hover:bg-violet-50 dark:hover:bg-violet-900/20 flex items-center gap-2">
+              <ListOrdered className="w-4 h-4" /> Add to queue
+            </button>
             {outputs.length > 1 && (
               <button onClick={exportAll} className="px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium hover:bg-violet-700 flex items-center gap-2">
                 <Download className="w-4 h-4" /> Export all formats (.md bundle)
@@ -599,6 +625,22 @@ export default function ContentStudio() {
         {source.topic && ` · ${source.topic}`}
         {source.headline && ` · ${source.headline}`}
       </p>
+      </div>
+
+      {queueOpen && (
+        <aside className="hidden lg:block w-72 shrink-0 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden h-[calc(100vh-8rem)] sticky top-4">
+          <ContentQueuePanel onClose={() => setQueueOpen(false)} />
+        </aside>
+      )}
+
+      {queueOpen && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setQueueOpen(false)} aria-hidden />
+          <aside className="absolute right-0 top-0 h-full w-full max-w-sm bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 overflow-hidden">
+            <ContentQueuePanel onClose={() => setQueueOpen(false)} />
+          </aside>
+        </div>
+      )}
     </div>
   );
 }

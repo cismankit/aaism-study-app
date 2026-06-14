@@ -682,10 +682,30 @@ async function callClaude(config: AIConfig, messages: Message[]): Promise<AIResp
   }
 }
 
+/** Client-side Groq throttle — max calls per rolling minute */
+const GROQ_MAX_CALLS_PER_MINUTE = 30;
+const groqCallTimestamps: number[] = [];
+
+function checkGroqRateLimit(): string | null {
+  const now = Date.now();
+  while (groqCallTimestamps.length > 0 && now - groqCallTimestamps[0] >= 60_000) {
+    groqCallTimestamps.shift();
+  }
+  if (groqCallTimestamps.length >= GROQ_MAX_CALLS_PER_MINUTE) {
+    const waitSec = Math.ceil((60_000 - (now - groqCallTimestamps[0])) / 1000);
+    return `Groq rate limit reached (${GROQ_MAX_CALLS_PER_MINUTE}/min). Retry in ~${waitSec}s.`;
+  }
+  groqCallTimestamps.push(now);
+  return null;
+}
+
 async function callGroq(config: AIConfig, messages: Message[], options?: ChatOptions): Promise<AIResponse> {
   if (!config.apiKey) {
     return { content: '', error: 'Groq API key not configured. Get a free key at https://console.groq.com' };
   }
+
+  const rateError = checkGroqRateLimit();
+  if (rateError) return { content: '', error: rateError };
 
   try {
     const response = await fetch(`${config.baseUrl}/v1/chat/completions`, {
@@ -941,6 +961,9 @@ export async function fetchGroqModels(config: AIConfig): Promise<GroqConnectionR
   if (!config.apiKey?.trim()) {
     return { success: false, message: 'Groq API key not configured. Get a free key at console.groq.com' };
   }
+
+  const rateError = checkGroqRateLimit();
+  if (rateError) return { success: false, message: rateError };
 
   try {
     const baseUrl = config.baseUrl ?? defaultConfigs.groq.baseUrl!;

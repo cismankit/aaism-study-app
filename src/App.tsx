@@ -1,4 +1,6 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { Loader2 } from 'lucide-react'
 import OSINTLayout from './components/OSINTLayout'
 import CommandCenter from './pages/CommandCenter'
 import Study from './pages/Study'
@@ -6,7 +8,6 @@ import CheatSheet from './pages/CheatSheet'
 import CramMode from './pages/CramMode'
 import KnowledgeHub from './pages/KnowledgeHub'
 import KnowledgeBase from './pages/KnowledgeBase'
-import AgentDiscovery from './pages/AgentDiscovery'
 import IntelHub from './pages/IntelHub'
 import OSINTArsenal from './pages/OSINTArsenal'
 import ScenarioLab from './pages/ScenarioLab'
@@ -18,8 +19,18 @@ import Support from './pages/Support'
 import Donate from './pages/Donate'
 import FeatureRequest from './pages/FeatureRequest'
 import MyUpdates from './pages/MyUpdates'
-import ContentStudio from './pages/ContentStudio'
-import Exam from './pages/Exam'
+
+const Exam = lazy(() => import('./pages/Exam'))
+const ContentStudio = lazy(() => import('./pages/ContentStudio'))
+const AgentDiscovery = lazy(() => import('./pages/AgentDiscovery'))
+
+function RouteFallback() {
+  return (
+    <div className="flex items-center justify-center py-24">
+      <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+    </div>
+  )
+}
 
 function App() {
   return (
@@ -27,11 +38,11 @@ function App() {
       <Route path="/" element={<OSINTLayout />}>
         <Route index element={<CommandCenter />} />
         <Route path="study" element={<Study />} />
-        <Route path="exam" element={<Exam />} />
+        <Route path="exam" element={<Suspense fallback={<RouteFallback />}><Exam /></Suspense>} />
         <Route path="intel" element={<IntelHub />} />
         <Route path="osint" element={<OSINTArsenal />} />
         <Route path="scenarios" element={<ScenarioLab />} />
-        <Route path="agent" element={<AgentDiscovery />} />
+        <Route path="agent" element={<Suspense fallback={<RouteFallback />}><AgentDiscovery /></Suspense>} />
         <Route path="playbooks" element={<Playbooks />} />
         <Route path="knowledge" element={<KnowledgeBase />} />
         <Route path="knowledge/visual" element={<KnowledgeHub />} />
@@ -44,7 +55,7 @@ function App() {
         <Route path="donate" element={<Donate />} />
         <Route path="feature-request" element={<FeatureRequest />} />
         <Route path="my-updates" element={<MyUpdates />} />
-        <Route path="studio" element={<ContentStudio />} />
+        <Route path="studio" element={<Suspense fallback={<RouteFallback />}><ContentStudio /></Suspense>} />
       </Route>
     </Routes>
   )
