@@ -49,6 +49,18 @@ export const releaseFeed: ReleaseEntry[] = [
 ];
 
 export const LAST_SEEN_RELEASE_KEY = 'aaism_last_seen_release';
+export const WHATS_NEW_BANNER_DISMISSED_KEY = 'aaism_whats_new_banner_dismissed';
+
+export function hasUnseenReleases(): boolean {
+  const lastSeen = localStorage.getItem(LAST_SEEN_RELEASE_KEY);
+  return getNewReleasesSince(lastSeen).length > 0;
+}
+
+export function isWhatsNewBannerDismissedForLatest(): boolean {
+  const dismissed = localStorage.getItem(WHATS_NEW_BANNER_DISMISSED_KEY);
+  const latest = getLatestRelease();
+  return !!latest && dismissed === latest.id;
+}
 
 export function getLatestRelease(): ReleaseEntry | null {
   if (releaseFeed.length === 0) return null;

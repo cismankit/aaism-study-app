@@ -24,6 +24,7 @@ import {
   subscribeLLMHealth,
   type LLMHealthReport,
 } from '../services/llmHealthService';
+import { hasUnseenReleases } from '../data/releaseFeed';
 
 interface PerformanceContextType {
   bgColor: MatrixColor;
@@ -114,6 +115,11 @@ function Sidebar({
   const currentLevel = getLevelFromXP(state.xp);
   const location = useLocation();
   const [supportExpanded, setSupportExpanded] = useState(false);
+  const [unseenUpdates, setUnseenUpdates] = useState(false);
+
+  useEffect(() => {
+    setUnseenUpdates(hasUnseenReleases());
+  }, [location.pathname]);
 
   const isSupportMoreActive = navSections
     .find(s => s.label === 'SUPPORT')
@@ -174,13 +180,14 @@ function Sidebar({
               {section.items.map(item => {
                 const Icon = item.icon;
                 const isActive = item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);
+                const showUpdateDot = item.to === '/' && unseenUpdates;
                 return (
                   <NavLink
                     key={item.to}
                     to={item.to}
                     onClick={onCloseMobile}
                     end={item.to === '/'}
-                    className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${collapsed ? 'px-0 py-2' : 'px-2.5 py-2'} rounded-lg text-sm font-medium transition-all group ${
+                    className={`relative flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${collapsed ? 'px-0 py-2' : 'px-2.5 py-2'} rounded-lg text-sm font-medium transition-all group ${
                       isActive
                         ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -195,6 +202,12 @@ function Sidebar({
                       <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400">
                         {item.badge}
                       </span>
+                    )}
+                    {!collapsed && showUpdateDot && !item.badge && (
+                      <span className="ml-auto w-2 h-2 rounded-full bg-amber-500 shrink-0" title="New platform updates" />
+                    )}
+                    {collapsed && showUpdateDot && (
+                      <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-amber-500" title="New platform updates" />
                     )}
                   </NavLink>
                 );

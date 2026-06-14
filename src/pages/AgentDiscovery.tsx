@@ -213,12 +213,12 @@ export default function AgentDiscovery() {
         title="Agent Discovery"
         subtitle="Multi-agent pipeline discovers ISACA-matching questions — review leads in the Leads tab."
         action={
-          <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-theme-muted">
             <Settings size={12} />
             {aiConfig.provider} / {aiConfig.model}
             <button
               onClick={handleClearPipeline}
-              className="p-2 text-gray-400 hover:text-red-500 transition-colors ml-1"
+              className="p-2 text-theme-faint hover:text-red-500 transition-colors ml-1"
               title="Clear pipeline"
             >
               <Trash2 size={16} />

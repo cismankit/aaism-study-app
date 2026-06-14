@@ -8,6 +8,9 @@ import { useApp } from '../context/AppContext';
 import { loadAIConfig, saveAIConfig, defaultConfigs } from '../services/aiService';
 
 const ONBOARDED_KEY = 'aaism-onboarded';
+export const ONBOARDING_HINT_KEY = 'aaism-onboarding-hint';
+
+export type OnboardingHint = 'study' | 'intel' | 'studio' | 'agent' | 'command';
 
 export function isOnboarded(): boolean {
   return localStorage.getItem(ONBOARDED_KEY) === 'true';
@@ -16,6 +19,25 @@ export function isOnboarded(): boolean {
 export function setOnboarded(value = true): void {
   localStorage.setItem(ONBOARDED_KEY, value ? 'true' : 'false');
 }
+
+export function setOnboardingHint(hint: OnboardingHint): void {
+  localStorage.setItem(ONBOARDING_HINT_KEY, hint);
+}
+
+export function consumeOnboardingHint(): OnboardingHint | null {
+  const hint = localStorage.getItem(ONBOARDING_HINT_KEY);
+  localStorage.removeItem(ONBOARDING_HINT_KEY);
+  const valid: OnboardingHint[] = ['study', 'intel', 'studio', 'agent', 'command'];
+  return valid.includes(hint as OnboardingHint) ? (hint as OnboardingHint) : null;
+}
+
+const ROUTE_ONBOARDING_HINT: Record<string, OnboardingHint> = {
+  '/': 'command',
+  '/study': 'study',
+  '/intel': 'intel',
+  '/studio': 'studio',
+  '/agent': 'agent',
+};
 
 interface OnboardingWizardProps {
   onComplete: () => void;
@@ -43,11 +65,13 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     }
     if (examDateInput) setExamDate(examDateInput);
     if (dontShowAgain) setOnboarded(true);
+    setOnboardingHint('study');
     onComplete();
   };
 
   const handleTourNav = (route: string) => {
     setOnboarded(true);
+    setOnboardingHint(ROUTE_ONBOARDING_HINT[route] ?? 'study');
     onComplete();
     navigate(route);
   };

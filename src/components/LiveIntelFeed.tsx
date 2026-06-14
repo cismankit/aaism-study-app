@@ -115,15 +115,15 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
         >
           <div className="flex items-center gap-2">
             <Activity className={`w-4 h-4 text-emerald-500 ${refreshing ? 'animate-spin' : ''}`} />
-            <span className="text-sm font-semibold">Live Intel Feed</span>
+            <span className="text-sm font-semibold text-cockpit">Live Intel Feed</span>
             <div className="ml-auto flex items-center gap-2">
               {liveCount > 0 && (
                 <div className="flex items-center gap-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
-                  <span className="text-[10px] text-emerald-500 font-medium">RSS</span>
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-500 font-medium">RSS</span>
                 </div>
               )}
-              <RefreshCw className={`w-3.5 h-3.5 text-gray-400 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 text-cockpit-subtle ${refreshing ? 'animate-spin' : ''}`} />
               {showCloseButton && onClose && (
                 <span
                   role="button"
@@ -139,7 +139,7 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
             </div>
           </div>
           {fetchedAt && (
-            <p className="text-[10px] text-gray-400 mt-1">
+            <p className="text-[10px] text-cockpit-subtle mt-1">
               RSS stream · Updated {formatTimeAgo(fetchedAt)} · {liveCount} live articles
             </p>
           )}
@@ -169,7 +169,7 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
           {loading ? (
             <FeedSkeleton count={compact ? 4 : 6} />
           ) : items.length === 0 ? (
-            <div className="p-6 text-center text-sm text-gray-500">
+            <div className="p-6 text-center text-sm text-theme-muted">
               No intel items available. Try refreshing.
             </div>
           ) : (
@@ -186,7 +186,7 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
         {/* Footer */}
         {!loading && (
           <div className="px-4 py-2.5 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 bg-gray-50/80 dark:bg-gray-900/50">
-            <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1.5">
+            <p className="text-[10px] text-cockpit-muted dark:text-gray-400 mb-1.5">
               {fetchedAt
                 ? `Last updated ${formatTimeAgo(fetchedAt)} · ${activeSources.length || RSS_SOURCES.length} sources`
                 : `${RSS_SOURCES.length} sources configured`}
@@ -320,18 +320,18 @@ function FeedItemRow({
                 LIVE
               </span>
             )}
-            <span className="text-[10px] text-gray-400 ml-auto flex-shrink-0">
+            <span className="text-[10px] text-cockpit-subtle ml-auto flex-shrink-0">
               {formatTimeAgo(item.publishedAt)}
             </span>
           </div>
-          <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 line-clamp-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+          <p className="text-xs font-semibold text-cockpit line-clamp-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
             {item.title}
           </p>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">
+          <p className="text-[11px] text-cockpit-muted line-clamp-1 mt-0.5">
             {item.summary}
           </p>
         </div>
-        <div className="mt-1 flex-shrink-0 text-gray-300 dark:text-gray-600 group-hover:text-emerald-500 transition-colors">
+        <div className="mt-1 flex-shrink-0 text-cockpit-subtle dark:text-gray-600 group-hover:text-emerald-500 transition-colors">
           {isExternal ? <ExternalLink className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </div>
       </div>
@@ -400,11 +400,11 @@ export function LiveRssFeedPanel() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold flex items-center gap-2">
+          <h2 className="text-lg font-bold text-cockpit flex items-center gap-2">
             <Radio className="w-5 h-5 text-emerald-500" />
             Live RSS Intelligence
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <p className="text-sm text-cockpit-muted mt-0.5">
             Real-time security &amp; AI governance news from {RSS_SOURCES.length} curated sources
             {fetchedAt && ` · Updated ${formatTimeAgo(fetchedAt)}`}
           </p>

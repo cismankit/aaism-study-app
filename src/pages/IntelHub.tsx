@@ -144,7 +144,7 @@ export default function IntelHub() {
       </div>
 
       {activeTabMeta && (
-        <p className="text-sm text-gray-400 -mt-2">{activeTabMeta.description}</p>
+        <p className="text-sm text-theme-muted -mt-2">{activeTabMeta.description}</p>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-900/10">
@@ -210,7 +210,7 @@ export default function IntelHub() {
       {activeTab === 'arsenal' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-theme-muted">
               Practitioner-grade intelligence sources — full tree browser on the dedicated page.
             </p>
             <Link
@@ -410,7 +410,7 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
       <div className="space-y-2">
         {TOPIC_HEAT_MAP.map((topic, i) => {
           const TrendIcon = trendIcons[topic.trend] || Minus;
-          const trendColor = topic.trend === 'rising' ? 'text-green-500' : topic.trend === 'declining' ? 'text-red-500' : 'text-gray-400';
+          const trendColor = topic.trend === 'rising' ? 'text-green-500' : topic.trend === 'declining' ? 'text-red-500' : 'text-theme-faint';
 
           return (
             <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
@@ -433,7 +433,7 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
                     }}>
                       {topic.heat}
                     </div>
-                    <div className="text-[10px] text-gray-400">heat</div>
+                    <div className="text-[10px] text-theme-faint">heat</div>
                   </div>
                 </div>
               </div>
@@ -539,7 +539,7 @@ function TrapsTab({
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="font-semibold text-sm">{trap.name}</h3>
-                <p className="text-xs text-gray-400 mt-1 line-clamp-2">{trap.description}</p>
+                <p className="text-xs text-theme-muted mt-1 line-clamp-2">{trap.description}</p>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   {trap.domains.map(d => (
                     <span key={d} className="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">D{d}</span>
@@ -749,7 +749,7 @@ function InsightsTab({
                     <span className="font-medium text-sm">{insight.title}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-theme-muted">
                       {new Date(insight.createdAt).toLocaleDateString()}
                     </span>
                     {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -768,7 +768,7 @@ function InsightsTab({
           })}
         </div>
       ) : (
-        <div className="text-center py-12 text-gray-400">
+        <div className="text-center py-12 text-theme-muted">
           <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
           <p className="text-lg font-medium">No research insights yet</p>
           <p className="text-sm mt-1">Run the Research Agent to generate insights about exam patterns and traps</p>

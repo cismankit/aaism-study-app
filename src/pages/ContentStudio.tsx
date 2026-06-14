@@ -245,8 +245,8 @@ export default function ContentStudio() {
               }`}>
                 {n}
               </span>
-              <span className={active ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400'}>{label}</span>
-              {i < 3 && <ChevronRight className="w-3 h-3 text-gray-400" />}
+              <span className={active ? 'text-cockpit' : 'text-theme-muted'}>{label}</span>
+              {i < 3 && <ChevronRight className="w-3 h-3 text-theme-faint" />}
             </div>
           );
         })}
@@ -620,7 +620,7 @@ export default function ContentStudio() {
         )}
       </div>
 
-      <p className="text-[11px] text-gray-400 text-center">
+      <p className="text-[11px] text-theme-faint text-center">
         Domain {source.domain ?? 1}: {getDomainName(source.domain ?? 1)}
         {source.topic && ` · ${source.topic}`}
         {source.headline && ` · ${source.headline}`}

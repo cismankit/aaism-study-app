@@ -49,7 +49,7 @@ export default function Study() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>('tutor');
   const { setBgColor } = usePerformance();
-  const [quizBootstrap, setQuizBootstrap] = useState<{ domainId?: number } | null>(null);
+  const [quizBootstrap, setQuizBootstrap] = useState<{ domainId?: number; questionCount?: number } | null>(null);
 
   // Handle URL params for quiz generation
   useEffect(() => {
@@ -61,10 +61,10 @@ export default function Study() {
 
   // Handle navigation state from Command Center domain readiness
   useEffect(() => {
-    const state = location.state as { startQuiz?: boolean; domainId?: number } | null;
+    const state = location.state as { startQuiz?: boolean; domainId?: number; questionCount?: number } | null;
     if (state?.startQuiz) {
       setActiveTab('quiz');
-      setQuizBootstrap({ domainId: state.domainId });
+      setQuizBootstrap({ domainId: state.domainId, questionCount: state.questionCount });
       window.history.replaceState({}, document.title);
     }
   }, [location.state]);
@@ -148,7 +148,7 @@ interface ShuffledQuestion extends ExamQuestion {
 }
 
 // ============ QUIZ TAB ============
-function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: number } | null; onBootstrapConsumed?: () => void }) {
+function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: number; questionCount?: number } | null; onBootstrapConsumed?: () => void }) {
   const { addQuizAttempt } = useApp();
   const { completeQuiz } = useGamification();
   const { setBgColor } = usePerformance();
@@ -218,7 +218,8 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
     const timer = setTimeout(() => {
       const qs = getQuestionsByDomain(bootstrap.domainId!);
       const shuffledQs = [...qs].sort(() => Math.random() - 0.5);
-      const count = Math.min(10, shuffledQs.length);
+      const target = bootstrap.questionCount ?? 10;
+      const count = Math.min(target, shuffledQs.length);
       const preparedQs = shuffledQs.slice(0, count).map(shuffleAnswerOptions);
       setQuestions(preparedQs);
       setAnswers(new Array(preparedQs.length).fill(null));
@@ -829,7 +830,7 @@ function NotesTab() {
           <p className="text-gray-500 dark:text-gray-400 mb-2">
             {searchQuery ? 'No notes match your search' : 'No notes yet'}
           </p>
-          <p className="text-sm text-gray-400 dark:text-gray-500">
+          <p className="text-sm text-theme-muted dark:text-gray-500">
             {!searchQuery && (
               <>
                 Create notes here or save AI Tutor responses as notes with the
@@ -1135,7 +1136,7 @@ function FlashcardsTab() {
           className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 min-h-[300px] flex items-center justify-center cursor-pointer hover:shadow-lg transition-all"
         >
           <div className="text-center">
-            <div className="text-xs text-gray-400 uppercase mb-4">
+            <div className="text-xs text-theme-muted uppercase mb-4">
               {showAnswer ? 'Answer' : 'Question'}
             </div>
             <div className="text-xl font-medium text-gray-900 dark:text-white">
@@ -1186,7 +1187,7 @@ function FlashcardsTab() {
       <div className="max-w-lg mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold text-gray-900 dark:text-white">Create Flashcard</h3>
-          <button onClick={() => setMode('overview')} className="text-gray-400 hover:text-gray-600">
+          <button onClick={() => setMode('overview')} className="text-theme-faint hover:text-theme-secondary">
             ← Back
           </button>
         </div>

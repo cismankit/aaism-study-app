@@ -19,8 +19,10 @@ import {
   getLatestRelease,
   getNewReleasesSince,
   LAST_SEEN_RELEASE_KEY,
+  WHATS_NEW_BANNER_DISMISSED_KEY,
   releaseFeed,
 } from '../data/releaseFeed';
+import { consumeOnboardingHint, type OnboardingHint } from '../components/OnboardingWizard';
 import { PLATFORM_ROADMAP, ROADMAP_STATUS_LABEL } from '../data/platformRoadmap';
 import { OSINT_SOURCES } from '../data/osintSources';
 import { getReadinessScore, getDomainProgress } from '../services/progressService';
@@ -31,6 +33,16 @@ import {
   getDigestMissionLogEntry,
   getDigestStudioUrl,
 } from '../services/intelDigestService';
+
+type NextAction = { label: string; sub: string; route: string; icon: typeof Crosshair; primary: boolean };
+
+const ONBOARDING_ACTIONS: Record<OnboardingHint, NextAction> = {
+  study: { label: 'Start your first quiz', sub: '5 questions · ~3 min', route: '/study', icon: Crosshair, primary: true },
+  intel: { label: 'Explore Intel Hub', sub: 'Patterns, traps, and heat map', route: '/intel', icon: Radar, primary: true },
+  studio: { label: 'Try Content Studio', sub: 'Generate study posts', route: '/studio', icon: PenLine, primary: true },
+  agent: { label: 'Run Agent Discovery', sub: 'AI-powered question leads', route: '/agent', icon: Bot, primary: true },
+  command: { label: 'Tour Command Center', sub: 'Readiness HUD & throttles', route: '/', icon: LayoutDashboard, primary: false },
+};
 
 export default function CommandCenter() {
   const navigate = useNavigate();
@@ -113,31 +125,49 @@ export default function CommandCenter() {
   const digestStudioUrl = loadCachedDigest() ? getDigestStudioUrl(loadCachedDigest()!) : getDigestStudioUrl();
 
   const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [showWhatsNewChip, setShowWhatsNewChip] = useState(false);
   const [newReleases, setNewReleases] = useState<ReturnType<typeof getNewReleasesSince>>([]);
   const [showMore, setShowMore] = useState(false);
   const [showRoadmap, setShowRoadmap] = useState(false);
+  const [onboardingHint] = useState<OnboardingHint | null>(() => consumeOnboardingHint());
 
   useEffect(() => {
     const lastSeen = localStorage.getItem(LAST_SEEN_RELEASE_KEY);
     const unseen = getNewReleasesSince(lastSeen);
     if (unseen.length > 0) {
       setNewReleases(unseen);
-      setShowWhatsNew(true);
+      const latest = getLatestRelease();
+      const bannerDismissed = latest && localStorage.getItem(WHATS_NEW_BANNER_DISMISSED_KEY) === latest.id;
+      if (bannerDismissed) {
+        setShowWhatsNewChip(true);
+      } else {
+        setShowWhatsNew(true);
+      }
     }
     void buildWeeklyIntelDigest().then(d => cacheDigest(d));
   }, []);
 
-  function dismissWhatsNew() {
+  function dismissWhatsNew(markSeen = false) {
     const latest = getLatestRelease();
-    if (latest) localStorage.setItem(LAST_SEEN_RELEASE_KEY, latest.id);
+    if (latest) {
+      localStorage.setItem(WHATS_NEW_BANNER_DISMISSED_KEY, latest.id);
+      if (markSeen) localStorage.setItem(LAST_SEEN_RELEASE_KEY, latest.id);
+    }
     setShowWhatsNew(false);
+    if (!markSeen && newReleases.length > 0) setShowWhatsNewChip(true);
+  }
+
+  function expandWhatsNew() {
+    setShowWhatsNewChip(false);
+    setShowWhatsNew(true);
   }
 
   const hudValue = getReadinessScore();
   const ringCircumference = 2 * Math.PI * 88;
   const ringOffset = ringCircumference - (hudValue / 100) * ringCircumference;
 
-  const nextAction = useMemo(() => {
+  const nextAction = useMemo((): NextAction => {
+    if (onboardingHint) return ONBOARDING_ACTIONS[onboardingHint];
     if (hudValue === 0 && recentQuizzes.length === 0) {
       return { label: 'Start your first quiz', sub: '5 questions · ~3 min', route: '/study', icon: Crosshair, primary: true };
     }
@@ -151,7 +181,7 @@ export default function CommandCenter() {
       return { label: 'Retry weak areas', sub: `Avg ${avgScore}% — push higher`, route: '/study', icon: Crosshair, primary: true };
     }
     return { label: 'Continue studying', sub: 'Pick up where you left off', route: '/study', icon: Crosshair, primary: true };
-  }, [hudValue, recentQuizzes.length, examCountdown, domainReadiness, stats.pendingCount, avgScore]);
+  }, [onboardingHint, hudValue, recentQuizzes.length, examCountdown, domainReadiness, stats.pendingCount, avgScore]);
 
   const NextActionIcon = nextAction.icon;
 
@@ -202,7 +232,7 @@ export default function CommandCenter() {
       {showWhatsNew && newReleases.length > 0 && (
         <div className="relative cockpit-glass rounded-xl p-4 animate-fade-in border-amber-200/60 dark:border-amber-500/20">
           <button
-            onClick={dismissWhatsNew}
+            onClick={() => dismissWhatsNew(false)}
             className="absolute top-3 right-3 p-1 rounded-md text-cockpit-subtle hover:text-cockpit transition-colors"
             aria-label="Dismiss"
           >
@@ -221,7 +251,7 @@ export default function CommandCenter() {
               </ul>
               <Link
                 to="/my-updates"
-                onClick={dismissWhatsNew}
+                onClick={() => dismissWhatsNew(true)}
                 className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-amber-700 dark:text-amber-400 hover:underline"
               >
                 See all updates
@@ -229,6 +259,20 @@ export default function CommandCenter() {
             </div>
           </div>
         </div>
+      )}
+
+      {showWhatsNewChip && newReleases.length > 0 && !showWhatsNew && (
+        <button
+          type="button"
+          onClick={expandWhatsNew}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 text-xs font-medium text-amber-800 dark:text-amber-300 hover:bg-amber-200/80 dark:hover:bg-amber-500/25 transition-colors"
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          What&apos;s New
+          <span className="px-1.5 py-0.5 rounded-full bg-amber-600 text-white text-[10px] font-bold leading-none">
+            {newReleases.length}
+          </span>
+        </button>
       )}
 
       {/* Cockpit layout */}
@@ -374,8 +418,15 @@ export default function CommandCenter() {
               return (
                 <button
                   key={domain.id}
-                  onClick={() => navigate('/study', { state: { startQuiz: true, domainId: domain.id } })}
+                  onClick={() => navigate('/study', {
+                    state: {
+                      startQuiz: true,
+                      domainId: domain.id,
+                      questionCount: avg > 0 && avg < 60 ? 3 : undefined,
+                    },
+                  })}
                   className="w-full mb-2 group last:mb-0"
+                  title={avg > 0 && avg < 60 ? '3-question micro-drill for weak domain' : undefined}
                 >
                   <div className="flex items-center justify-between text-[10px] mb-1">
                     <span className="truncate text-cockpit-muted">D{domain.id}: {domain.name}</span>
