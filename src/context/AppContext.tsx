@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AppState, QuizAttempt, StudySession, Note } from '../types';
 import { loadState, saveState, initialState } from '../data/initialData';
+import { loadProgress, updateProgressFields } from '../services/progressService';
 
 interface AppContextType {
   state: AppState;
@@ -17,10 +18,17 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<AppState>(loadState);
+  const [state, setState] = useState<AppState>(() => {
+    loadProgress(); // trigger migration on first load
+    return loadState();
+  });
 
   useEffect(() => {
     saveState(state);
+    updateProgressFields({
+      quizHistory: state.quizAttempts,
+      examDate: state.examDate,
+    });
   }, [state]);
 
   const updateChapterProgress = (resourceId: string, chapterId: string, pass: number, completed: boolean) => {

@@ -12,6 +12,7 @@ import {
   getLevelFromXP,
   generateDailyChallenge 
 } from '../data/gamificationData';
+import { loadProgress, updateProgressFields } from '../services/progressService';
 
 // Actions
 type GamificationAction =
@@ -152,6 +153,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
 
   // Load state from localStorage
   useEffect(() => {
+    loadProgress(); // ensure unified store is initialized
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
@@ -190,6 +192,19 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
   // Save state to localStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    updateProgressFields({
+      domainScores: state.domainScores,
+      streak: {
+        current: state.currentStreak,
+        longest: state.longestStreak,
+        lastActivityDate: state.lastActivityDate,
+      },
+      xp: state.xp,
+      level: state.level,
+      totalQuizzesTaken: state.totalQuizzesTaken,
+      perfectQuizzes: state.perfectQuizzes,
+      totalStudyMinutes: state.totalStudyMinutes,
+    });
   }, [state]);
 
   // Save notifications

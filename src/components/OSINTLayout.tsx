@@ -14,6 +14,8 @@ import { getLevelFromXP } from '../data/gamificationData';
 import AchievementToast from './AchievementToast';
 import MatrixRain, { MatrixColor } from './MatrixRain';
 import LiveIntelFeed from './LiveIntelFeed';
+import GlobalSearch, { useGlobalSearchShortcut } from './GlobalSearch';
+import OnboardingWizard, { useOnboarding } from './OnboardingWizard';
 import {
   checkLLMHealth,
   getFixSteps,
@@ -74,6 +76,7 @@ const navSections: NavSection[] = [
     label: 'OPERATIONS',
     items: [
       { to: '/study', icon: Crosshair, label: 'Study Ops' },
+      { to: '/exam', icon: Zap, label: 'Timed Exam', badge: 'NEW' },
       { to: '/knowledge', icon: Eye, label: 'Knowledge Base' },
       { to: '/cheatsheet', icon: Map, label: 'Quick Ref' },
       { to: '/cram', icon: Zap, label: '24h Cram Mode' },
@@ -265,10 +268,12 @@ function TopBar({
   onToggleIntel,
   intelOpen,
   onToggleMobileNav,
+  onOpenSearch,
 }: {
   onToggleIntel: () => void;
   intelOpen: boolean;
   onToggleMobileNav: () => void;
+  onOpenSearch: () => void;
 }) {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
@@ -296,6 +301,15 @@ function TopBar({
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          onClick={onOpenSearch}
+          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          title="Search (⌘K)"
+        >
+          <span>Search</span>
+          <kbd className="text-[10px] opacity-60">⌘K</kbd>
+        </button>
+
         <button
           onClick={onToggleIntel}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
@@ -379,6 +393,10 @@ function LayoutContent() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [intelOpen, setIntelOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [showOnboarding, dismissOnboarding] = useOnboarding();
+
+  useGlobalSearchShortcut(() => setSearchOpen(true));
 
   useEffect(() => {
     void checkLLMHealth();
@@ -408,6 +426,7 @@ function LayoutContent() {
           onToggleIntel={() => setIntelOpen(!intelOpen)}
           intelOpen={intelOpen}
           onToggleMobileNav={() => setMobileNavOpen(true)}
+          onOpenSearch={() => setSearchOpen(true)}
         />
 
         <LLMHealthBanner />
@@ -446,6 +465,8 @@ function LayoutContent() {
       </div>
 
       <AchievementToast />
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+      {showOnboarding && <OnboardingWizard onComplete={dismissOnboarding} />}
     </div>
   );
 }

@@ -23,6 +23,14 @@ import {
 } from '../data/releaseFeed';
 import { PLATFORM_ROADMAP, ROADMAP_STATUS_LABEL } from '../data/platformRoadmap';
 import { OSINT_SOURCES } from '../data/osintSources';
+import { getReadinessScore, getDomainProgress } from '../services/progressService';
+import {
+  buildWeeklyIntelDigest,
+  cacheDigest,
+  loadCachedDigest,
+  getDigestMissionLogEntry,
+  getDigestStudioUrl,
+} from '../services/intelDigestService';
 
 export default function CommandCenter() {
   const navigate = useNavigate();
@@ -41,16 +49,12 @@ export default function CommandCenter() {
     : 0;
 
   const domainReadiness = useMemo(() => {
-    const scores = state.domains.map(domain => {
-      const ds = gameState.domainScores[domain.id] || [];
-      const avg = ds.length > 0 ? Math.round(ds.reduce((a: number, b: number) => a + b, 0) / ds.length) : 0;
-      return avg;
-    });
-    const withData = scores.filter(s => s > 0);
+    const progress = getDomainProgress();
+    const withData = progress.filter(d => d.count > 0);
     return withData.length > 0
-      ? Math.round(withData.reduce((a, b) => a + b, 0) / withData.length)
+      ? Math.round(withData.reduce((a, d) => a + d.avg, 0) / withData.length)
       : 0;
-  }, [state.domains, gameState.domainScores]);
+  }, [state.quizAttempts, gameState.domainScores]);
 
   const examCountdown = useMemo(() => {
     if (!state.examDate) return null;
@@ -97,8 +101,16 @@ export default function CommandCenter() {
       });
     });
 
+    const cachedDigest = loadCachedDigest();
+    if (cachedDigest) {
+      const d = getDigestMissionLogEntry(cachedDigest);
+      entries.push({ id: d.id, time: d.time, tag: d.tag, message: d.message });
+    }
+
     return entries.slice(0, 8);
   }, [state.quizAttempts, stats, risingTopics]);
+
+  const digestStudioUrl = loadCachedDigest() ? getDigestStudioUrl(loadCachedDigest()!) : getDigestStudioUrl();
 
   const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [newReleases, setNewReleases] = useState<ReturnType<typeof getNewReleasesSince>>([]);
@@ -112,6 +124,7 @@ export default function CommandCenter() {
       setNewReleases(unseen);
       setShowWhatsNew(true);
     }
+    void buildWeeklyIntelDigest().then(d => cacheDigest(d));
   }, []);
 
   function dismissWhatsNew() {
@@ -120,7 +133,7 @@ export default function CommandCenter() {
     setShowWhatsNew(false);
   }
 
-  const hudValue = Math.round((domainReadiness * 0.5) + (avgScore * 0.3) + (Math.min(gameState.currentStreak, 30) / 30 * 20));
+  const hudValue = getReadinessScore();
   const ringCircumference = 2 * Math.PI * 88;
   const ringOffset = ringCircumference - (hudValue / 100) * ringCircumference;
 
@@ -194,6 +207,7 @@ export default function CommandCenter() {
           <InstrumentPanel title="Throttle Controls" icon={Zap} accent="emerald">
             <div className="grid grid-cols-2 gap-2">
               <ThrottleButton icon={Crosshair} label="Study" sub="Practice ops" onClick={() => navigate('/study')} />
+              <ThrottleButton icon={Target} label="Exam" sub="90Q · 150min" onClick={() => navigate('/exam')} pulse />
               <ThrottleButton icon={Bot} label="Agent" sub={`${stats.pendingCount} leads`} onClick={() => navigate('/agent')} pulse />
               <ThrottleButton icon={PenLine} label="Studio" sub="Create posts" onClick={() => navigate('/studio')} />
               <ThrottleButton icon={Radar} label="Intel" sub="Deep dive" onClick={() => navigate('/intel')} pulse />
@@ -281,6 +295,7 @@ export default function CommandCenter() {
             <div className="grid grid-cols-4 gap-3 w-full max-w-md mt-4 relative z-10">
               <HudReadout icon={Flame} label="Streak" value={`${gameState.currentStreak}d`} color="text-orange-400" />
               <HudReadout icon={Crosshair} label="Avg Quiz" value={`${avgScore}%`} color="text-blue-400" />
+              <HudReadout icon={Target} label="Domains" value={`${domainReadiness}%`} color="text-violet-400" />
               <HudReadout icon={Bot} label="Leads" value={`${stats.pendingCount}`} color="text-cyan-400" />
               <HudReadout icon={Shield} label="XP" value={gameState.xp >= 1000 ? `${(gameState.xp / 1000).toFixed(1)}k` : `${gameState.xp}`} color="text-emerald-400" />
             </div>
@@ -374,7 +389,9 @@ export default function CommandCenter() {
                     <span className={`text-[9px] px-1.5 py-0.5 rounded-full shrink-0 ${
                       item.status === 'shipped'
                         ? 'bg-emerald-500/20 text-emerald-400'
-                        : 'bg-violet-500/20 text-violet-400'
+                        : item.status === 'partial'
+                          ? 'bg-amber-500/20 text-amber-400'
+                          : 'bg-violet-500/20 text-violet-400'
                     }`}>
                       {ROADMAP_STATUS_LABEL[item.status]}
                     </span>
@@ -389,9 +406,17 @@ export default function CommandCenter() {
 
       {/* Mission log strip */}
       <div className="cockpit-glass-cyan rounded-xl overflow-hidden">
-        <div className="flex items-center gap-2 px-4 py-2 border-b border-cyan-500/20">
-          <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse-dot" />
-          <span className="text-[10px] font-mono text-cyan-400 tracking-widest uppercase">Mission Log</span>
+        <div className="flex items-center justify-between px-4 py-2 border-b border-cyan-500/20">
+          <div className="flex items-center gap-2">
+            <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse-dot" />
+            <span className="text-[10px] font-mono text-cyan-400 tracking-widest uppercase">Mission Log</span>
+          </div>
+          <Link
+            to={digestStudioUrl}
+            className="text-[10px] font-mono text-violet-400 hover:text-violet-300 flex items-center gap-1"
+          >
+            <PenLine className="w-3 h-3" /> Weekly Intel Digest
+          </Link>
         </div>
         <div className="overflow-hidden py-2">
           <div className="flex gap-8 animate-mission-scroll whitespace-nowrap px-4" style={{ width: 'max-content' }}>
@@ -400,6 +425,7 @@ export default function CommandCenter() {
                 <span className="font-mono text-gray-600">{entry.time}</span>
                 <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                   entry.tag === 'INTEL' ? 'bg-red-500/20 text-red-400' :
+                  entry.tag === 'DIGEST' ? 'bg-violet-500/20 text-violet-400' :
                   entry.tag === 'AGENT' ? 'bg-cyan-500/20 text-cyan-400' :
                   entry.tag === 'RELEASE' ? 'bg-amber-500/20 text-amber-400' :
                   'bg-emerald-500/20 text-emerald-400'

@@ -13,11 +13,13 @@ import ScenarioLab from './pages/ScenarioLab'
 import Playbooks from './pages/Playbooks'
 import Dashboard from './pages/Dashboard'
 import HelpCenter from './pages/HelpCenter'
+import Privacy from './pages/Privacy'
 import Support from './pages/Support'
 import Donate from './pages/Donate'
 import FeatureRequest from './pages/FeatureRequest'
 import MyUpdates from './pages/MyUpdates'
 import ContentStudio from './pages/ContentStudio'
+import Exam from './pages/Exam'
 
 function App() {
   return (
@@ -25,6 +27,7 @@ function App() {
       <Route path="/" element={<OSINTLayout />}>
         <Route index element={<CommandCenter />} />
         <Route path="study" element={<Study />} />
+        <Route path="exam" element={<Exam />} />
         <Route path="intel" element={<IntelHub />} />
         <Route path="osint" element={<OSINTArsenal />} />
         <Route path="scenarios" element={<ScenarioLab />} />
@@ -36,6 +39,7 @@ function App() {
         <Route path="cram" element={<CramMode />} />
         <Route path="settings" element={<Dashboard />} />
         <Route path="help" element={<HelpCenter />} />
+        <Route path="privacy" element={<Privacy />} />
         <Route path="support" element={<Support />} />
         <Route path="donate" element={<Donate />} />
         <Route path="feature-request" element={<FeatureRequest />} />

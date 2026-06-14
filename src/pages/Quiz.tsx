@@ -3,6 +3,8 @@ import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
 import { sampleQuestions } from '../data/initialData';
 import { ChevronRight, CheckCircle, XCircle, RotateCcw, Zap } from 'lucide-react';
+import RemediationPanel from '../components/RemediationPanel';
+import { ExamQuestion } from '../data/examContent';
 
 type QuizState = 'setup' | 'active' | 'review';
 
@@ -310,6 +312,13 @@ export default function Quiz() {
           <RotateCcw size={20} />
           Try Again
         </button>
+
+        <RemediationPanel
+          wrongAnswers={filteredQuestions
+            .map((q, i) => ({ question: q as ExamQuestion, userAnswer: answers[i] }))
+            .filter(({ question, userAnswer }) => userAnswer !== question.correctAnswer)}
+          compact
+        />
       </div>
 
       {/* Question Review */}

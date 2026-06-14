@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams, useLocation } from 'react-router-dom';
+import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
 import { usePerformance } from '../components/OSINTLayout';
@@ -37,6 +37,8 @@ import {
   Merge
 } from 'lucide-react';
 import Tutor from './Tutor';
+import RemediationPanel from '../components/RemediationPanel';
+import { EXAM_QUESTION_COUNT, EXAM_DURATION_SECONDS } from '../constants/examConfig';
 
 type Tab = 'tutor' | 'notes' | 'flashcards' | 'quiz' | 'exam';
 type QuizState = 'setup' | 'active' | 'review';
@@ -104,6 +106,21 @@ export default function Study() {
       {/* Tab Content with creative floating layout */}
       <div className="flex-1 flex items-start justify-center px-4">
         <div className="w-full max-w-4xl">
+          {activeTab !== 'exam' && (
+            <Link
+              to="/exam"
+              className="mb-4 flex items-center justify-between gap-3 p-3 rounded-xl bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/20 hover:border-red-500/40 transition-all group"
+            >
+              <div className="flex items-center gap-2">
+                <ClipboardList className="w-5 h-5 text-red-500" />
+                <div>
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white">Timed Exam Mode</div>
+                  <div className="text-xs text-gray-500">90 questions · 150 min · ISACA AAISM sim</div>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-red-400 group-hover:translate-x-0.5 transition-transform" />
+            </Link>
+          )}
           {activeTab === 'tutor' && <TutorTab />}
           {activeTab === 'notes' && <NotesTab />}
           {activeTab === 'flashcards' && <FlashcardsTab />}
@@ -243,9 +260,9 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
     setSelected(null);
     setShowExp(false);
     setEarnedXP(0);
-    // Set timer for exam mode: ~1.67 min per question (real exam: 150 min / 90 questions)
+    // Set timer for exam mode: 150 minutes total (ISACA AAISM)
     if (quizMode === 'exam') {
-      setExamTimer(Math.round(preparedQs.length * 100)); // 100 seconds per question
+      setExamTimer(EXAM_DURATION_SECONDS);
     }
     setQuizState('active');
   };
@@ -510,8 +527,12 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
 
   // REVIEW STATE
   const correct = answers.reduce((count: number, ans, i) => 
-    count + (ans === questions[i].correctAnswer ? 1 : 0), 0);
+    count + (ans === questions[i].shuffledCorrectAnswer ? 1 : 0), 0);
   const score = Math.round((correct / questions.length) * 100);
+
+  const wrongAnswers = questions
+    .map((q, i) => ({ question: q, userAnswer: answers[i] }))
+    .filter(({ question, userAnswer }) => userAnswer !== question.shuffledCorrectAnswer);
 
   // Calculate exam-equivalent score (out of 800, pass = 450)
   const examScore = Math.round((score / 100) * 800);
@@ -563,6 +584,8 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
         <RotateCcw size={18} />
         Try Again
       </button>
+
+      <RemediationPanel wrongAnswers={wrongAnswers} compact />
     </div>
   );
 }
@@ -1266,14 +1289,13 @@ function ExamSimTab() {
   };
 
   const startExam = () => {
-    // Use only real exam questions from the question bank
     const allQ = getAllQuestions();
-    const selected = allQ.sort(() => Math.random() - 0.5).slice(0, 100);
+    const selected = allQ.sort(() => Math.random() - 0.5).slice(0, EXAM_QUESTION_COUNT);
     const shuffled = selected.map(shuffleOptions);
     setQuestions(shuffled);
-    setAnswers(new Array(100).fill(null));
+    setAnswers(new Array(shuffled.length).fill(null));
     setCurrentQ(0);
-    setTimeRemaining(150 * 60);
+    setTimeRemaining(EXAM_DURATION_SECONDS);
     setExamState('active');
   };
 
@@ -1314,13 +1336,13 @@ function ExamSimTab() {
           Exam Simulation
         </h2>
         <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
-          Simulate the real AAISM exam experience with 100 questions and a 150-minute timer.
-          This is your chance to test yourself under exam conditions.
+          Simulate the real AAISM exam experience with {EXAM_QUESTION_COUNT} questions and a 150-minute timer.
+          For the full timed mode with flagging and domain breakdown, use the dedicated exam route.
         </p>
         
         <div className="grid grid-cols-3 gap-4 mb-6 max-w-md mx-auto">
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">100</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{EXAM_QUESTION_COUNT}</div>
             <div className="text-xs text-gray-500 dark:text-gray-400">Questions</div>
           </div>
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
@@ -1335,12 +1357,18 @@ function ExamSimTab() {
 
         <button
           onClick={startExam}
-          className="px-6 py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-xl font-medium hover:from-red-700 hover:to-orange-700 transition-all flex items-center gap-2 mx-auto"
+          className="px-6 py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-xl font-medium hover:from-red-700 hover:to-orange-700 transition-all flex items-center gap-2 mx-auto mb-3"
         >
           <ClipboardList size={20} />
-          Start Exam Simulation
+          Quick Exam Sim
           <ChevronRight size={18} />
         </button>
+        <Link
+          to="/exam"
+          className="text-sm text-primary-600 dark:text-primary-400 hover:underline inline-flex items-center gap-1"
+        >
+          Full Timed Exam Mode (flag, pause, breakdown) →
+        </Link>
       </div>
     );
   }
@@ -1447,6 +1475,10 @@ function ExamSimTab() {
   const score = Math.round((correct / questions.length) * 100);
   const passed = score >= 65;
 
+  const wrongAnswers = questions
+    .map((q, i) => ({ question: q, userAnswer: answers[i] }))
+    .filter(({ question, userAnswer }) => userAnswer !== question.shuffledCorrectAnswer);
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700 text-center">
       <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
@@ -1476,6 +1508,8 @@ function ExamSimTab() {
         <RotateCcw size={18} className="inline mr-2" />
         Try Again
       </button>
+
+      <RemediationPanel wrongAnswers={wrongAnswers} compact />
     </div>
   );
 }
