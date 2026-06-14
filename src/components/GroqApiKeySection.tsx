@@ -1,14 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   GROQ_MODELS,
   maskApiKey,
-  testGroqConnection,
+  fetchGroqModels,
+  getGroqModelsForDropdown,
+  hasGemma4OnGroq,
   clearAIConfigApiKey,
+  saveAIConfig,
   type AIConfig,
+  type GroqModelOption,
 } from '../services/aiService';
 import {
-  Eye, EyeOff, Shield, Loader2, Check, X, ExternalLink, Sparkles, Trash2,
+  Eye, EyeOff, Shield, Loader2, Check, X, ExternalLink, Sparkles, Trash2, RefreshCw,
 } from 'lucide-react';
 
 interface GroqApiKeySectionProps {
@@ -22,9 +26,13 @@ export default function GroqApiKeySection({ config, onChange, savedKey }: GroqAp
   const [editingKey, setEditingKey] = useState(() => !(savedKey || config.apiKey)?.trim());
   const [persistedKey, setPersistedKey] = useState(() => savedKey || config.apiKey || '');
   const [testing, setTesting] = useState(false);
+  const [refreshingModels, setRefreshingModels] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [usingFallback, setUsingFallback] = useState(() => !config.groqModels?.length);
 
   const showMasked = Boolean(persistedKey.trim()) && !editingKey;
+  const models = getGroqModelsForDropdown(config);
+  const gemma4OnGroq = hasGemma4OnGroq(models);
 
   useEffect(() => {
     if (savedKey?.trim()) {
@@ -33,21 +41,78 @@ export default function GroqApiKeySection({ config, onChange, savedKey }: GroqAp
     }
   }, [savedKey]);
 
+  useEffect(() => {
+    setUsingFallback(!config.groqModels?.length);
+  }, [config.groqModels]);
+
+  const applyFetchedModels = useCallback((fetched: GroqModelOption[]) => {
+    const modelStillValid = fetched.some(m => m.id === config.model);
+    const nextModel = modelStillValid
+      ? config.model
+      : fetched[0]?.id ?? config.model;
+    const updated: AIConfig = {
+      ...config,
+      model: nextModel,
+      groqModels: fetched,
+      groqModelsFetchedAt: new Date().toISOString(),
+    };
+    onChange(updated);
+    setUsingFallback(false);
+    return updated;
+  }, [config, onChange]);
+
+  const loadModels = useCallback(async (apiKey: string, persist = false) => {
+    const result = await fetchGroqModels({ ...config, apiKey });
+    if (result.success && result.models?.length) {
+      const updated = applyFetchedModels(result.models);
+      if (persist) saveAIConfig(updated);
+      return result;
+    }
+    setUsingFallback(true);
+    return result;
+  }, [applyFetchedModels, config]);
+
+  useEffect(() => {
+    const key = (savedKey || persistedKey || config.apiKey)?.trim();
+    if (!key || config.groqModels?.length) return;
+    let cancelled = false;
+    (async () => {
+      setRefreshingModels(true);
+      const result = await loadModels(key);
+      if (!cancelled && result.success) {
+        setTestResult({ success: true, message: result.message });
+      }
+      if (!cancelled) setRefreshingModels(false);
+    })();
+    return () => { cancelled = true; };
+  }, [savedKey, persistedKey, config.apiKey, config.groqModels?.length, loadModels]);
+
   const handleTest = async () => {
     setTesting(true);
     setTestResult(null);
-    const result = await testGroqConnection(config);
+    const result = await loadModels(config.apiKey ?? '', true);
     setTestResult(result);
     setTesting(false);
+  };
+
+  const handleRefreshModels = async () => {
+    const key = (config.apiKey || persistedKey)?.trim();
+    if (!key) return;
+    setRefreshingModels(true);
+    setTestResult(null);
+    const result = await loadModels(key, true);
+    setTestResult(result);
+    setRefreshingModels(false);
   };
 
   const handleClearKey = () => {
     if (!confirm('Remove your Groq API key from this browser?')) return;
     clearAIConfigApiKey();
-    onChange({ ...config, apiKey: undefined });
+    onChange({ ...config, apiKey: undefined, groqModels: undefined, groqModelsFetchedAt: undefined });
     setPersistedKey('');
     setEditingKey(true);
     setTestResult(null);
+    setUsingFallback(true);
   };
 
   return (
@@ -70,11 +135,30 @@ export default function GroqApiKeySection({ config, onChange, savedKey }: GroqAp
             </a>
           </li>
           <li>Paste below — stored only in your browser <code className="bg-green-100 dark:bg-green-900/40 px-1 rounded text-xs">localStorage</code>, never sent to our servers</li>
-          <li>Select <strong>Groq</strong> as provider and pick a model (Llama 3.3 70B, Mixtral, etc.)</li>
+          <li>Click <strong>Test Connection</strong> to load all models your Groq account can access</li>
         </ol>
         <p className="text-xs text-green-700 dark:text-green-400 mt-2">
           Free tier: ~14,400 requests/day · No credit card required
         </p>
+      </div>
+
+      <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+        <Sparkles className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+        <div className="text-xs text-blue-800 dark:text-blue-300 space-y-1">
+          <p>
+            <strong>Groq</strong> = fast cloud models (Llama, Mixtral, Gemma 2, etc.).
+            {' '}<strong>Ollama</strong> = local models (Gemma 4, Qwen 3.5) — switch to the <strong>Ollama</strong> tab to pull them.
+          </p>
+          {gemma4OnGroq ? (
+            <p>Gemma 4 is available on your Groq account — select it below.</p>
+          ) : (
+            <p>
+              Gemma 4 is not on Groq yet — run it locally via Ollama:{' '}
+              <code className="bg-blue-100 dark:bg-blue-900/40 px-1 rounded">ollama pull gemma4:e4b</code>.
+              {' '}See <strong>Settings → Ollama</strong> tab for pull buttons.
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
@@ -132,16 +216,41 @@ export default function GroqApiKeySection({ config, onChange, savedKey }: GroqAp
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Model</label>
+        <div className="flex items-center justify-between mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Model</label>
+          {(persistedKey.trim() || config.apiKey?.trim()) && (
+            <button
+              type="button"
+              onClick={handleRefreshModels}
+              disabled={refreshingModels}
+              className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3 h-3 ${refreshingModels ? 'animate-spin' : ''}`} />
+              Refresh list
+            </button>
+          )}
+        </div>
         <select
-          value={config.model}
+          value={models.some(m => m.id === config.model) ? config.model : models[0]?.id ?? config.model}
           onChange={e => onChange({ ...config, model: e.target.value })}
+          disabled={refreshingModels && !models.length}
           className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
-          {GROQ_MODELS.map(m => (
+          {models.map(m => (
             <option key={m.id} value={m.id}>{m.label}</option>
           ))}
         </select>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          {refreshingModels && !config.groqModels?.length ? (
+            <span className="inline-flex items-center gap-1">
+              <Loader2 className="w-3 h-3 animate-spin" /> Loading models from Groq…
+            </span>
+          ) : usingFallback ? (
+            <>Showing {GROQ_MODELS.length} default models — test connection to load your full Groq account list.</>
+          ) : (
+            <>{models.length} models from your Groq account{config.groqModelsFetchedAt ? ` · updated ${new Date(config.groqModelsFetchedAt).toLocaleString()}` : ''}</>
+          )}
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2">

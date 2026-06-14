@@ -5,6 +5,12 @@ export type AIProvider = 'ollama' | 'groq' | 'claude' | 'openai';
 
 export type ModelTier = 'small' | 'medium' | 'large';
 
+export interface GroqModelOption {
+  id: string;
+  label: string;
+  badge?: string;
+}
+
 export interface AIConfig {
   provider: AIProvider;
   apiKey?: string;
@@ -12,6 +18,9 @@ export interface AIConfig {
   model: string;
   /** Optional separate model for validation/critic pass (multi-agent) */
   validationModel?: string;
+  /** Cached Groq /v1/models list from last successful fetch */
+  groqModels?: GroqModelOption[];
+  groqModelsFetchedAt?: string;
 }
 
 export interface OllamaModel {
@@ -72,13 +81,84 @@ export const defaultConfigs: Record<AIProvider, Partial<AIConfig>> = {
 /** localStorage key for AI provider config (API keys stored here — browser only, never sent to AAISM servers) */
 export const AI_CONFIG_STORAGE_KEY = 'aaism-ai-config';
 
-/** Groq cloud models available on the free tier */
-export const GROQ_MODELS = [
-  { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (Recommended)' },
-  { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (Faster)' },
-  { id: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' },
-  { id: 'gemma2-9b-it', label: 'Gemma 2 9B' },
-] as const;
+/** Groq cloud models — static fallback when /v1/models fetch fails */
+export const GROQ_MODELS: readonly GroqModelOption[] = [
+  { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B', badge: 'Recommended · JSON/agent' },
+  { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B', badge: 'Faster' },
+  { id: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B', badge: 'Long context' },
+  { id: 'gemma2-9b-it', label: 'Gemma 2 9B', badge: 'Efficient' },
+];
+
+/** Badge hints for known Groq model IDs (merged with API list) */
+export const GROQ_MODEL_BADGES: Record<string, string> = {
+  'llama-3.3-70b-versatile': 'Recommended · JSON/agent',
+  'llama-3.3-70b-specdec': 'Speculative decode',
+  'llama-3.1-8b-instant': 'Faster',
+  'llama-3.1-70b-versatile': 'High quality',
+  'llama-3.1-70b-specdec': 'Speculative decode',
+  'llama-guard-3-8b': 'Safety guard',
+  'mixtral-8x7b-32768': 'Long context',
+  'gemma2-9b-it': 'Efficient',
+  'gemma-7b-it': 'Efficient',
+};
+
+const GROQ_NON_CHAT_PATTERN = /whisper|distil|tts|embed|prompt|or-pp|or-sage|playai-tts/i;
+
+function groqModelDisplayLabel(id: string): string {
+  const staticMatch = GROQ_MODELS.find(m => m.id === id);
+  if (staticMatch) return staticMatch.label;
+  return id
+    .replace(/-/g, ' ')
+    .replace(/\b(\w)/g, c => c.toUpperCase());
+}
+
+function groqModelOptionLabel(id: string, badge?: string): string {
+  const base = groqModelDisplayLabel(id);
+  return badge ? `${base} — ${badge}` : base;
+}
+
+/** Parse Groq /v1/models response into chat-capable dropdown options */
+export function parseGroqModelsFromApi(data: unknown): GroqModelOption[] {
+  if (!data || typeof data !== 'object' || !Array.isArray((data as { data?: unknown }).data)) {
+    return [];
+  }
+
+  const rows = (data as { data: { id?: string }[] }).data;
+  const seen = new Set<string>();
+
+  return rows
+    .filter(m => {
+      if (!m.id || GROQ_NON_CHAT_PATTERN.test(m.id) || seen.has(m.id)) return false;
+      seen.add(m.id);
+      return true;
+    })
+    .map(m => {
+      const badge = GROQ_MODEL_BADGES[m.id!];
+      return { id: m.id!, label: groqModelOptionLabel(m.id!, badge), badge };
+    })
+    .sort((a, b) => {
+      const aRec = a.badge?.includes('Recommended') ? 0 : 1;
+      const bRec = b.badge?.includes('Recommended') ? 0 : 1;
+      if (aRec !== bRec) return aRec - bRec;
+      return a.id.localeCompare(b.id);
+    });
+}
+
+/** Models for dropdown — cached API list or static fallback */
+export function getGroqModelsForDropdown(config: AIConfig): GroqModelOption[] {
+  if (config.groqModels?.length) {
+    return config.groqModels;
+  }
+  return GROQ_MODELS.map(m => ({
+    id: m.id,
+    label: m.badge ? `${m.label} — ${m.badge}` : m.label,
+    badge: m.badge,
+  }));
+}
+
+export function hasGemma4OnGroq(models: GroqModelOption[]): boolean {
+  return models.some(m => /gemma.?4/i.test(m.id));
+}
 
 /** Agent auto-selection order — first installed match wins */
 export const AGENT_MODEL_PREFERENCE: readonly string[] = [
@@ -850,8 +930,14 @@ function sanitizeErrorMessage(message: string): string {
   return message.replace(/gsk_[a-zA-Z0-9_-]+/g, 'gsk_***').replace(/sk-[a-zA-Z0-9_-]+/g, 'sk-***');
 }
 
-/** Test Groq via /models — avoids chat round-trip and never exposes the key in errors */
-export async function testGroqConnection(config: AIConfig): Promise<{ success: boolean; message: string }> {
+export interface GroqConnectionResult {
+  success: boolean;
+  message: string;
+  models?: GroqModelOption[];
+}
+
+/** Fetch chat-capable models from Groq /v1/models */
+export async function fetchGroqModels(config: AIConfig): Promise<GroqConnectionResult> {
   if (!config.apiKey?.trim()) {
     return { success: false, message: 'Groq API key not configured. Get a free key at console.groq.com' };
   }
@@ -871,12 +957,22 @@ export async function testGroqConnection(config: AIConfig): Promise<{ success: b
     }
 
     const data = await response.json();
-    const count = Array.isArray(data.data) ? data.data.length : 0;
-    return { success: true, message: `Connected! ${count} model${count === 1 ? '' : 's'} available on your Groq account.` };
+    const models = parseGroqModelsFromApi(data);
+    const count = models.length;
+    return {
+      success: true,
+      message: `Connected! ${count} model${count === 1 ? '' : 's'} available on your Groq account.`,
+      models,
+    };
   } catch (error) {
     const raw = error instanceof Error ? error.message : String(error);
     return { success: false, message: sanitizeErrorMessage(`Groq unreachable: ${raw}`) };
   }
+}
+
+/** Test Groq via /models — avoids chat round-trip and never exposes the key in errors */
+export async function testGroqConnection(config: AIConfig): Promise<GroqConnectionResult> {
+  return fetchGroqModels(config);
 }
 
 export async function testConnection(config: AIConfig): Promise<{ success: boolean; message: string }> {

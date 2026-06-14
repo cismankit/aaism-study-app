@@ -46,7 +46,18 @@ import {
   Lightbulb,
   CheckCircle,
   Star,
+  Sparkles,
+  Server,
+  Cloud,
 } from 'lucide-react';
+
+type AISettingsTab = 'groq' | 'ollama' | 'cloud';
+
+function providerToTab(provider: AIProvider): AISettingsTab {
+  if (provider === 'groq') return 'groq';
+  if (provider === 'ollama') return 'ollama';
+  return 'cloud';
+}
 
 type Tab = 'home' | 'analytics' | 'achievements' | 'settings';
 
@@ -603,6 +614,7 @@ function SettingsTab() {
   const [config, setConfig] = useState<AIConfig>(loadAIConfig);
   const [saved, setSaved] = useState(false);
   const [savedApiKey, setSavedApiKey] = useState(() => loadAIConfig().apiKey);
+  const [aiTab, setAiTab] = useState<AISettingsTab>(() => providerToTab(loadAIConfig().provider));
   const modelCap = getModelCapability(config.model);
   const modelWarning = config.provider === 'ollama' ? getModelWarning(config.model) : null;
 
@@ -613,6 +625,38 @@ function SettingsTab() {
     setTimeout(() => setSaved(false), 2000);
   };
 
+  const handleAiTabChange = (tab: AISettingsTab) => {
+    setAiTab(tab);
+    if (tab === 'groq') {
+      setConfig(prev => ({
+        ...prev,
+        provider: 'groq',
+        baseUrl: defaultConfigs.groq.baseUrl,
+        model: prev.provider === 'groq' ? prev.model : (defaultConfigs.groq.model ?? prev.model),
+      }));
+    } else if (tab === 'ollama') {
+      setConfig(prev => ({
+        ...prev,
+        provider: 'ollama',
+        baseUrl: defaultConfigs.ollama.baseUrl,
+        model: prev.provider === 'ollama' ? prev.model : (defaultConfigs.ollama.model ?? prev.model),
+      }));
+    } else if (config.provider !== 'claude' && config.provider !== 'openai') {
+      setConfig(prev => ({
+        ...prev,
+        provider: 'claude',
+        model: defaultConfigs.claude.model ?? prev.model,
+        baseUrl: defaultConfigs.claude.baseUrl,
+      }));
+    }
+  };
+
+  const aiTabs: { id: AISettingsTab; label: string; icon: typeof Sparkles; hint: string }[] = [
+    { id: 'groq', label: 'Groq', icon: Sparkles, hint: 'Free cloud · fast inference' },
+    { id: 'ollama', label: 'Ollama', icon: Server, hint: 'Local · Gemma 4 & Qwen' },
+    { id: 'cloud', label: 'Cloud', icon: Cloud, hint: 'Claude & OpenAI' },
+  ];
+
   return (
     <div className="space-y-4">
       {/* AI Settings */}
@@ -621,26 +665,30 @@ function SettingsTab() {
           <Settings size={18} className="text-primary-500" />
           AI Provider Settings
         </h3>
+
+        <div className="flex gap-1 p-1 mb-4 rounded-lg bg-gray-100 dark:bg-gray-900/50">
+          {aiTabs.map(({ id, label, icon: Icon, hint }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => handleAiTabChange(id)}
+              className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors flex flex-col items-center gap-0.5 ${
+                aiTab === id
+                  ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <Icon className="w-4 h-4" />
+                {label}
+              </span>
+              <span className="text-[10px] font-normal opacity-70 hidden sm:block">{hint}</span>
+            </button>
+          ))}
+        </div>
         
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Provider</label>
-            <select
-              value={config.provider}
-              onChange={e => {
-                const provider = e.target.value as AIProvider;
-                setConfig({ ...config, provider, ...defaultConfigs[provider] });
-              }}
-              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-            >
-              <option value="groq">Groq (Free) — Best for Agent Discovery</option>
-              <option value="ollama">Ollama (Local / Offline)</option>
-              <option value="claude">Claude</option>
-              <option value="openai">OpenAI</option>
-            </select>
-          </div>
-
-          {config.provider === 'groq' && (
+          {aiTab === 'groq' && (
             <GroqApiKeySection
               config={config}
               onChange={setConfig}
@@ -648,67 +696,103 @@ function SettingsTab() {
             />
           )}
 
-          {config.provider !== 'ollama' && config.provider !== 'groq' && (
-            <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">API Key</label>
-              <input
-                type="password"
-                value={config.apiKey || ''}
-                onChange={e => setConfig({ ...config, apiKey: e.target.value })}
-                placeholder={`Enter your ${config.provider} API key`}
-                autoComplete="off"
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            </div>
+          {aiTab === 'ollama' && (
+            <>
+              <div className="p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800">
+                <p className="text-xs text-violet-800 dark:text-violet-300">
+                  <strong>Ollama</strong> runs models locally — ideal for Gemma 4, Qwen 3.5, and offline study.
+                  Install from <a href="https://ollama.ai" target="_blank" rel="noopener noreferrer" className="underline">ollama.ai</a>, then pull models below.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Model</label>
+                <select
+                  value={config.model}
+                  onChange={e => setConfig({ ...config, model: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  {AAISM_OFFLINE_MODELS.map(m => (
+                    <option key={m.name} value={m.name}>
+                      {m.name}{m.recommended ? ' ★ Recommended' : ''}{m.fallbackOnly ? ' (fallback)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                    modelCap.tier === 'small'
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                      : modelCap.tier === 'large'
+                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                        : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                  }`}>
+                    {modelCap.tier} tier · JSON {modelCap.jsonReliability}%
+                  </span>
+                  {modelCap.recommended && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-0.5">
+                      <Star className="w-2.5 h-2.5 fill-current" /> Recommended
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {modelWarning && (
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-800 dark:text-amber-300">{modelWarning}</p>
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                <h4 className="font-medium text-gray-900 dark:text-white mb-3 text-sm">Offline Model Manager</h4>
+                <OllamaModelManager
+                  baseUrl={config.baseUrl}
+                  selectedModel={config.model}
+                  onSelectModel={model => setConfig({ ...config, model })}
+                />
+              </div>
+            </>
           )}
 
-          <div>
-            <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Model</label>
-            {config.provider === 'ollama' ? (
-              <select
-                value={config.model}
-                onChange={e => setConfig({ ...config, model: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                {AAISM_OFFLINE_MODELS.map(m => (
-                  <option key={m.name} value={m.name}>
-                    {m.name}{m.recommended ? ' ★ Recommended' : ''}{m.fallbackOnly ? ' (fallback)' : ''}
-                  </option>
-                ))}
-              </select>
-            ) : config.provider === 'groq' ? null : (
-              <input
-                type="text"
-                value={config.model}
-                onChange={e => setConfig({ ...config, model: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-            )}
-            {config.provider === 'ollama' && (
-              <div className="mt-2 flex items-center gap-2 flex-wrap">
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                  modelCap.tier === 'small'
-                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                    : modelCap.tier === 'large'
-                      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                      : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                }`}>
-                  {modelCap.tier} tier · JSON {modelCap.jsonReliability}%
-                </span>
-                {modelCap.recommended && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-0.5">
-                    <Star className="w-2.5 h-2.5 fill-current" /> Recommended
-                  </span>
-                )}
+          {aiTab === 'cloud' && (
+            <>
+              <div>
+                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Cloud Provider</label>
+                <select
+                  value={config.provider === 'openai' ? 'openai' : 'claude'}
+                  onChange={e => {
+                    const provider = e.target.value as 'claude' | 'openai';
+                    setConfig({ ...config, provider, ...defaultConfigs[provider] });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="claude">Claude (Anthropic)</option>
+                  <option value="openai">OpenAI (GPT)</option>
+                </select>
               </div>
-            )}
-          </div>
 
-          {modelWarning && (
-            <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-800 dark:text-amber-300">{modelWarning}</p>
-            </div>
+              <div>
+                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">API Key</label>
+                <input
+                  type="password"
+                  value={config.apiKey || ''}
+                  onChange={e => setConfig({ ...config, apiKey: e.target.value })}
+                  placeholder={`Enter your ${config.provider} API key`}
+                  autoComplete="off"
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Model</label>
+                <input
+                  type="text"
+                  value={config.model}
+                  onChange={e => setConfig({ ...config, model: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+            </>
           )}
 
           <button
@@ -723,25 +807,6 @@ function SettingsTab() {
           </button>
         </div>
       </div>
-
-      {config.provider === 'ollama' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-          <div className="mb-4 p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800">
-            <p className="text-xs text-violet-800 dark:text-violet-300">
-              <strong>Gemma 4 vs Gemma 3:</strong> Gemma 4 (Apr 2026) adds native JSON output, function calling, and agentic workflows on Ollama.
-              Prefer <code className="bg-violet-100 dark:bg-violet-900/40 px-1 rounded">gemma4:e4b</code> or{' '}
-              <code className="bg-violet-100 dark:bg-violet-900/40 px-1 rounded">gemma4:31b</code> over Gemma 3 for Agent Discovery.
-              Gemma 3 remains a lighter fallback if VRAM is limited.
-            </p>
-          </div>
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Offline Model Manager</h3>
-          <OllamaModelManager
-            baseUrl={config.baseUrl}
-            selectedModel={config.model}
-            onSelectModel={model => setConfig({ ...config, model })}
-          />
-        </div>
-      )}
 
       {/* App Info */}
       <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
