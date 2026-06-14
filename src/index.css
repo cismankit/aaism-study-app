@@ -251,3 +251,83 @@ html.dark body {
 .aaism-logo:hover .aaism-logo-hex {
   opacity: 1;
 }
+
+/* ========== Cockpit / HUD ========== */
+@keyframes scan-line {
+  0% { transform: translateY(-100%); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(400%); opacity: 0; }
+}
+
+@keyframes pulse-ring {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.04); opacity: 0.85; }
+}
+
+@keyframes hud-tick {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+@keyframes mission-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-scan-line {
+  animation: scan-line 4s linear infinite;
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 3s ease-in-out infinite;
+}
+
+.animate-hud-tick {
+  animation: hud-tick 2s ease-in-out infinite;
+}
+
+.animate-mission-scroll {
+  animation: mission-scroll 40s linear infinite;
+}
+
+.cockpit-glass {
+  @apply bg-gray-900/60 dark:bg-gray-950/70 backdrop-blur-md border border-emerald-500/20;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.cockpit-glass-cyan {
+  @apply bg-gray-900/60 dark:bg-gray-950/70 backdrop-blur-md border border-cyan-500/20;
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.cockpit-throttle {
+  @apply relative overflow-hidden transition-all duration-200;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.cockpit-throttle:hover {
+  border-color: rgba(16, 185, 129, 0.6);
+  box-shadow: 0 0 24px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+}
+
+.cockpit-throttle:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.hud-ring-track {
+  stroke: rgba(16, 185, 129, 0.15);
+  fill: none;
+}
+
+.hud-ring-fill {
+  stroke: url(#hudGradient);
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s ease-out;
+}
+

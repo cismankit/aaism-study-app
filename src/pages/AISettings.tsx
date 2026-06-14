@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   AIConfig, 
   AIProvider, 
@@ -7,13 +7,26 @@ import {
   saveAIConfig,
   testConnection 
 } from '../services/aiService';
-import { Settings, Check, X, Loader2, Server, Cloud, Zap, Sparkles } from 'lucide-react';
+import { checkLLMHealth, subscribeLLMHealth, type LLMHealthReport } from '../services/llmHealthService';
+import { Settings, Check, X, Loader2, Server, Cloud, Zap, Sparkles, Activity, RefreshCw } from 'lucide-react';
 
 export default function AISettings() {
   const [config, setConfig] = useState<AIConfig>(loadAIConfig);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [saved, setSaved] = useState(false);
+  const [health, setHealth] = useState<LLMHealthReport | null>(null);
+  const [healthLoading, setHealthLoading] = useState(false);
+
+  useEffect(() => {
+    return subscribeLLMHealth(setHealth);
+  }, []);
+
+  const refreshHealth = async () => {
+    setHealthLoading(true);
+    await checkLLMHealth();
+    setHealthLoading(false);
+  };
 
   const providers: { id: AIProvider; name: string; icon: typeof Server; description: string; badge?: string }[] = [
     { 
@@ -337,14 +350,88 @@ export default function AISettings() {
         </div>
       </div>
 
+      {/* LLM Health Dashboard */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Activity className="text-emerald-500" size={22} />
+            LLM Health Dashboard
+          </h2>
+          <button
+            onClick={refreshHealth}
+            disabled={healthLoading}
+            className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 flex items-center gap-1"
+          >
+            <RefreshCw className={`w-3 h-3 ${healthLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+        </div>
+
+        {health ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-900/50">
+              <span className={`w-3 h-3 rounded-full ${health.overallHealthy ? 'bg-emerald-500' : 'bg-red-500'}`} />
+              <div>
+                <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                  Active: {config.provider} — {health.overallHealthy ? 'Healthy' : 'Unhealthy'}
+                </div>
+                <div className="text-xs text-gray-500">
+                  Last check: {health.providers[config.provider]?.lastChecked
+                    ? new Date(health.providers[config.provider]!.lastChecked).toLocaleString()
+                    : 'Never'}
+                </div>
+              </div>
+            </div>
+
+            {config.provider === 'ollama' && health.providers.ollama && (
+              <div className="grid sm:grid-cols-2 gap-3 text-sm">
+                <div className="p-3 rounded-lg border dark:border-gray-700">
+                  <div className="text-xs text-gray-500">Ollama Status</div>
+                  <div className={health.providers.ollama.healthy ? 'text-emerald-600 font-medium' : 'text-red-600 font-medium'}>
+                    {health.providers.ollama.healthy ? 'Running' : 'Offline'}
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg border dark:border-gray-700">
+                  <div className="text-xs text-gray-500">Model Installed</div>
+                  <div className={health.providers.ollama.modelInstalled ? 'text-emerald-600 font-medium' : 'text-amber-600 font-medium'}>
+                    {health.providers.ollama.configuredModel ?? config.model}: {health.providers.ollama.modelInstalled ? 'Yes' : 'No'}
+                  </div>
+                  {health.providers.ollama.resolvedModel && health.providers.ollama.resolvedModel !== health.providers.ollama.configuredModel && (
+                    <div className="text-[10px] text-gray-500 mt-1">Fallback: {health.providers.ollama.resolvedModel}</div>
+                  )}
+                </div>
+                {health.providers.ollama.installedModels && health.providers.ollama.installedModels.length > 0 && (
+                  <div className="sm:col-span-2 p-3 rounded-lg border dark:border-gray-700">
+                    <div className="text-xs text-gray-500 mb-1">Installed Models</div>
+                    <div className="text-xs text-gray-600 dark:text-gray-400 font-mono">
+                      {health.providers.ollama.installedModels.join(', ')}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {config.provider === 'groq' && health.providers.groq && (
+              <div className="p-3 rounded-lg border dark:border-gray-700 text-sm">
+                <div className="text-xs text-gray-500">Groq API</div>
+                <div className={health.providers.groq.healthy ? 'text-emerald-600 font-medium' : 'text-red-600 font-medium'}>
+                  {health.providers.groq.message}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500">Checking provider health…</p>
+        )}
+      </div>
+
       {/* Privacy Note */}
-      <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-        <h3 className="font-medium text-gray-800 mb-2">🔒 Privacy Note</h3>
-        <p className="text-sm text-gray-600">
+      <div className="p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <h3 className="font-medium text-gray-800 dark:text-gray-200 mb-2">🔒 Privacy & Security Note</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {config.provider === 'ollama' 
             ? 'Ollama runs entirely on your machine. Your data never leaves your computer.'
-            : 'Your conversations are sent to the API provider. API keys are stored locally in your browser only.'
-          }
+            : 'Your conversations are sent to the API provider. API keys are stored in browser localStorage — not encrypted. Do not use on shared computers. Keys are never logged to the console.'}
         </p>
       </div>
     </div>

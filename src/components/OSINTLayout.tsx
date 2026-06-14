@@ -6,7 +6,7 @@ import {
   HelpCircle, LifeBuoy, Heart, Sparkles, ChevronDown, Globe, PenLine,
 } from 'lucide-react';
 import Logo from './Logo';
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AppProvider } from '../context/AppContext';
 import { GamificationProvider, useGamification } from '../context/GamificationContext';
 import { useTheme } from '../context/ThemeContext';
@@ -14,6 +14,13 @@ import { getLevelFromXP } from '../data/gamificationData';
 import AchievementToast from './AchievementToast';
 import MatrixRain, { MatrixColor } from './MatrixRain';
 import LiveIntelFeed from './LiveIntelFeed';
+import {
+  checkLLMHealth,
+  getFixSteps,
+  startLLMHealthPolling,
+  subscribeLLMHealth,
+  type LLMHealthReport,
+} from '../services/llmHealthService';
 
 interface PerformanceContextType {
   bgColor: MatrixColor;
@@ -322,6 +329,48 @@ function TopBar({
   );
 }
 
+// ============ LLM HEALTH BANNER ============
+
+function LLMHealthBanner() {
+  const [health, setHealth] = useState<LLMHealthReport | null>(null);
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    return subscribeLLMHealth(setHealth);
+  }, []);
+
+  if (dismissed || !health || health.overallHealthy) return null;
+
+  const steps = getFixSteps(health);
+  const active = health.providers[health.activeProvider];
+
+  return (
+    <div className="mx-3 sm:mx-5 mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 flex items-start gap-3 animate-fade-in">
+      <Activity className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0 text-xs">
+        <span className="font-semibold text-amber-700 dark:text-amber-400">
+          {health.activeProvider === 'ollama' ? 'Ollama' : 'LLM'} offline
+        </span>
+        <span className="text-amber-600/80 dark:text-amber-400/80 ml-1">
+          — {active?.message ?? 'Provider not ready'}
+        </span>
+        {steps.length > 0 && (
+          <span className="block text-amber-600/70 dark:text-amber-400/70 mt-0.5">
+            Fix: {steps.join(' · ')}
+          </span>
+        )}
+      </div>
+      <button
+        onClick={() => setDismissed(true)}
+        className="text-amber-500/60 hover:text-amber-500 text-lg leading-none"
+        aria-label="Dismiss"
+      >
+        ×
+      </button>
+    </div>
+  );
+}
+
 // ============ MAIN LAYOUT ============
 
 function LayoutContent() {
@@ -330,6 +379,11 @@ function LayoutContent() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [intelOpen, setIntelOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    void checkLLMHealth();
+    return startLLMHealthPolling();
+  }, []);
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900 relative overflow-hidden">
@@ -355,6 +409,8 @@ function LayoutContent() {
           intelOpen={intelOpen}
           onToggleMobileNav={() => setMobileNavOpen(true)}
         />
+
+        <LLMHealthBanner />
 
         <div className="flex-1 flex overflow-hidden">
           {/* Main content */}

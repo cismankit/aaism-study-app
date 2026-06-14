@@ -419,11 +419,72 @@ Key topics:
 
 const JSON_SYSTEM_HINT = `You MUST respond with valid JSON only. No markdown, no code fences, no explanation text before or after the JSON.`;
 
+function modelExistsInRegistry(models: OllamaModel[], modelName: string): boolean {
+  const names = models.map(m => m.name);
+  if (names.includes(modelName)) return true;
+  const base = modelName.split(':')[0];
+  return names.some(n => n === base || n.startsWith(`${base}:`));
+}
+
+/** Resolve an installed Ollama model — auto-fallback when configured model is missing */
+export async function resolveOllamaModel(config: AIConfig): Promise<{ model: string; fallbackUsed: boolean; error?: string }> {
+  const baseUrl = config.baseUrl ?? defaultConfigs.ollama.baseUrl!;
+  const status = await checkOllamaStatus(baseUrl);
+
+  if (!status.running) {
+    return {
+      model: config.model,
+      fallbackUsed: false,
+      error: status.error ?? 'Ollama not running. Start with: ollama serve',
+    };
+  }
+
+  if (status.models.length === 0) {
+    return {
+      model: config.model,
+      fallbackUsed: false,
+      error: 'No models installed. Run: ollama pull llama3.1:8b',
+    };
+  }
+
+  if (modelExistsInRegistry(status.models, config.model)) {
+    return { model: config.model, fallbackUsed: false };
+  }
+
+  const best = pickBestInstalledModel(status.models);
+  if (best) {
+    return { model: best, fallbackUsed: true };
+  }
+
+  return {
+    model: config.model,
+    fallbackUsed: false,
+    error: `Model ${config.model} not found — run: ollama pull llama3.1:8b`,
+  };
+}
+
+function formatOllamaError(status: number, statusText: string, bodyText: string, model: string): string {
+  const lower = bodyText.toLowerCase();
+  if (status === 404 || lower.includes('not found') || lower.includes('does not exist')) {
+    return `Model "${model}" not found — run: ollama pull ${model.includes(':') ? model : `${model}:latest`}`;
+  }
+  if (status === 405) {
+    return 'Ollama endpoint error — ensure Ollama is updated and /api/chat is available';
+  }
+  return `Ollama error (${status} ${statusText})`;
+}
+
 async function callOllama(config: AIConfig, messages: Message[], options?: ChatOptions): Promise<AIResponse> {
   try {
+    const resolved = await resolveOllamaModel(config);
+    if (resolved.error) {
+      return { content: '', error: resolved.error };
+    }
+
+    const model = resolved.model;
     const temperature = options?.temperature ?? (options?.jsonMode ? 0.1 : 0.7);
     const body: Record<string, unknown> = {
-      model: config.model,
+      model,
       messages: options?.jsonMode
         ? messages.map((m, i) =>
             i === 0 && m.role === 'system'
@@ -442,20 +503,31 @@ async function callOllama(config: AIConfig, messages: Message[], options?: ChatO
       body.format = 'json';
     }
 
-    const response = await fetch(`${config.baseUrl}/api/chat`, {
+    const baseUrl = config.baseUrl ?? defaultConfigs.ollama.baseUrl!;
+    const response = await fetch(`${baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(120_000),
     });
 
     if (!response.ok) {
-      throw new Error(`Ollama error: ${response.statusText}`);
+      const bodyText = await response.text().catch(() => '');
+      throw new Error(formatOllamaError(response.status, response.statusText, bodyText, model));
     }
 
     const data = await response.json();
-    return { content: data.message?.content || '' };
+    const content = data.message?.content || '';
+    if (!content) {
+      return { content: '', error: 'Ollama returned empty response — try a different model' };
+    }
+    return { content };
   } catch (error) {
-    return { content: '', error: `Ollama connection failed. Make sure Ollama is running locally. Error: ${error}` };
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('not found') || msg.includes('ollama pull')) {
+      return { content: '', error: msg };
+    }
+    return { content: '', error: `Ollama connection failed. Make sure Ollama is running locally. ${msg}` };
   }
 }
 
@@ -709,8 +781,8 @@ export function loadAIConfig(): AIConfig {
       }
       return parsed;
     }
-  } catch (e) {
-    console.error('Failed to load AI config:', e);
+  } catch {
+    // Corrupt or unavailable storage — fall through to defaults
   }
   return {
     provider: 'ollama',
@@ -721,8 +793,8 @@ export function loadAIConfig(): AIConfig {
 export function saveAIConfig(config: AIConfig): void {
   try {
     localStorage.setItem(AI_CONFIG_KEY, JSON.stringify(config));
-  } catch (e) {
-    console.error('Failed to save AI config:', e);
+  } catch {
+    // Storage quota or private mode — avoid logging config contents (may include API keys)
   }
 }
 

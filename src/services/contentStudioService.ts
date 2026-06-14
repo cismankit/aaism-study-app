@@ -9,11 +9,12 @@ import { AAISM_DOMAIN_GUIDES } from '../data/aaismDomainGuide';
 import { topics } from '../data/knowledgeBase';
 import {
   chat,
-  checkOllamaStatus,
   loadAIConfig,
+  resolveOllamaModel,
   type AIConfig,
   type AIProvider,
 } from './aiService';
+import { checkLLMHealth, type LLMHealthReport } from './llmHealthService';
 
 export type ContentSourceType = 'domain-topic' | 'knowledge-topic' | 'intel-headline' | 'custom';
 
@@ -120,36 +121,38 @@ export function resolveSourceFromParams(params: URLSearchParams): ContentSource 
   return { type: 'domain-topic', domain, topic: format ? undefined : 'AI Security Governance' };
 }
 
-export async function resolveContentProvider(): Promise<ContentProviderStatus> {
+export async function resolveContentProvider(health?: LLMHealthReport | null): Promise<ContentProviderStatus> {
   const config = loadAIConfig();
+  const report = health ?? await checkLLMHealth();
 
   if (config.provider === 'ollama') {
-    const status = await checkOllamaStatus(config.baseUrl);
-    if (status.running && status.models.length > 0) {
+    const ollama = report.providers.ollama;
+    if (ollama?.healthy) {
       return {
         provider: 'ollama',
         label: 'Ollama (local)',
         configured: true,
-        message: `${status.models.length} model(s) ready`,
+        message: ollama.message,
       };
     }
     return {
       provider: 'none',
       label: 'Ollama offline',
       configured: false,
-      message: 'Start Ollama locally or configure Groq in Settings',
+      message: ollama?.message ?? 'Start Ollama locally or configure Groq in Settings',
     };
   }
 
   if (config.provider === 'groq') {
-    if (config.apiKey?.trim()) {
-      return { provider: 'groq', label: 'Groq (free tier)', configured: true };
+    const groq = report.providers.groq;
+    if (groq?.healthy) {
+      return { provider: 'groq', label: 'Groq (free tier)', configured: true, message: groq.message };
     }
     return {
       provider: 'none',
       label: 'Groq key missing',
       configured: false,
-      message: 'Add a free API key at console.groq.com → Settings',
+      message: groq?.message ?? 'Add a free API key at console.groq.com → Settings',
     };
   }
 
@@ -181,19 +184,62 @@ function buildStaticOutput(template: ContentTemplate, source: ContentSource, con
   });
 }
 
+export const PLATFORM_CHAR_LIMITS: Partial<Record<ContentFormatId, number>> = {
+  linkedin: 3000,
+  'twitter-thread': 280,
+  'youtube-outline': 5000,
+  'youtube-shorts': 1000,
+  'github-readme': 10000,
+  'blog-intro': 2000,
+  'exam-carousel': 2200,
+};
+
+export function getCharLimit(formatId: ContentFormatId): number {
+  return PLATFORM_CHAR_LIMITS[formatId] ?? getContentTemplate(formatId).maxLength ?? 3000;
+}
+
+export function getCharCount(content: string, formatId: ContentFormatId): { count: number; limit: number; withinLimit: boolean } {
+  const limit = getCharLimit(formatId);
+  if (formatId === 'twitter-thread') {
+    const tweets = content.split(/\n(?=\d+\/\d+)/).filter(Boolean);
+    const longest = tweets.reduce((max, t) => Math.max(max, t.length), content.length);
+    return { count: longest, limit: 280, withinLimit: longest <= 280 };
+  }
+  return { count: content.length, limit, withinLimit: content.length <= limit };
+}
+
+export function buildReadyChecklist(
+  content: string,
+  formatId: ContentFormatId,
+  usedLlm: boolean,
+): Array<{ label: string; passed: boolean }> {
+  const template = getContentTemplate(formatId);
+  const chars = getCharCount(content, formatId);
+  return [
+    { label: 'LLM generation succeeded', passed: usedLlm },
+    { label: `Within ${chars.limit} character limit (${chars.count}/${chars.limit})`, passed: chars.withinLimit },
+    { label: 'Content is not empty', passed: content.trim().length > 20 },
+    { label: 'No template fallback marker', passed: !content.includes('template fallback') && !content.includes('LLM unavailable') },
+    ...template.publishChecklist.slice(0, 2).map(item => ({
+      label: item,
+      passed: content.length > 50,
+    })),
+  ];
+}
+
 export async function generateContent(
   source: ContentSource,
   formatId: ContentFormatId,
   config?: AIConfig,
+  health?: LLMHealthReport | null,
 ): Promise<GeneratedContent> {
   const template = getContentTemplate(formatId);
   const context = buildSourceContext(source);
-  const providerStatus = await resolveContentProvider();
+  const report = health ?? await checkLLMHealth();
+  const providerStatus = await resolveContentProvider(report);
   const aiConfig = config ?? loadAIConfig();
 
-  const canUseLlm =
-    (aiConfig.provider === 'ollama' && providerStatus.provider === 'ollama') ||
-    (aiConfig.provider === 'groq' && providerStatus.provider === 'groq' && !!aiConfig.apiKey);
+  const canUseLlm = report.overallHealthy && providerStatus.configured;
 
   if (!canUseLlm) {
     return {
@@ -206,8 +252,24 @@ export async function generateContent(
     };
   }
 
+  let effectiveConfig = aiConfig;
+  if (aiConfig.provider === 'ollama') {
+    const resolved = await resolveOllamaModel(aiConfig);
+    if (resolved.error) {
+      return {
+        formatId,
+        formatLabel: template.label,
+        content: buildStaticOutput(template, source, context),
+        provider: 'none',
+        usedLlm: false,
+        generatedAt: new Date().toISOString(),
+      };
+    }
+    effectiveConfig = { ...aiConfig, model: resolved.model };
+  }
+
   const userPrompt = buildPrompt(template, source, context);
-  const response = await chat(aiConfig, [
+  const response = await chat(effectiveConfig, [
     {
       role: 'system',
       content: `You are an AAISM content strategist. Generate publish-ready content for security practitioners and certification candidates.\n\n${template.systemHint}`,
@@ -215,16 +277,18 @@ export async function generateContent(
     { role: 'user', content: userPrompt },
   ]);
 
-  const content = response.error
-    ? `${buildStaticOutput(template, source, context)}\n\n---\n*LLM unavailable (${response.error}). Showing template fallback.*`
-    : (response.content || buildStaticOutput(template, source, context));
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  const content = response.content || buildStaticOutput(template, source, context);
 
   return {
     formatId,
     formatLabel: template.label,
     content,
     provider: providerStatus.provider,
-    usedLlm: !response.error,
+    usedLlm: true,
     generatedAt: new Date().toISOString(),
   };
 }
@@ -232,10 +296,11 @@ export async function generateContent(
 export async function generateBatch(
   source: ContentSource,
   formatIds: ContentFormatId[],
+  health?: LLMHealthReport | null,
 ): Promise<GeneratedContent[]> {
   const results: GeneratedContent[] = [];
   for (const id of formatIds) {
-    results.push(await generateContent(source, id));
+    results.push(await generateContent(source, id, undefined, health));
   }
   return results;
 }
@@ -277,6 +342,23 @@ export function downloadJson(filename: string, data: unknown): void {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export function downloadExportBundle(outputs: GeneratedContent[], source: ContentSource): void {
+  const slug = (source.topic ?? source.headline ?? 'content')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .slice(0, 40);
+  const sections = outputs.map(o =>
+    `# ${o.formatLabel}\n\n<!-- format: ${o.formatId} | provider: ${o.provider} | llm: ${o.usedLlm} -->\n\n${o.content}\n`
+  );
+  const bundle = [
+    `# Content Studio Export — ${new Date().toLocaleDateString()}`,
+    `Source: ${source.type} | Domain ${source.domain ?? 1}`,
+    '',
+    ...sections,
+  ].join('\n---\n\n');
+  downloadMarkdown(`content-studio-${slug}-bundle.md`, bundle);
 }
 
 export { CONTENT_TEMPLATES };

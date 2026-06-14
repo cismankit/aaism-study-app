@@ -205,7 +205,24 @@ function readStaleCache(): IntelFeedItem[] {
   }
 }
 
+/** Validate RSS source URL before proxy fetch — blocks javascript: and non-http(s) schemes */
+export function isSafeFetchUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) return false;
+    const host = parsed.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.')) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function fetchViaRss2Json(source: RssSource): Promise<IntelFeedItem[]> {
+  // Trust: rss2json.com sees feed URLs — only curated sources from rssSources.ts are fetched
+  if (!isSafeFetchUrl(source.url)) return [];
   const url = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(source.url)}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`rss2json HTTP ${res.status}`);
@@ -235,6 +252,8 @@ async function fetchViaRss2Json(source: RssSource): Promise<IntelFeedItem[]> {
 }
 
 async function fetchViaAllOrigins(source: RssSource): Promise<IntelFeedItem[]> {
+  // Trust: allorigins.win proxies feed content — URLs validated before fetch
+  if (!isSafeFetchUrl(source.url)) return [];
   const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(source.url)}`;
   const res = await fetch(proxyUrl);
   if (!res.ok) throw new Error(`allorigins HTTP ${res.status}`);

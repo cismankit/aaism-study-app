@@ -559,7 +559,7 @@ function SettingsTab() {
                   <div className="text-sm text-blue-800 space-y-2">
                     <p><strong>To use AI offline:</strong></p>
                     <ol className="list-decimal list-inside space-y-1 text-blue-700">
-                      <li>Install Ollama from <a href="https://ollama.com" target="_blank" className="underline">ollama.com</a></li>
+                      <li>Install Ollama from <a href="https://ollama.com" target="_blank" rel="noopener noreferrer" className="underline">ollama.com</a></li>
                       <li>Open Terminal and run: <code className="bg-blue-100 px-1 rounded">ollama serve</code></li>
                       <li>Download a model: <code className="bg-blue-100 px-1 rounded">ollama pull llama3.2</code></li>
                       <li>Click "Check Status" above</li>
