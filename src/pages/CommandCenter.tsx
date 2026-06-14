@@ -137,6 +137,24 @@ export default function CommandCenter() {
   const ringCircumference = 2 * Math.PI * 88;
   const ringOffset = ringCircumference - (hudValue / 100) * ringCircumference;
 
+  const nextAction = useMemo(() => {
+    if (hudValue === 0 && recentQuizzes.length === 0) {
+      return { label: 'Start your first quiz', sub: '5 questions · ~3 min', route: '/study', icon: Crosshair, primary: true };
+    }
+    if (examCountdown !== null && examCountdown <= 14 && domainReadiness < 70) {
+      return { label: 'Focus weak domains', sub: `${examCountdown} days to exam`, route: '/study', icon: Target, primary: true };
+    }
+    if (stats.pendingCount > 0) {
+      return { label: 'Review agent leads', sub: `${stats.pendingCount} pending`, route: '/agent', icon: Bot, primary: false };
+    }
+    if (recentQuizzes.length > 0 && avgScore < 70) {
+      return { label: 'Retry weak areas', sub: `Avg ${avgScore}% — push higher`, route: '/study', icon: Crosshair, primary: true };
+    }
+    return { label: 'Continue studying', sub: 'Pick up where you left off', route: '/study', icon: Crosshair, primary: true };
+  }, [hudValue, recentQuizzes.length, examCountdown, domainReadiness, stats.pendingCount, avgScore]);
+
+  const NextActionIcon = nextAction.icon;
+
   return (
     <div className="max-w-[1400px] mx-auto space-y-4 relative">
       {/* HUD scan overlay */}
@@ -147,51 +165,64 @@ export default function CommandCenter() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-[10px] font-mono text-emerald-500/80 tracking-[0.25em] uppercase">
+          <div className="flex items-center gap-2 text-[10px] font-mono text-accent-emerald tracking-[0.25em] uppercase">
             <Radio className="w-3 h-3 animate-pulse-dot" />
             Mission Control · AAISM-OPS
           </div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mt-1 flex items-center gap-2">
-            <LayoutDashboard className="w-6 h-6 text-emerald-500" />
+            <LayoutDashboard className="w-6 h-6 text-emerald-600 dark:text-emerald-500" />
             Command Center
           </h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+          <p className="text-xs text-theme-muted mt-0.5">
             Pilot seat — readiness, intel, and quick throttle to all ops
           </p>
         </div>
-        <Link
-          to="/studio"
-          className="text-xs px-3 py-2 rounded-lg cockpit-throttle text-emerald-300 flex items-center gap-1.5"
-        >
-          <PenLine className="w-3.5 h-3.5" />
-          Content Studio
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate(nextAction.route)}
+            className={`text-xs px-4 py-2.5 rounded-lg flex items-center gap-2 font-semibold transition-all ${
+              nextAction.primary
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20'
+                : 'cockpit-throttle text-accent-emerald'
+            }`}
+          >
+            <NextActionIcon className="w-4 h-4" />
+            {nextAction.label}
+          </button>
+          <Link
+            to="/studio"
+            className="text-xs px-3 py-2 rounded-lg cockpit-throttle text-accent-emerald hidden sm:flex items-center gap-1.5"
+          >
+            <PenLine className="w-3.5 h-3.5" />
+            Studio
+          </Link>
+        </div>
       </div>
 
       {showWhatsNew && newReleases.length > 0 && (
-        <div className="relative cockpit-glass rounded-xl p-4 animate-fade-in">
+        <div className="relative cockpit-glass rounded-xl p-4 animate-fade-in border-amber-200/60 dark:border-amber-500/20">
           <button
             onClick={dismissWhatsNew}
-            className="absolute top-3 right-3 p-1 rounded-md text-gray-400 hover:text-gray-200 transition-colors"
+            className="absolute top-3 right-3 p-1 rounded-md text-cockpit-subtle hover:text-cockpit transition-colors"
             aria-label="Dismiss"
           >
             <X className="w-4 h-4" />
           </button>
           <div className="flex items-start gap-3 pr-8">
-            <Sparkles className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <Sparkles className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div className="min-w-0">
-              <p className="font-semibold text-sm text-gray-100">What&apos;s New</p>
+              <p className="font-semibold text-sm text-cockpit">What&apos;s New</p>
               <ul className="mt-2 space-y-1">
                 {newReleases.map(rel => (
-                  <li key={rel.id} className="text-xs text-gray-400">
-                    <strong className="text-amber-400">v{rel.version}</strong> — {rel.title}
+                  <li key={rel.id} className="text-xs text-cockpit-muted">
+                    <strong className="text-amber-700 dark:text-amber-400">v{rel.version}</strong> — {rel.title}
                   </li>
                 ))}
               </ul>
               <Link
                 to="/my-updates"
                 onClick={dismissWhatsNew}
-                className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-amber-400 hover:underline"
+                className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-amber-700 dark:text-amber-400 hover:underline"
               >
                 See all updates
               </Link>
@@ -206,17 +237,17 @@ export default function CommandCenter() {
         <div className="lg:col-span-3 space-y-3 order-2 lg:order-1">
           <InstrumentPanel title="Throttle Controls" icon={Zap} accent="emerald">
             <div className="grid grid-cols-2 gap-2">
-              <ThrottleButton icon={Crosshair} label="Study" sub="Practice ops" onClick={() => navigate('/study')} />
-              <ThrottleButton icon={Target} label="Exam" sub="90Q · 150min" onClick={() => navigate('/exam')} pulse />
-              <ThrottleButton icon={Bot} label="Agent" sub={`${stats.pendingCount} leads`} onClick={() => navigate('/agent')} pulse />
+              <ThrottleButton icon={Crosshair} label="Study" sub="Practice ops" onClick={() => navigate('/study')} primary={nextAction.route === '/study'} />
+              <ThrottleButton icon={Target} label="Exam" sub="90Q · 150min" onClick={() => navigate('/exam')} pulse highlight />
+              <ThrottleButton icon={Bot} label="Agent" sub={`${stats.pendingCount} leads`} onClick={() => navigate('/agent')} pulse={stats.pendingCount > 0} />
               <ThrottleButton icon={PenLine} label="Studio" sub="Create posts" onClick={() => navigate('/studio')} />
-              <ThrottleButton icon={Radar} label="Intel" sub="Deep dive" onClick={() => navigate('/intel')} pulse />
+              <ThrottleButton icon={Radar} label="Intel" sub="Deep dive" onClick={() => navigate('/intel')} />
             </div>
           </InstrumentPanel>
 
           <InstrumentPanel title="Intel Snapshot" icon={TrendingUp} accent="cyan"
             action={
-              <button onClick={() => navigate('/intel')} className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-0.5">
+              <button onClick={() => navigate('/intel')} className="text-[10px] text-accent-cyan hover:opacity-80 flex items-center gap-0.5">
                 Hub <ChevronRight className="w-3 h-3" />
               </button>
             }
@@ -233,10 +264,10 @@ export default function CommandCenter() {
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="text-[11px] font-medium text-gray-200 truncate">{topic.topic}</div>
-                    <div className="text-[9px] text-gray-500">D{topic.domain} · Heat {topic.heat}</div>
+                    <div className="text-[11px] font-medium text-cockpit truncate">{topic.topic}</div>
+                    <div className="text-[9px] text-cockpit-subtle">D{topic.domain} · Heat {topic.heat}</div>
                   </div>
-                  <div className="w-10 h-1 rounded-full bg-gray-800">
+                  <div className="w-10 h-1 rounded-full bg-cockpit-track">
                     <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-400" style={{ width: `${topic.heat}%` }} />
                   </div>
                 </button>
@@ -280,32 +311,40 @@ export default function CommandCenter() {
               </svg>
 
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-                <div className="text-[10px] font-mono text-emerald-500/70 tracking-widest uppercase">Readiness</div>
-                <div className="text-5xl font-bold text-white tabular-nums">{hudValue}%</div>
-                <div className="text-xs text-gray-400 mt-1">{currentLevel.title}</div>
+                <div className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 tracking-widest uppercase">Readiness</div>
+                <div className="text-5xl font-bold text-cockpit tabular-nums">{hudValue}%</div>
+                <div className="text-xs text-cockpit-muted mt-1">{currentLevel.title}</div>
                 {examCountdown !== null && (
-                  <div className="mt-2 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-[10px] text-amber-300 font-mono">
+                  <div className="mt-2 px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-500/15 border border-amber-300 dark:border-amber-500/30 text-[10px] text-amber-800 dark:text-amber-300 font-mono">
                     T-{examCountdown}d EXAM
                   </div>
+                )}
+                {hudValue === 0 && (
+                  <button
+                    onClick={() => navigate('/study')}
+                    className="mt-3 text-[10px] px-3 py-1.5 rounded-full bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors"
+                  >
+                    Quick start → 5-question quiz
+                  </button>
                 )}
               </div>
             </div>
 
             {/* HUD readouts */}
             <div className="grid grid-cols-4 gap-3 w-full max-w-md mt-4 relative z-10">
-              <HudReadout icon={Flame} label="Streak" value={`${gameState.currentStreak}d`} color="text-orange-400" />
-              <HudReadout icon={Crosshair} label="Avg Quiz" value={`${avgScore}%`} color="text-blue-400" />
-              <HudReadout icon={Target} label="Domains" value={`${domainReadiness}%`} color="text-violet-400" />
-              <HudReadout icon={Bot} label="Leads" value={`${stats.pendingCount}`} color="text-cyan-400" />
-              <HudReadout icon={Shield} label="XP" value={gameState.xp >= 1000 ? `${(gameState.xp / 1000).toFixed(1)}k` : `${gameState.xp}`} color="text-emerald-400" />
+              <HudReadout icon={Flame} label="Streak" value={`${gameState.currentStreak}d`} color="text-orange-600 dark:text-orange-400" />
+              <HudReadout icon={Crosshair} label="Avg Quiz" value={`${avgScore}%`} color="text-blue-600 dark:text-blue-400" />
+              <HudReadout icon={Target} label="Domains" value={`${domainReadiness}%`} color="text-violet-600 dark:text-violet-400" />
+              <HudReadout icon={Bot} label="Leads" value={`${stats.pendingCount}`} color="text-cyan-700 dark:text-cyan-400" />
+              <HudReadout icon={Shield} label="XP" value={gameState.xp >= 1000 ? `${(gameState.xp / 1000).toFixed(1)}k` : `${gameState.xp}`} color="text-emerald-700 dark:text-emerald-400" />
             </div>
 
             <div className="w-full max-w-md mt-3 relative z-10">
-              <div className="flex justify-between text-[9px] text-gray-500 font-mono mb-1">
+              <div className="flex justify-between text-[9px] text-cockpit-muted font-mono mb-1">
                 <span>LVL {currentLevel.level}</span>
                 <span>{xpProgress.current}/{xpProgress.required} XP</span>
               </div>
-              <div className="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-cockpit-track rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-emerald-500 to-cyan-400 rounded-full transition-all" style={{ width: `${xpProgress.percentage}%` }} />
               </div>
             </div>
@@ -314,14 +353,14 @@ export default function CommandCenter() {
           {/* Secondary quick actions row */}
           <div className="grid grid-cols-2 gap-2 mt-3">
             <button onClick={() => navigate('/scenarios')} className="cockpit-throttle rounded-xl p-3 text-left">
-              <Theater className="w-4 h-4 text-indigo-400 mb-1" />
-              <div className="text-xs font-bold text-gray-100">Scenario Lab</div>
-              <div className="text-[10px] text-gray-500">Pattern drills</div>
+              <Theater className="w-4 h-4 text-indigo-600 dark:text-indigo-400 mb-1" />
+              <div className="text-xs font-bold text-cockpit">Scenario Lab</div>
+              <div className="text-[10px] text-cockpit-subtle">Pattern drills</div>
             </button>
             <button onClick={() => navigate('/playbooks')} className="cockpit-throttle rounded-xl p-3 text-left">
-              <Briefcase className="w-4 h-4 text-blue-400 mb-1" />
-              <div className="text-xs font-bold text-gray-100">Playbooks</div>
-              <div className="text-[10px] text-gray-500">{PLAYBOOKS.length} guides</div>
+              <Briefcase className="w-4 h-4 text-blue-600 dark:text-blue-400 mb-1" />
+              <div className="text-xs font-bold text-cockpit">Playbooks</div>
+              <div className="text-[10px] text-cockpit-subtle">{PLAYBOOKS.length} guides</div>
             </button>
           </div>
         </div>
@@ -339,12 +378,12 @@ export default function CommandCenter() {
                   className="w-full mb-2 group last:mb-0"
                 >
                   <div className="flex items-center justify-between text-[10px] mb-1">
-                    <span className="truncate text-gray-400">D{domain.id}: {domain.name}</span>
-                    <span className={`font-bold font-mono ${avg >= 80 ? 'text-emerald-400' : avg >= 60 ? 'text-amber-400' : avg > 0 ? 'text-red-400' : 'text-gray-600'}`}>
+                    <span className="truncate text-cockpit-muted">D{domain.id}: {domain.name}</span>
+                    <span className={`font-bold font-mono ${avg >= 80 ? 'text-emerald-700 dark:text-emerald-400' : avg >= 60 ? 'text-amber-700 dark:text-amber-400' : avg > 0 ? 'text-red-600 dark:text-red-400' : 'text-cockpit-subtle'}`}>
                       {avg > 0 ? `${avg}%` : '—'}
                     </span>
                   </div>
-                  <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+                  <div className="h-1 bg-cockpit-track rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all ${avg >= 80 ? 'bg-emerald-500' : avg >= 60 ? 'bg-amber-500' : avg > 0 ? 'bg-red-500' : 'bg-gray-700'}`}
                       style={{ width: `${avg}%` }}
@@ -357,17 +396,17 @@ export default function CommandCenter() {
 
           <InstrumentPanel title="OSINT Arsenal" icon={Globe} accent="cyan"
             action={
-              <button onClick={() => navigate('/osint')} className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-0.5">
+              <button onClick={() => navigate('/osint')} className="text-[10px] text-accent-cyan hover:opacity-80 flex items-center gap-0.5">
                 Browse <ChevronRight className="w-3 h-3" />
               </button>
             }
           >
-            <p className="text-[10px] text-gray-500 mb-2">
+            <p className="text-[10px] text-cockpit-subtle mb-2">
               {OSINT_SOURCES.length} curated sources — MITRE ATLAS, OWASP LLM, NIST AI RMF
             </p>
             <button
               onClick={() => navigate('/osint')}
-              className="w-full text-left p-2 rounded-lg hover:bg-cyan-500/10 transition-colors text-[11px] text-cyan-400"
+              className="w-full text-left p-2 rounded-lg hover:bg-cyan-500/10 transition-colors text-[11px] text-accent-cyan font-medium"
             >
               Open OSINT Arsenal →
             </button>
@@ -375,7 +414,7 @@ export default function CommandCenter() {
 
           <InstrumentPanel title="What's Next" icon={Sparkles} accent="violet" compact
             action={
-              <button onClick={() => setShowRoadmap(!showRoadmap)} className="text-[10px] text-gray-500 hover:text-gray-300 flex items-center gap-0.5">
+              <button onClick={() => setShowRoadmap(!showRoadmap)} className="text-[10px] text-cockpit-subtle hover:text-cockpit-muted flex items-center gap-0.5">
                 {showRoadmap ? 'Less' : 'All'}
                 <ChevronDown className={`w-3 h-3 transition-transform ${showRoadmap ? 'rotate-180' : ''}`} />
               </button>
@@ -383,20 +422,20 @@ export default function CommandCenter() {
           >
             <div className="space-y-1.5">
               {(showRoadmap ? PLATFORM_ROADMAP : PLATFORM_ROADMAP.slice(0, 3)).map(item => (
-                <div key={item.id} className="p-2 rounded-lg bg-gray-800/50 border border-gray-700/40">
+                <div key={item.id} className="p-2 rounded-lg bg-gray-100/80 dark:bg-gray-800/50 border border-gray-200/80 dark:border-gray-700/40">
                   <div className="flex items-center justify-between gap-2 mb-0.5">
-                    <span className="text-[10px] font-medium text-gray-200">{item.title}</span>
+                    <span className="text-[10px] font-medium text-cockpit">{item.title}</span>
                     <span className={`text-[9px] px-1.5 py-0.5 rounded-full shrink-0 ${
                       item.status === 'shipped'
-                        ? 'bg-emerald-500/20 text-emerald-400'
+                        ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
                         : item.status === 'partial'
-                          ? 'bg-amber-500/20 text-amber-400'
-                          : 'bg-violet-500/20 text-violet-400'
+                          ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400'
+                          : 'bg-violet-100 dark:bg-violet-500/20 text-violet-800 dark:text-violet-400'
                     }`}>
                       {ROADMAP_STATUS_LABEL[item.status]}
                     </span>
                   </div>
-                  <p className="text-[9px] text-gray-500 leading-snug">{item.summary}</p>
+                  <p className="text-[9px] text-cockpit-subtle leading-snug">{item.summary}</p>
                 </div>
               ))}
             </div>
@@ -406,14 +445,14 @@ export default function CommandCenter() {
 
       {/* Mission log strip */}
       <div className="cockpit-glass-cyan rounded-xl overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-2 border-b border-cyan-500/20">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-cyan-200/60 dark:border-cyan-500/20">
           <div className="flex items-center gap-2">
-            <Radio className="w-3.5 h-3.5 text-cyan-400 animate-pulse-dot" />
-            <span className="text-[10px] font-mono text-cyan-400 tracking-widest uppercase">Mission Log</span>
+            <Radio className="w-3.5 h-3.5 text-cyan-700 dark:text-cyan-400 animate-pulse-dot" />
+            <span className="text-[10px] font-mono text-cyan-800 dark:text-cyan-400 tracking-widest uppercase">Mission Log</span>
           </div>
           <Link
             to={digestStudioUrl}
-            className="text-[10px] font-mono text-violet-400 hover:text-violet-300 flex items-center gap-1"
+            className="text-[10px] font-mono text-violet-700 dark:text-violet-400 hover:opacity-80 flex items-center gap-1"
           >
             <PenLine className="w-3 h-3" /> Weekly Intel Digest
           </Link>
@@ -422,15 +461,15 @@ export default function CommandCenter() {
           <div className="flex gap-8 animate-mission-scroll whitespace-nowrap px-4" style={{ width: 'max-content' }}>
             {[...missionLog, ...missionLog].map((entry, i) => (
               <div key={`${entry.id}-${i}`} className="flex items-center gap-2 text-[11px]">
-                <span className="font-mono text-gray-600">{entry.time}</span>
+                <span className="font-mono text-cockpit-subtle">{entry.time}</span>
                 <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
-                  entry.tag === 'INTEL' ? 'bg-red-500/20 text-red-400' :
-                  entry.tag === 'DIGEST' ? 'bg-violet-500/20 text-violet-400' :
-                  entry.tag === 'AGENT' ? 'bg-cyan-500/20 text-cyan-400' :
-                  entry.tag === 'RELEASE' ? 'bg-amber-500/20 text-amber-400' :
-                  'bg-emerald-500/20 text-emerald-400'
+                  entry.tag === 'INTEL' ? 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400' :
+                  entry.tag === 'DIGEST' ? 'bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-400' :
+                  entry.tag === 'AGENT' ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400' :
+                  entry.tag === 'RELEASE' ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400' :
+                  'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'
                 }`}>{entry.tag}</span>
-                <span className="text-gray-400">{entry.message}</span>
+                <span className="text-cockpit-muted">{entry.message}</span>
               </div>
             ))}
           </div>
@@ -438,10 +477,10 @@ export default function CommandCenter() {
       </div>
 
       {/* Collapsed secondary widgets */}
-      <div className="border-t border-gray-800 pt-4">
+      <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
         <button
           onClick={() => setShowMore(!showMore)}
-          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-300 transition-colors"
+          className="flex items-center gap-2 text-sm font-medium text-theme-muted hover:text-theme-secondary transition-colors"
         >
           <ChevronDown className={`w-4 h-4 transition-transform ${showMore ? 'rotate-180' : ''}`} />
           {showMore ? 'Hide secondary instruments' : 'Expand — scenarios, playbooks, patterns'}
@@ -449,7 +488,7 @@ export default function CommandCenter() {
 
         {showMore && (
           <div className="grid gap-4 mt-4 lg:grid-cols-3">
-            <SecondaryCard title="Quick Scenarios" icon={Theater} iconColor="text-indigo-400">
+            <SecondaryCard title="Quick Scenarios" icon={Theater} iconColor="text-indigo-600 dark:text-indigo-400">
               <div className="space-y-2">
                 {QUESTION_PATTERNS.filter(p => ['best', 'most', 'first'].includes(p.id)).map(p => (
                   <button
@@ -457,21 +496,21 @@ export default function CommandCenter() {
                     onClick={() => navigate(`/scenarios?mode=drill&pattern=${p.id}`)}
                     className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-indigo-500/10 transition-colors text-left group"
                   >
-                    <div className="w-8 h-8 rounded-lg bg-indigo-500/15 flex items-center justify-center text-xs font-bold text-indigo-400">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-500/15 flex items-center justify-center text-xs font-bold text-indigo-700 dark:text-indigo-400">
                       {p.keyword}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium truncate text-gray-200">{p.name} Drill</div>
+                      <div className="text-xs font-medium truncate text-cockpit">{p.name} Drill</div>
                     </div>
-                    <Play className="w-3 h-3 text-gray-600 group-hover:text-indigo-400" />
+                    <Play className="w-3 h-3 text-cockpit-subtle group-hover:text-indigo-600 dark:group-hover:text-indigo-400" />
                   </button>
                 ))}
               </div>
             </SecondaryCard>
 
-            <SecondaryCard title={LEARNING_PATH_WIDGET.title} icon={Lightbulb} iconColor="text-yellow-400"
+            <SecondaryCard title={LEARNING_PATH_WIDGET.title} icon={Lightbulb} iconColor="text-amber-600 dark:text-yellow-400"
               action={
-                <button onClick={() => navigate(LEARNING_PATH_WIDGET.ctaRoute)} className="text-xs text-emerald-400 hover:text-emerald-300">
+                <button onClick={() => navigate(LEARNING_PATH_WIDGET.ctaRoute)} className="text-xs text-accent-emerald hover:opacity-80">
                   {LEARNING_PATH_WIDGET.ctaLabel} →
                 </button>
               }
@@ -483,18 +522,18 @@ export default function CommandCenter() {
                     onClick={() => navigate(`/knowledge?domain=${guide.id}`)}
                     className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-emerald-500/10 transition-colors text-left"
                   >
-                    <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center text-xs font-bold text-emerald-400">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-500/15 flex items-center justify-center text-xs font-bold text-emerald-700 dark:text-emerald-400">
                       D{guide.id}
                     </div>
-                    <span className="text-xs font-medium truncate text-gray-300">{guide.shortName}</span>
+                    <span className="text-xs font-medium truncate text-cockpit-muted">{guide.shortName}</span>
                   </button>
                 ))}
               </div>
             </SecondaryCard>
 
-            <SecondaryCard title="Playbooks" icon={Briefcase} iconColor="text-blue-400"
+            <SecondaryCard title="Playbooks" icon={Briefcase} iconColor="text-blue-600 dark:text-blue-400"
               action={
-                <button onClick={() => navigate('/playbooks')} className="text-xs text-emerald-400 hover:text-emerald-300">
+                <button onClick={() => navigate('/playbooks')} className="text-xs text-accent-emerald hover:opacity-80">
                   View all →
                 </button>
               }
@@ -506,31 +545,31 @@ export default function CommandCenter() {
                     onClick={() => navigate('/playbooks')}
                     className="w-full text-left p-2 rounded-lg hover:bg-blue-500/10 transition-colors"
                   >
-                    <div className="text-xs font-medium truncate text-gray-200">{pb.title}</div>
-                    <div className="text-[10px] text-gray-500">{pb.phases.length} phases</div>
+                    <div className="text-xs font-medium truncate text-cockpit">{pb.title}</div>
+                    <div className="text-[10px] text-cockpit-subtle">{pb.phases.length} phases</div>
                   </button>
                 ))}
               </div>
             </SecondaryCard>
 
-            <SecondaryCard title="Question Pattern Analysis" icon={BarChart3} iconColor="text-purple-400" className="lg:col-span-3">
+            <SecondaryCard title="Question Pattern Analysis" icon={BarChart3} iconColor="text-purple-600 dark:text-purple-400" className="lg:col-span-3">
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 mb-3">
                 {Object.entries(patternAnalysis.patternDistribution).map(([pattern, count]) => (
-                  <div key={pattern} className="text-center p-2 bg-gray-800/50 rounded-lg border border-gray-700/40">
-                    <div className="text-lg font-bold text-purple-400">{count}</div>
-                    <div className="text-[10px] text-gray-500">{pattern}</div>
+                  <div key={pattern} className="text-center p-2 bg-gray-100/80 dark:bg-gray-800/50 rounded-lg border border-gray-200/80 dark:border-gray-700/40">
+                    <div className="text-lg font-bold text-purple-700 dark:text-purple-400">{count}</div>
+                    <div className="text-[10px] text-cockpit-subtle">{pattern}</div>
                   </div>
                 ))}
               </div>
               {patternAnalysis.recommendations.slice(0, 2).map((rec, i) => (
-                <div key={i} className="text-xs text-gray-400 flex items-start gap-2 mb-1">
-                  <Lightbulb className="w-3 h-3 text-yellow-400 mt-0.5 flex-shrink-0" />
+                <div key={i} className="text-xs text-cockpit-muted flex items-start gap-2 mb-1">
+                  <Lightbulb className="w-3 h-3 text-amber-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
                   {rec}
                 </div>
               ))}
               <button
                 onClick={() => navigate('/intel')}
-                className="mt-2 text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                className="mt-2 text-xs text-accent-emerald hover:opacity-80 flex items-center gap-1"
               >
                 Full pattern intel in Intel Hub <Radar className="w-3 h-3" />
               </button>
@@ -546,13 +585,18 @@ function InstrumentPanel({ title, icon: Icon, accent, action, children, compact 
   title: string; icon: typeof Shield; accent: 'emerald' | 'cyan' | 'violet';
   action?: ReactNode; children: ReactNode; compact?: boolean;
 }) {
+  const iconClass = accent === 'cyan'
+    ? 'text-cyan-700 dark:text-cyan-400'
+    : accent === 'violet'
+      ? 'text-violet-700 dark:text-violet-400'
+      : 'text-emerald-700 dark:text-emerald-400';
   const borderClass = accent === 'cyan' ? 'cockpit-glass-cyan' : 'cockpit-glass';
   return (
     <div className={`${borderClass} rounded-xl ${compact ? 'p-3' : 'p-4'}`}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Icon className={`w-4 h-4 ${accent === 'cyan' ? 'text-cyan-400' : accent === 'violet' ? 'text-violet-400' : 'text-emerald-400'}`} />
-          <span className="text-xs font-semibold text-gray-200">{title}</span>
+          <Icon className={`w-4 h-4 ${iconClass}`} />
+          <span className="text-xs font-semibold text-cockpit">{title}</span>
         </div>
         {action}
       </div>
@@ -561,22 +605,26 @@ function InstrumentPanel({ title, icon: Icon, accent, action, children, compact 
   );
 }
 
-function ThrottleButton({ icon: Icon, label, sub, onClick, pulse }: {
-  icon: typeof Shield; label: string; sub: string; onClick: () => void; pulse?: boolean;
+function ThrottleButton({ icon: Icon, label, sub, onClick, pulse, primary, highlight }: {
+  icon: typeof Shield; label: string; sub: string; onClick: () => void;
+  pulse?: boolean; primary?: boolean; highlight?: boolean;
 }) {
   return (
-    <button onClick={onClick} className="cockpit-throttle rounded-xl p-3 text-left group">
+    <button
+      onClick={onClick}
+      className={`cockpit-throttle rounded-xl p-3 text-left group ${primary ? 'cockpit-throttle-primary ring-2 ring-emerald-500/30' : ''} ${highlight ? 'ring-1 ring-emerald-400/40' : ''}`}
+    >
       <div className="flex items-center gap-2 mb-1">
-        <Icon className="w-4 h-4 text-emerald-400" />
+        <Icon className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
         {pulse && (
           <span className="relative flex h-1.5 w-1.5 ml-auto">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-50" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-600 dark:bg-emerald-500" />
           </span>
         )}
       </div>
-      <div className="text-xs font-bold text-gray-100">{label}</div>
-      <div className="text-[9px] text-gray-500">{sub}</div>
+      <div className="text-xs font-bold text-cockpit">{label}</div>
+      <div className="text-[9px] text-cockpit-subtle">{sub}</div>
     </button>
   );
 }
@@ -585,10 +633,16 @@ function HudReadout({ icon: Icon, label, value, color }: {
   icon: typeof Shield; label: string; value: string; color: string;
 }) {
   return (
-    <div className="text-center p-2 rounded-lg bg-gray-900/50 border border-gray-800">
+    <div
+      className="text-center p-2 rounded-lg border"
+      style={{
+        backgroundColor: 'rgb(var(--cockpit-readout-bg) / 0.85)',
+        borderColor: 'rgb(var(--cockpit-readout-border) / 0.8)',
+      }}
+    >
       <Icon className={`w-3 h-3 mx-auto mb-0.5 ${color}`} />
       <div className={`text-sm font-bold font-mono ${color}`}>{value}</div>
-      <div className="text-[8px] text-gray-600 uppercase tracking-wider">{label}</div>
+      <div className="text-[8px] text-cockpit-muted uppercase tracking-wider">{label}</div>
     </div>
   );
 }
@@ -601,7 +655,7 @@ function SecondaryCard({ title, icon: Icon, iconColor, action, children, classNa
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Icon className={`w-4 h-4 ${iconColor}`} />
-          <span className="text-sm font-semibold text-gray-200">{title}</span>
+          <span className="text-sm font-semibold text-cockpit">{title}</span>
         </div>
         {action}
       </div>

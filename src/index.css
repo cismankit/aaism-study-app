@@ -2,6 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========== Semantic theme tokens ========== */
+:root {
+  --surface-page: 249 250 251;
+  --surface-elevated: 255 255 255;
+  --surface-muted: 243 244 246;
+  --border-default: 229 231 235;
+  --text-primary: 17 24 39;
+  --text-secondary: 55 65 81;
+  --text-muted: 75 85 99;
+  --text-faint: 107 114 128;
+  --accent-emerald: 5 150 105;
+  --accent-cyan: 8 145 178;
+  --accent-amber: 217 119 6;
+  --accent-violet: 109 40 217;
+  --cockpit-bg: 255 255 255;
+  --cockpit-bg-muted: 249 250 251;
+  --cockpit-border-emerald: 16 185 129;
+  --cockpit-border-cyan: 6 182 212;
+  --cockpit-text: 17 24 39;
+  --cockpit-text-muted: 75 85 99;
+  --cockpit-text-subtle: 107 114 128;
+  --cockpit-track: 229 231 235;
+  --cockpit-readout-bg: 243 244 246;
+  --cockpit-readout-border: 209 213 219;
+  --sidebar-bg: 255 255 255;
+  --sidebar-border: 229 231 235;
+  --sidebar-text: 75 85 99;
+  --sidebar-text-active: 5 150 105;
+  --sidebar-hover: 243 244 246;
+}
+
+.dark {
+  --surface-page: 17 24 39;
+  --surface-elevated: 31 41 55;
+  --surface-muted: 31 41 55;
+  --border-default: 55 65 81;
+  --text-primary: 243 244 246;
+  --text-secondary: 209 213 219;
+  --text-muted: 156 163 175;
+  --text-faint: 107 114 128;
+  --accent-emerald: 52 211 153;
+  --accent-cyan: 34 211 238;
+  --accent-amber: 251 191 36;
+  --accent-violet: 167 139 250;
+  --cockpit-bg: 17 24 39;
+  --cockpit-bg-muted: 31 41 55;
+  --cockpit-border-emerald: 16 185 129;
+  --cockpit-border-cyan: 6 182 212;
+  --cockpit-text: 243 244 246;
+  --cockpit-text-muted: 156 163 175;
+  --cockpit-text-subtle: 107 114 128;
+  --cockpit-track: 31 41 55;
+  --cockpit-readout-bg: 17 24 39;
+  --cockpit-readout-border: 31 41 55;
+  --sidebar-bg: 3 7 18;
+  --sidebar-border: 31 41 55;
+  --sidebar-text: 156 163 175;
+  --sidebar-text-active: 52 211 153;
+  --sidebar-hover: 31 41 55;
+}
+
+@layer utilities {
+  .text-theme-primary { color: rgb(var(--text-primary)); }
+  .text-theme-secondary { color: rgb(var(--text-secondary)); }
+  .text-theme-muted { color: rgb(var(--text-muted)); }
+  .text-theme-faint { color: rgb(var(--text-faint)); }
+  .text-cockpit { color: rgb(var(--cockpit-text)); }
+  .text-cockpit-muted { color: rgb(var(--cockpit-text-muted)); }
+  .text-cockpit-subtle { color: rgb(var(--cockpit-text-subtle)); }
+  .text-accent-emerald { color: rgb(var(--accent-emerald)); }
+  .text-accent-cyan { color: rgb(var(--accent-cyan)); }
+  .text-accent-amber { color: rgb(var(--accent-amber)); }
+  .text-accent-violet { color: rgb(var(--accent-violet)); }
+  .bg-theme-page { background-color: rgb(var(--surface-page)); }
+  .bg-theme-elevated { background-color: rgb(var(--surface-elevated)); }
+  .bg-cockpit-track { background-color: rgb(var(--cockpit-track)); }
+  .border-theme { border-color: rgb(var(--border-default)); }
+}
+
 /* Light mode (default) */
 body {
   @apply bg-gray-50 text-gray-900 transition-colors duration-200;
@@ -292,36 +371,89 @@ html.dark body {
 }
 
 .cockpit-glass {
-  @apply bg-gray-900/60 dark:bg-gray-950/70 backdrop-blur-md border border-emerald-500/20;
-  box-shadow: 0 0 20px rgba(16, 185, 129, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  @apply backdrop-blur-md;
+  background: rgb(var(--cockpit-bg) / 0.97);
+  border: 1px solid rgb(var(--cockpit-border-emerald) / 0.22);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 0 24px rgba(16, 185, 129, 0.06);
+}
+
+.dark .cockpit-glass {
+  background: rgb(var(--cockpit-bg) / 0.72);
+  box-shadow:
+    0 0 20px rgba(16, 185, 129, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .cockpit-glass-cyan {
-  @apply bg-gray-900/60 dark:bg-gray-950/70 backdrop-blur-md border border-cyan-500/20;
-  box-shadow: 0 0 20px rgba(6, 182, 212, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  @apply backdrop-blur-md;
+  background: rgb(var(--cockpit-bg) / 0.97);
+  border: 1px solid rgb(var(--cockpit-border-cyan) / 0.22);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 0 24px rgba(6, 182, 212, 0.06);
+}
+
+.dark .cockpit-glass-cyan {
+  background: rgb(var(--cockpit-bg) / 0.72);
+  box-shadow:
+    0 0 20px rgba(6, 182, 212, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .cockpit-throttle {
   @apply relative overflow-hidden transition-all duration-200;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%);
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .cockpit-throttle:hover {
-  border-color: rgba(16, 185, 129, 0.6);
-  box-shadow: 0 0 24px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.14);
   transform: translateY(-2px);
 }
 
 .cockpit-throttle:active {
   transform: translateY(1px);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.dark .cockpit-throttle {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.08) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.dark .cockpit-throttle:hover {
+  border-color: rgba(16, 185, 129, 0.6);
+  box-shadow: 0 0 24px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.dark .cockpit-throttle:active {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
+.cockpit-throttle-primary {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(5, 150, 105, 0.12) 100%);
+  border-color: rgba(5, 150, 105, 0.45);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.18);
+}
+
+.dark .cockpit-throttle-primary {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 182, 212, 0.12) 100%);
+  border-color: rgba(16, 185, 129, 0.55);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
 .hud-ring-track {
-  stroke: rgba(16, 185, 129, 0.15);
+  stroke: rgb(var(--cockpit-border-emerald) / 0.2);
   fill: none;
+}
+
+.dark .hud-ring-track {
+  stroke: rgba(16, 185, 129, 0.15);
 }
 
 .hud-ring-fill {

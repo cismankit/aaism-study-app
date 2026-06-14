@@ -23,7 +23,7 @@ export default function PageHeader({
           {title}
         </h1>
         {subtitle && (
-          <p className="text-gray-400 dark:text-gray-400 mt-1 text-sm max-w-2xl">{subtitle}</p>
+          <p className="text-theme-muted dark:text-gray-400 mt-1 text-sm max-w-2xl">{subtitle}</p>
         )}
       </div>
       {action && <div className="flex-shrink-0">{action}</div>}
