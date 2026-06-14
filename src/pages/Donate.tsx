@@ -12,6 +12,7 @@ import {
   donationDisclaimer,
   GITHUB_REPO,
   DONATE_ENV_KEYS,
+  withCheckoutReturnUrls,
   type DonationRegionId,
   type RegionalPaymentMethod,
 } from '../data/donations';
@@ -72,7 +73,7 @@ function PaymentMethodCard({ method }: { method: RegionalPaymentMethod }) {
   const Icon = paymentIcons[method.icon] || CreditCard;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-amber-200/50 dark:border-amber-800/30 p-4 osint-widget">
+    <div className="bg-theme-elevated rounded-xl border border-amber-200/50 dark:border-amber-800/30 p-4 osint-widget">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
@@ -87,13 +88,13 @@ function PaymentMethodCard({ method }: { method: RegionalPaymentMethod }) {
                 </span>
               )}
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{method.description}</p>
+            <p className="text-xs text-theme-muted mt-0.5">{method.description}</p>
           </div>
         </div>
         {method.type === 'copy' && <CopyButton value={method.value} />}
         {method.type === 'link' && (
           <a
-            href={method.value}
+            href={withCheckoutReturnUrls(method.value)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors flex-shrink-0"
@@ -105,12 +106,12 @@ function PaymentMethodCard({ method }: { method: RegionalPaymentMethod }) {
       </div>
 
       {(method.type === 'copy' || method.type === 'info') && (
-        <code className="block text-xs sm:text-sm font-mono bg-amber-50 dark:bg-gray-900 px-3 py-2 rounded-lg border border-amber-200/50 dark:border-amber-800/30 break-all text-gray-700 dark:text-gray-300 mb-2">
+        <code className="block text-xs sm:text-sm font-mono bg-amber-50 dark:bg-gray-900 px-3 py-2 rounded-lg border border-amber-200/50 dark:border-amber-800/30 break-all text-theme-secondary mb-2">
           {method.value}
         </code>
       )}
 
-      <p className="text-xs text-gray-500 dark:text-gray-400 flex items-start gap-1.5">
+      <p className="text-xs text-theme-muted flex items-start gap-1.5">
         <ArrowRightLeft className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
         <span><strong className="text-gray-600 dark:text-gray-300">How to pay:</strong> {method.howToPay}</span>
       </p>
@@ -188,11 +189,11 @@ export default function Donate() {
           return (
             <div
               key={item.title}
-              className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-amber-200/40 dark:border-amber-800/20 osint-widget"
+              className="p-4 rounded-xl bg-theme-elevated border border-amber-200/40 dark:border-amber-800/20 osint-widget"
             >
               <Icon className="w-5 h-5 text-amber-500 mb-2" />
               <h3 className="font-medium text-sm mb-1">{item.title}</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{item.body}</p>
+              <p className="text-xs text-theme-muted leading-relaxed">{item.body}</p>
             </div>
           );
         })}
@@ -203,7 +204,7 @@ export default function Donate() {
           <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
             <p className="font-medium text-yellow-700 dark:text-yellow-300">Placeholder payment details</p>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-cockpit-muted mt-1">
               Addresses and links below are placeholders until configured. Edit{' '}
               <code className="text-xs px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-700">src/data/donations.ts</code>{' '}
               or set <code className="text-xs px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-700">VITE_DONATE_*</code>{' '}
@@ -227,7 +228,7 @@ export default function Donate() {
               className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
                 region === r.id
                   ? 'bg-amber-600 text-white border-amber-500 shadow-lg shadow-amber-500/20'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-amber-400'
+                  : 'bg-theme-elevated text-theme-secondary border-theme hover:border-amber-400'
               }`}
             >
               <span className="mr-1.5">{r.flag}</span>
@@ -236,7 +237,7 @@ export default function Donate() {
           ))}
         </div>
         {selectedRegion.note && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 bg-amber-50 dark:bg-gray-800/50 rounded-lg px-4 py-3 border border-amber-200/40 dark:border-amber-800/20">
+          <p className="text-sm text-theme-muted bg-amber-50 dark:bg-gray-800/50 rounded-lg px-4 py-3 border border-amber-200/40 dark:border-amber-800/20">
             {selectedRegion.note}
           </p>
         )}
@@ -266,7 +267,7 @@ export default function Donate() {
             <Bitcoin className="w-5 h-5 text-orange-500" />
             <h2 className="text-lg font-semibold">Cryptocurrency</h2>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-theme-muted">
             Send only the listed asset on the correct network. Double-check addresses before sending.
           </p>
           <div className="space-y-3">
@@ -275,7 +276,7 @@ export default function Donate() {
               return (
                 <div
                   key={method.id}
-                  className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget"
+                  className="bg-theme-elevated rounded-xl border border-theme p-4 osint-widget"
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3">
@@ -291,15 +292,15 @@ export default function Donate() {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{method.description}</p>
+                        <p className="text-xs text-theme-muted">{method.description}</p>
                       </div>
                     </div>
                     <CopyButton value={method.value} />
                   </div>
-                  <code className="block text-xs sm:text-sm font-mono bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 break-all text-gray-700 dark:text-gray-300 mb-2">
+                  <code className="block text-xs sm:text-sm font-mono bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-lg border border-theme break-all text-theme-secondary mb-2">
                     {method.value}
                   </code>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-theme-muted">
                     <strong className="text-gray-600 dark:text-gray-300">How to pay:</strong> {method.howToPay}
                   </p>
                 </div>
@@ -311,10 +312,10 @@ export default function Donate() {
 
 
       {/* Config hint for maintainers */}
-      <section className="flex items-start gap-3 p-4 rounded-xl bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+      <section className="flex items-start gap-3 p-4 rounded-xl bg-gray-100 dark:bg-gray-800/50 border border-theme">
         <Code2 className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          <p className="font-medium text-gray-700 dark:text-gray-300">For maintainers</p>
+        <div className="text-sm text-cockpit-muted">
+          <p className="font-medium text-theme-secondary">For maintainers</p>
           <p className="mt-1">
             Update payment details in <code className="text-xs px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-700">src/data/donations.ts</code>.
             Optional env overrides:{' '}
@@ -337,7 +338,7 @@ export default function Donate() {
         </div>
       </section>
 
-      <p className="text-xs text-gray-500 dark:text-gray-500 leading-relaxed border-t border-gray-200 dark:border-gray-700 pt-4">
+      <p className="text-xs text-gray-500 dark:text-gray-500 leading-relaxed border-t border-theme pt-4">
         {donationDisclaimer}
       </p>
     </div>

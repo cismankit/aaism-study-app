@@ -128,10 +128,10 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
   return (
     <div className="fixed inset-0 z-[90] flex items-start justify-center pt-[15vh] px-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="w-full max-w-xl bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+        className="w-full max-w-xl bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-theme overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-theme">
           <Search className="w-5 h-5 text-gray-400" />
           <input
             autoFocus
@@ -139,7 +139,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
             placeholder="Search pages, topics, OSINT, playbooks…"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none text-sm"
+            className="flex-1 bg-transparent text-cockpit placeholder-gray-400 focus:outline-none text-sm"
           />
           <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] text-gray-400 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-600">
             <Command className="w-3 h-3" />K
@@ -164,7 +164,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
                 >
                   <Icon className="w-4 h-4 text-gray-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.title}</div>
+                    <div className="text-sm font-medium text-cockpit truncate">{item.title}</div>
                     {item.subtitle && (
                       <div className="text-xs text-gray-500 truncate">{item.subtitle}</div>
                     )}
@@ -178,7 +178,7 @@ export default function GlobalSearch({ open, onClose }: GlobalSearchProps) {
           )}
         </div>
 
-        <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 flex items-center gap-4 text-[10px] text-gray-400">
+        <div className="px-4 py-2 border-t border-theme flex items-center gap-4 text-[10px] text-gray-400">
           <span>↑↓ navigate</span>
           <span>↵ select</span>
           <span>esc close</span>

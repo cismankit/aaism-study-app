@@ -38,18 +38,18 @@ function DomainGuidePanel({ guide }: { guide: DomainGuide }) {
         <span className={`text-xs font-bold px-2 py-1 rounded border ${DOMAIN_BADGE[guide.id]}`}>
           Domain {guide.id} · {guide.weight}
         </span>
-        <h2 className="text-xl font-bold mt-2 text-gray-900 dark:text-white">{guide.name}</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 leading-relaxed">{guide.overview}</p>
+        <h2 className="text-xl font-bold mt-2 text-cockpit">{guide.name}</h2>
+        <p className="text-sm text-cockpit-muted mt-2 leading-relaxed">{guide.overview}</p>
       </div>
 
       <section>
-        <h3 className="text-sm font-semibold flex items-center gap-2 mb-3 text-gray-900 dark:text-white">
+        <h3 className="text-sm font-semibold flex items-center gap-2 mb-3 text-cockpit">
           <GraduationCap className="w-4 h-4 text-emerald-500" />
           Learning Objectives
         </h3>
         <ul className="space-y-2">
           {guide.learningObjectives.map((obj, i) => (
-            <li key={i} className="flex gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <li key={i} className="flex gap-2 text-sm text-cockpit-muted">
               <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
               {obj}
             </li>
@@ -58,27 +58,27 @@ function DomainGuidePanel({ guide }: { guide: DomainGuide }) {
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-white">Core Concepts</h3>
+        <h3 className="text-sm font-semibold mb-3 text-cockpit">Core Concepts</h3>
         <div className="space-y-4">
           {guide.coreConcepts.map((concept, i) => (
             <div
               key={i}
-              className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 osint-widget"
+              className="p-4 rounded-xl bg-theme-elevated border border-theme osint-widget"
             >
-              <h4 className="font-semibold text-sm text-gray-900 dark:text-white">{concept.title}</h4>
+              <h4 className="font-semibold text-sm text-cockpit">{concept.title}</h4>
               <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 font-medium">{concept.summary}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 leading-relaxed">{concept.detail}</p>
+              <p className="text-sm text-cockpit-muted mt-2 leading-relaxed">{concept.detail}</p>
             </div>
           ))}
         </div>
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-white">Frameworks & Standards Crosswalk</h3>
+        <h3 className="text-sm font-semibold mb-3 text-cockpit">Frameworks & Standards Crosswalk</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
+              <tr className="border-b border-theme">
                 <th className="text-left py-2 px-3 text-gray-500">Framework</th>
                 <th className="text-left py-2 px-3 text-gray-500">Relevance</th>
                 <th className="text-left py-2 px-3 text-gray-500">Exam Weight</th>
@@ -87,8 +87,8 @@ function DomainGuidePanel({ guide }: { guide: DomainGuide }) {
             <tbody>
               {guide.frameworks.map((fw, i) => (
                 <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                  <td className="py-2 px-3 font-medium text-gray-900 dark:text-white">{fw.name}</td>
-                  <td className="py-2 px-3 text-gray-600 dark:text-gray-400">{fw.relevance}</td>
+                  <td className="py-2 px-3 font-medium text-cockpit">{fw.name}</td>
+                  <td className="py-2 px-3 text-cockpit-muted">{fw.relevance}</td>
                   <td className="py-2 px-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
                       fw.examWeight === 'high' ? 'bg-red-500/20 text-red-400' :
@@ -106,7 +106,7 @@ function DomainGuidePanel({ guide }: { guide: DomainGuide }) {
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold flex items-center gap-2 mb-3 text-gray-900 dark:text-white">
+        <h3 className="text-sm font-semibold flex items-center gap-2 mb-3 text-cockpit">
           <Target className="w-4 h-4 text-amber-500" />
           Common Exam Patterns
         </h3>
@@ -114,8 +114,8 @@ function DomainGuidePanel({ guide }: { guide: DomainGuide }) {
           {guide.examPatterns.map((pattern, i) => (
             <div key={i} className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
               <span className="text-xs font-bold text-amber-600 dark:text-amber-400">{pattern.keyword}</span>
-              <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{pattern.prompt}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              <p className="text-sm text-theme-secondary mt-1">{pattern.prompt}</p>
+              <p className="text-xs text-theme-muted mt-2">
                 <strong>Logic:</strong> {pattern.answerLogic}
               </p>
             </div>
@@ -124,7 +124,7 @@ function DomainGuidePanel({ guide }: { guide: DomainGuide }) {
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold flex items-center gap-2 mb-3 text-gray-900 dark:text-white">
+        <h3 className="text-sm font-semibold flex items-center gap-2 mb-3 text-cockpit">
           <AlertTriangle className="w-4 h-4 text-red-500" />
           Trap Alerts
         </h3>
@@ -132,7 +132,7 @@ function DomainGuidePanel({ guide }: { guide: DomainGuide }) {
           {guide.trapAlerts.map((trap, i) => (
             <div key={i} className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
               <h4 className="font-medium text-sm text-red-600 dark:text-red-400">{trap.title}</h4>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1"><strong>Trap:</strong> {trap.trap}</p>
+              <p className="text-xs text-cockpit-muted mt-1"><strong>Trap:</strong> {trap.trap}</p>
               <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1"><strong>Correct:</strong> {trap.correctApproach}</p>
             </div>
           ))}
@@ -140,27 +140,27 @@ function DomainGuidePanel({ guide }: { guide: DomainGuide }) {
       </section>
 
       <section className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20">
-        <h3 className="text-sm font-semibold flex items-center gap-2 mb-2 text-gray-900 dark:text-white">
+        <h3 className="text-sm font-semibold flex items-center gap-2 mb-2 text-cockpit">
           <Lightbulb className="w-4 h-4 text-yellow-500" />
           Apply It
         </h3>
-        <p className="text-sm text-gray-700 dark:text-gray-300"><strong>Scenario:</strong> {guide.applyIt.scenario}</p>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2"><strong>Org action:</strong> {guide.applyIt.orgAction}</p>
+        <p className="text-sm text-theme-secondary"><strong>Scenario:</strong> {guide.applyIt.scenario}</p>
+        <p className="text-sm text-cockpit-muted mt-2"><strong>Org action:</strong> {guide.applyIt.orgAction}</p>
       </section>
 
       <section>
-        <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-white">Related Platform Features</h3>
+        <h3 className="text-sm font-semibold mb-3 text-cockpit">Related Platform Features</h3>
         <div className="grid gap-2 sm:grid-cols-2">
           {guide.relatedFeatures.map((feat, i) => (
             <Link
               key={i}
               to={feat.route}
-              className="flex items-center gap-3 p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-emerald-400 transition-colors osint-widget group"
+              className="flex items-center gap-3 p-3 rounded-lg bg-theme-elevated border border-theme hover:border-emerald-400 transition-colors osint-widget group"
             >
               <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-emerald-500" />
               <div>
-                <div className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-emerald-500">{feat.label}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{feat.description}</div>
+                <div className="text-sm font-medium text-cockpit group-hover:text-emerald-500">{feat.label}</div>
+                <div className="text-xs text-theme-muted">{feat.description}</div>
               </div>
             </Link>
           ))}
@@ -250,7 +250,7 @@ export default function KnowledgeBase() {
         >
           <div className="flex items-center gap-2">
             <Route className="w-5 h-5 text-emerald-500" />
-            <span className="font-semibold text-sm text-gray-900 dark:text-white">Study paths & platform overview</span>
+            <span className="font-semibold text-sm text-cockpit">Study paths & platform overview</span>
           </div>
           <span className="text-xs text-gray-400">{metaExpanded ? 'Hide' : 'Show'}</span>
         </button>
@@ -261,13 +261,13 @@ export default function KnowledgeBase() {
               {STUDY_PATHS.map(path => (
                 <div
                   key={path.id}
-                  className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 osint-widget"
+                  className="p-4 rounded-xl bg-theme-elevated border border-theme osint-widget"
                 >
                   <div className="flex items-center gap-2 mb-2">
                     {path.icon === 'cram' && <Zap className="w-4 h-4 text-yellow-500" />}
                     {path.icon === 'deep' && <BookOpen className="w-4 h-4 text-blue-500" />}
                     {path.icon === 'org' && <Building2 className="w-4 h-4 text-purple-500" />}
-                    <h3 className="font-semibold text-sm text-gray-900 dark:text-white">{path.name}</h3>
+                    <h3 className="font-semibold text-sm text-cockpit">{path.name}</h3>
                   </div>
                   <p className="text-xs text-gray-400 mb-2">{path.description}</p>
                   <ul className="space-y-1">
@@ -299,7 +299,7 @@ export default function KnowledgeBase() {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSearch()}
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-theme bg-theme-elevated text-sm text-cockpit focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
         <button
@@ -321,11 +321,11 @@ export default function KnowledgeBase() {
               className={`p-3 rounded-xl text-left transition-all border ${
                 activeDomain === guide.id
                   ? `bg-gradient-to-br ${DOMAIN_COLORS[guide.id]} text-white border-transparent shadow-lg`
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-emerald-400'
+                  : 'bg-theme-elevated border-theme hover:border-emerald-400'
               }`}
             >
               <div className="text-xs font-bold opacity-80">D{guide.id} · {guide.weight}</div>
-              <div className={`text-sm font-semibold mt-0.5 truncate ${activeDomain === guide.id ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+              <div className={`text-sm font-semibold mt-0.5 truncate ${activeDomain === guide.id ? 'text-white' : 'text-cockpit'}`}>
                 {guide.shortName}
               </div>
               <div className={`text-[10px] mt-2 ${activeDomain === guide.id ? 'text-white/80' : 'text-gray-500'}`}>
@@ -345,7 +345,7 @@ export default function KnowledgeBase() {
       </div>
 
       {/* Main content tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700">
+      <div className="border-b border-theme">
         <div className="flex gap-4 overflow-x-auto">
           {mainTabs.map(tab => (
             <button
@@ -389,7 +389,7 @@ export default function KnowledgeBase() {
               {filteredTopics.map(topic => (
                 <div
                   key={topic.id}
-                  className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 cursor-pointer transition-all osint-widget ${
+                  className={`bg-theme-elevated rounded-xl border border-theme p-5 cursor-pointer transition-all osint-widget ${
                     selectedTopic?.id === topic.id ? 'ring-2 ring-emerald-500' : 'hover:border-emerald-400'
                   }`}
                   onClick={() => setSelectedTopic(selectedTopic?.id === topic.id ? null : topic)}
@@ -397,13 +397,13 @@ export default function KnowledgeBase() {
                   <span className={`text-xs font-medium px-2 py-0.5 rounded border ${DOMAIN_BADGE[topic.domain]}`}>
                     Domain {topic.domain}
                   </span>
-                  <h3 className="text-lg font-semibold mt-2 text-gray-900 dark:text-white">{topic.title}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{topic.description}</p>
+                  <h3 className="text-lg font-semibold mt-2 text-cockpit">{topic.title}</h3>
+                  <p className="text-sm text-cockpit-muted mt-1">{topic.description}</p>
                   {selectedTopic?.id === topic.id && (
-                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+                    <div className="mt-4 pt-4 border-t border-theme space-y-3">
                       <ul className="space-y-1">
                         {topic.keyPoints.map((point, i) => (
-                          <li key={i} className="text-sm text-gray-600 dark:text-gray-400 flex gap-2">
+                          <li key={i} className="text-sm text-cockpit-muted flex gap-2">
                             <span className="text-emerald-500">•</span>{point}
                           </li>
                         ))}
@@ -429,7 +429,7 @@ export default function KnowledgeBase() {
           )}
 
           {mainTab === 'glossary' && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden osint-widget">
+            <div className="bg-theme-elevated rounded-xl border border-theme overflow-hidden osint-widget">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-900">
                   <tr>
@@ -440,8 +440,8 @@ export default function KnowledgeBase() {
                 <tbody>
                   {filteredGlossary.map((term, i) => (
                     <tr key={i} className="border-t border-gray-100 dark:border-gray-800">
-                      <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{term.term}</td>
-                      <td className="px-4 py-3 text-gray-600 dark:text-gray-400">{term.definition}</td>
+                      <td className="px-4 py-3 font-medium text-cockpit">{term.term}</td>
+                      <td className="px-4 py-3 text-cockpit-muted">{term.definition}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -452,14 +452,14 @@ export default function KnowledgeBase() {
           {mainTab === 'owasp' && (
             <div className="space-y-4">
               {owaspLLM.map((item, i) => (
-                <div key={item.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 osint-widget">
+                <div key={item.id} className="bg-theme-elevated rounded-xl border border-theme p-5 osint-widget">
                   <div className="flex items-center gap-3 mb-2">
                     <span className="w-8 h-8 rounded-lg bg-red-500/20 text-red-500 flex items-center justify-center font-bold text-sm">
                       {i + 1}
                     </span>
-                    <h3 className="font-semibold text-gray-900 dark:text-white">{item.id}: {item.name}</h3>
+                    <h3 className="font-semibold text-cockpit">{item.id}: {item.name}</h3>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{item.description}</p>
+                  <p className="text-sm text-cockpit-muted">{item.description}</p>
                   <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-2">
                     <strong>Mitigation:</strong> {item.mitigation}
                   </p>
@@ -471,24 +471,24 @@ export default function KnowledgeBase() {
           {mainTab === 'platform' && (
             <div className="space-y-6">
               {PLATFORM_META_SECTIONS.map(section => (
-                <div key={section.id} className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 osint-widget">
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{section.title}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 leading-relaxed">{section.content}</p>
+                <div key={section.id} className="p-4 rounded-xl bg-theme-elevated border border-theme osint-widget">
+                  <h3 className="font-semibold text-cockpit">{section.title}</h3>
+                  <p className="text-sm text-cockpit-muted mt-2 leading-relaxed">{section.content}</p>
                 </div>
               ))}
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Platform Workflows</h3>
+                <h3 className="font-semibold text-cockpit mb-3">Platform Workflows</h3>
                 <div className="space-y-3">
                   {PLATFORM_WORKFLOWS.map(wf => (
-                    <div key={wf.id} className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 osint-widget">
+                    <div key={wf.id} className="p-4 rounded-xl bg-theme-elevated border border-theme osint-widget">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-gray-900 dark:text-white">{wf.title}</h4>
+                        <h4 className="font-medium text-cockpit">{wf.title}</h4>
                         <Link to={wf.route} className="text-xs text-emerald-500 hover:underline">Open →</Link>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{wf.summary}</p>
+                      <p className="text-sm text-cockpit-muted mt-1">{wf.summary}</p>
                       <ul className="mt-2 space-y-1">
                         {wf.tips.map((tip, i) => (
-                          <li key={i} className="text-xs text-gray-500 dark:text-gray-400">• {tip}</li>
+                          <li key={i} className="text-xs text-theme-muted">• {tip}</li>
                         ))}
                       </ul>
                     </div>
@@ -502,7 +502,7 @@ export default function KnowledgeBase() {
             <div className="space-y-6">
               {searchResults.guides.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
+                  <h3 className="font-semibold text-cockpit mb-3">
                     Domain Guides ({searchResults.guides.length})
                   </h3>
                   <div className="space-y-2">
@@ -510,10 +510,10 @@ export default function KnowledgeBase() {
                       <button
                         key={g.id}
                         onClick={() => { handleDomainChange(g.id); setMainTab('domains'); }}
-                        className="w-full text-left p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-emerald-400"
+                        className="w-full text-left p-3 rounded-lg bg-theme-elevated border border-theme hover:border-emerald-400"
                       >
                         <span className="text-xs text-emerald-500">D{g.id}</span>
-                        <h4 className="font-medium text-gray-900 dark:text-white">{g.name}</h4>
+                        <h4 className="font-medium text-cockpit">{g.name}</h4>
                       </button>
                     ))}
                   </div>
@@ -523,7 +523,7 @@ export default function KnowledgeBase() {
                 <div>
                   <h3 className="font-semibold mb-3">Topics ({searchResults.topics.length})</h3>
                   {searchResults.topics.map(t => (
-                    <div key={t.id} className="p-3 rounded-lg bg-white dark:bg-gray-800 border mb-2">
+                    <div key={t.id} className="p-3 rounded-lg bg-theme-elevated border mb-2">
                       <h4 className="font-medium">{t.title}</h4>
                       <p className="text-sm text-gray-500">{t.description}</p>
                     </div>
@@ -534,7 +534,7 @@ export default function KnowledgeBase() {
                 <div>
                   <h3 className="font-semibold mb-3">Terms ({searchResults.terms.length})</h3>
                   {searchResults.terms.map((t, i) => (
-                    <div key={i} className="p-3 rounded-lg bg-white dark:bg-gray-800 border mb-2">
+                    <div key={i} className="p-3 rounded-lg bg-theme-elevated border mb-2">
                       <span className="font-medium">{t.term}</span>
                       <p className="text-sm text-gray-500">{t.definition}</p>
                     </div>
@@ -574,7 +574,7 @@ export default function KnowledgeBase() {
             href="https://owasp.org/www-project-top-10-for-large-language-model-applications/"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline p-3 rounded-lg border border-gray-200 dark:border-gray-700"
+            className="flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 hover:underline p-3 rounded-lg border border-theme"
           >
             OWASP LLM Official <ExternalLink className="w-3 h-3" />
           </a>

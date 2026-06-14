@@ -97,7 +97,7 @@ function FAQAccordion() {
         return (
           <div
             key={faq.question}
-            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden osint-widget"
+            className="bg-theme-elevated rounded-xl border border-theme overflow-hidden osint-widget"
           >
             <button
               onClick={() => setOpenIndex(isOpen ? null : idx)}
@@ -111,7 +111,7 @@ function FAQAccordion() {
               )}
             </button>
             {isOpen && (
-              <div className="px-4 pb-4 text-sm text-gray-600 dark:text-gray-400 leading-relaxed border-t border-gray-100 dark:border-gray-700 pt-3">
+              <div className="px-4 pb-4 text-sm text-cockpit-muted leading-relaxed border-t border-theme pt-3">
                 {faq.answer}
               </div>
             )}
@@ -124,7 +124,7 @@ function FAQAccordion() {
 
 function ContactSection() {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 osint-widget space-y-4">
+    <div className="bg-theme-elevated rounded-xl border border-theme p-5 osint-widget space-y-4">
       <h3 className="font-semibold text-sm">Need more help?</h3>
       <p className="text-sm text-gray-400">
         Bug reports and GitHub community links are on the Support page. Paid feature requests use the dedicated form.
@@ -173,13 +173,13 @@ export default function HelpCenter() {
           {gettingStartedSteps.map(item => (
             <div
               key={item.step}
-              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget"
+              className="bg-theme-elevated rounded-xl border border-theme p-4 osint-widget"
             >
               <div className="w-7 h-7 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center text-xs font-bold mb-2">
                 {item.step}
               </div>
               <h3 className="font-medium text-sm mb-1">{item.title}</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{item.body}</p>
+              <p className="text-xs text-theme-muted leading-relaxed">{item.body}</p>
             </div>
           ))}
         </div>
@@ -198,14 +198,14 @@ export default function HelpCenter() {
               <Link
                 key={area.to}
                 to={area.to}
-                className="flex items-center gap-3 p-3 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-emerald-400 dark:hover:border-emerald-500 transition-all group osint-widget"
+                className="flex items-center gap-3 p-3 rounded-xl bg-theme-elevated border border-theme hover:border-emerald-400 dark:hover:border-emerald-500 transition-all group osint-widget"
               >
                 <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center group-hover:bg-emerald-500/15 transition-colors">
                   <Icon className="w-4 h-4 text-gray-500 group-hover:text-emerald-500" />
                 </div>
                 <div className="min-w-0">
                   <div className="font-medium text-sm">{area.label}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{area.desc}</div>
+                  <div className="text-xs text-theme-muted truncate">{area.desc}</div>
                 </div>
               </Link>
             );
@@ -220,7 +220,7 @@ export default function HelpCenter() {
           <div className="space-y-4">
             <div>
               <h2 className="text-lg font-semibold mb-1">Configure AI in Settings</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              <p className="text-sm text-cockpit-muted mb-3">
                 AI features are opt-in. Navigate to <strong>Settings → Settings tab</strong>, choose your provider, and paste your API key.
                 Keys stay in your browser only (<code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">{AI_CONFIG_STORAGE_KEY}</code> in localStorage) — never sent to our servers.
               </p>
@@ -235,7 +235,7 @@ export default function HelpCenter() {
 
             <div className="p-4 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-emerald-500/10">
               <h3 className="font-medium text-sm mb-2">How to add Groq API key</h3>
-              <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-1 list-decimal list-inside">
+              <ol className="text-sm text-cockpit-muted space-y-1 list-decimal list-inside">
                 <li>Get a free key at <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">console.groq.com</a></li>
                 <li>Open <Link to="/settings" className="text-emerald-600 hover:underline">Settings</Link> → Settings tab → select Groq</li>
                 <li>Paste your key, pick a model, Save, then Test Connection</li>
@@ -244,7 +244,7 @@ export default function HelpCenter() {
 
             <div className="p-4 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-violet-500/10">
               <h3 className="font-medium text-sm mb-2">Gemma 4 for offline agents</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-cockpit-muted">
                 Gemma 4 (Apr 2026) runs locally via Ollama with native JSON and agentic workflows.
                 Pull <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">gemma4:e4b</code> or{' '}
                 <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">gemma4:31b</code> in Settings → Offline Model Manager.{' '}
@@ -263,9 +263,9 @@ export default function HelpCenter() {
           <ClipboardCheck className="w-5 h-5 text-orange-500" />
           <h2 className="text-lg font-semibold">Exam Day Checklist</h2>
         </div>
-        <ul className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 space-y-2 osint-widget">
+        <ul className="bg-theme-elevated rounded-xl border border-theme p-5 space-y-2 osint-widget">
           {examChecklist.map(item => (
-            <li key={item} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <li key={item} className="flex items-start gap-2 text-sm text-cockpit-muted">
               <span className="w-1.5 h-1.5 rounded-full bg-orange-400 mt-2 flex-shrink-0" />
               {item}
             </li>

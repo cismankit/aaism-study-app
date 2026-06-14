@@ -88,8 +88,8 @@ export default function Quiz() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Practice Quiz</h1>
-          <p className="text-gray-600 mt-2">Test your knowledge with practice questions</p>
+          <h1 className="text-3xl font-bold text-cockpit">Practice Quiz</h1>
+          <p className="text-cockpit-muted mt-2">Test your knowledge with practice questions</p>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border p-8 max-w-2xl">
@@ -105,7 +105,7 @@ export default function Quiz() {
               }`}
             >
               <span className="font-medium">All Domains</span>
-              <span className="text-sm text-gray-500 ml-2">({sampleQuestions.length} questions)</span>
+              <span className="text-sm text-theme-muted ml-2">({sampleQuestions.length} questions)</span>
             </button>
             
             {state.domains.map(domain => {
@@ -122,7 +122,7 @@ export default function Quiz() {
                 >
                   <span className="text-xl mr-2">{domain.icon}</span>
                   <span className="font-medium">Domain {domain.id}: {domain.name}</span>
-                  <span className="text-sm text-gray-500 ml-2">({questionCount} questions)</span>
+                  <span className="text-sm text-theme-muted ml-2">({questionCount} questions)</span>
                 </button>
               );
             })}
@@ -144,12 +144,12 @@ export default function Quiz() {
             <h2 className="text-xl font-semibold mb-4">Recent Attempts</h2>
             <div className="space-y-3">
               {state.quizAttempts.slice(-5).reverse().map(attempt => (
-                <div key={attempt.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div key={attempt.id} className="flex items-center justify-between p-4 bg-theme-muted rounded-lg">
                   <div>
                     <p className="font-medium">
                       {attempt.domain === 'all' ? 'All Domains' : `Domain ${attempt.domain}`}
                     </p>
-                    <p className="text-sm text-gray-500">{new Date(attempt.date).toLocaleDateString()}</p>
+                    <p className="text-sm text-theme-muted">{new Date(attempt.date).toLocaleDateString()}</p>
                   </div>
                   <div className="text-right">
                     <p className={`text-lg font-bold ${
@@ -157,7 +157,7 @@ export default function Quiz() {
                     }`}>
                       {attempt.score}%
                     </p>
-                    <p className="text-sm text-gray-500">{attempt.correctAnswers}/{attempt.totalQuestions} correct</p>
+                    <p className="text-sm text-theme-muted">{attempt.correctAnswers}/{attempt.totalQuestions} correct</p>
                   </div>
                 </div>
               ))}
@@ -173,7 +173,7 @@ export default function Quiz() {
       <div className="max-w-3xl mx-auto space-y-8">
         {/* Progress */}
         <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-cockpit-muted">
             Question {currentQuestionIndex + 1} of {filteredQuestions.length}
           </span>
           <div className="flex-1 mx-4">
@@ -191,7 +191,7 @@ export default function Quiz() {
 
         {/* Question Card */}
         <div className="bg-white rounded-xl shadow-sm border p-8">
-          <h2 className="text-xl font-medium text-gray-900 mb-6">{currentQuestion.question}</h2>
+          <h2 className="text-xl font-medium text-cockpit mb-6">{currentQuestion.question}</h2>
 
           <div className="space-y-3">
             {currentQuestion.options.map((option, index) => {
@@ -224,7 +224,7 @@ export default function Quiz() {
                       ? 'bg-red-500 text-white'
                       : isSelected
                       ? 'bg-primary-500 text-white'
-                      : 'bg-gray-100 text-gray-600'
+                      : 'bg-gray-100 text-cockpit-muted'
                   }`}>
                     {String.fromCharCode(65 + index)}
                   </span>
@@ -278,14 +278,14 @@ export default function Quiz() {
   return (
     <div className="max-w-3xl mx-auto space-y-8">
       <div className="bg-white rounded-xl shadow-sm border p-8 text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Quiz Complete!</h1>
+        <h1 className="text-3xl font-bold text-cockpit mb-4">Quiz Complete!</h1>
         
         <div className={`text-6xl font-bold mb-2 ${
           score >= 80 ? 'text-green-600' : score >= 60 ? 'text-yellow-600' : 'text-red-600'
         }`}>
           {score}%
         </div>
-        <p className="text-gray-600 mb-4">
+        <p className="text-cockpit-muted mb-4">
           You got {correctCount} out of {filteredQuestions.length} questions correct
         </p>
 
@@ -338,8 +338,8 @@ export default function Quiz() {
                     <XCircle className="text-red-500 mt-1" size={20} />
                   )}
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{question.question}</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="font-medium text-cockpit">{question.question}</p>
+                    <p className="text-sm text-cockpit-muted mt-1">
                       Your answer: {userAnswer !== null ? question.options[userAnswer] : 'No answer'}
                     </p>
                     {!isCorrect && (

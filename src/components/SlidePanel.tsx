@@ -43,13 +43,13 @@ export default function SlidePanel({ open, onClose, title, subtitle, width = 'lg
       {/* Panel */}
       <div
         ref={panelRef}
-        className={`absolute right-0 top-0 h-full ${widthMap[width]} w-full bg-white dark:bg-gray-800 shadow-2xl border-l border-gray-200 dark:border-gray-700 flex flex-col animate-slide-in`}
+        className={`absolute right-0 top-0 h-full ${widthMap[width]} w-full bg-theme-elevated shadow-2xl border-l border-theme flex flex-col animate-slide-in`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-theme flex-shrink-0">
           <div>
             <h2 className="font-bold text-lg">{title}</h2>
-            {subtitle && <p className="text-sm text-gray-500 dark:text-gray-400">{subtitle}</p>}
+            {subtitle && <p className="text-sm text-theme-muted">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}

@@ -46,13 +46,13 @@ export default function Profile() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Tab Navigation */}
-      <div className="flex gap-2 mb-6 bg-white dark:bg-gray-800 p-2 rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="flex gap-2 mb-6 bg-theme-elevated p-2 rounded-xl border border-theme">
         <button
           onClick={() => setActiveTab('achievements')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
             activeTab === 'achievements'
               ? 'bg-primary-600 text-white'
-              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              : 'text-cockpit-muted hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
         >
           <Trophy size={18} />
@@ -63,7 +63,7 @@ export default function Profile() {
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
             activeTab === 'analytics'
               ? 'bg-primary-600 text-white'
-              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              : 'text-cockpit-muted hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
         >
           <TrendingUp size={18} />
@@ -74,7 +74,7 @@ export default function Profile() {
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-medium transition-all ${
             activeTab === 'settings'
               ? 'bg-primary-600 text-white'
-              : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+              : 'text-cockpit-muted hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
         >
           <Settings size={18} />
@@ -103,31 +103,31 @@ function AnalyticsTab() {
     <div className="space-y-4">
       {/* Stats Row */}
       <div className="grid grid-cols-4 gap-3">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-xl p-4 border border-theme text-center">
           <Target className="text-primary-500 mx-auto mb-1" size={20} />
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{gameState.totalQuizzesTaken}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Quizzes</div>
+          <div className="text-2xl font-bold text-cockpit">{gameState.totalQuizzesTaken}</div>
+          <div className="text-xs text-theme-muted">Quizzes</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-xl p-4 border border-theme text-center">
           <CheckCircle className="text-green-500 mx-auto mb-1" size={20} />
           <div className="text-2xl font-bold text-green-600">{gameState.perfectQuizzes}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Perfect</div>
+          <div className="text-xs text-theme-muted">Perfect</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-xl p-4 border border-theme text-center">
           <TrendingUp className="text-blue-500 mx-auto mb-1" size={20} />
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="text-2xl font-bold text-cockpit">
             {state.quizAttempts.length > 0 
               ? Math.round(state.quizAttempts.reduce((sum, a) => sum + a.score, 0) / state.quizAttempts.length) 
               : 0}%
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Avg Score</div>
+          <div className="text-xs text-theme-muted">Avg Score</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-xl p-4 border border-theme text-center">
           <Zap className="text-yellow-500 mx-auto mb-1" size={20} />
           <div className="text-2xl font-bold text-primary-600">
             {Math.floor(gameState.totalStudyMinutes / 60)}h
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Study Time</div>
+          <div className="text-xs text-theme-muted">Study Time</div>
         </div>
       </div>
 
@@ -145,7 +145,7 @@ function AnalyticsTab() {
                   rec.priority === 'high' ? 'bg-red-500' :
                   rec.priority === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
                 }`} />
-                <span className="text-gray-700 dark:text-gray-300">{rec.action}: {rec.reason}</span>
+                <span className="text-theme-secondary">{rec.action}: {rec.reason}</span>
               </div>
             ))}
           </div>
@@ -153,8 +153,8 @@ function AnalyticsTab() {
       )}
 
       {/* Domain Performance */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+      <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
+        <h3 className="font-semibold text-cockpit mb-3 flex items-center gap-2">
           <Target size={18} className="text-primary-500" />
           Domain Performance
         </h3>
@@ -162,8 +162,8 @@ function AnalyticsTab() {
           {analytics.map((domain) => (
             <div key={domain.domainId}>
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-700 dark:text-gray-300">Domain {domain.domainId}</span>
-                <span className="text-gray-600 dark:text-gray-400">
+                <span className="text-theme-secondary">Domain {domain.domainId}</span>
+                <span className="text-cockpit-muted">
                   {domain.accuracy}% ({domain.totalQuestions} questions)
                 </span>
               </div>
@@ -179,7 +179,7 @@ function AnalyticsTab() {
             </div>
           ))}
           {analytics.length === 0 && (
-            <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
+            <p className="text-theme-muted text-sm text-center py-4">
               Take some quizzes to see your domain performance!
             </p>
           )}
@@ -188,8 +188,8 @@ function AnalyticsTab() {
 
       {/* Insights */}
       {insights.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+        <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
+          <h3 className="font-semibold text-cockpit mb-3 flex items-center gap-2">
             <Lightbulb size={18} className="text-yellow-500" />
             Learning Insights
           </h3>
@@ -202,8 +202,8 @@ function AnalyticsTab() {
                    insight.type === 'milestone' ? '🏆' : '💡'}
                 </span>
                 <div>
-                  <p className="font-medium text-gray-800 dark:text-gray-200">{insight.title}</p>
-                  <p className="text-gray-600 dark:text-gray-400">{insight.description}</p>
+                  <p className="font-medium text-cockpit">{insight.title}</p>
+                  <p className="text-cockpit-muted">{insight.description}</p>
                 </div>
               </div>
             ))}
@@ -212,17 +212,17 @@ function AnalyticsTab() {
       )}
 
       {/* Recent Attempts */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Recent Quiz History</h3>
+      <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
+        <h3 className="font-semibold text-cockpit mb-3">Recent Quiz History</h3>
         {recentAttempts.length > 0 ? (
           <div className="space-y-2">
             {recentAttempts.map((attempt, i) => (
-              <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+              <div key={i} className="flex items-center justify-between py-2 border-b border-theme last:border-0">
                 <div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-theme-secondary">
                     {attempt.domain === 'all' ? 'All Domains' : `Domain ${attempt.domain}`}
                   </span>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className="text-xs text-theme-muted">
                     {new Date(attempt.date).toLocaleDateString()}
                   </div>
                 </div>
@@ -236,7 +236,7 @@ function AnalyticsTab() {
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
+          <p className="text-theme-muted text-sm text-center py-4">
             No quiz attempts yet. Start a quiz to track your progress!
           </p>
         )}

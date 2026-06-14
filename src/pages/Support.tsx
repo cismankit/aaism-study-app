@@ -99,7 +99,7 @@ export default function Support() {
                 href={channel.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-cyan-400 dark:hover:border-cyan-500 transition-all osint-widget"
+                className="block p-5 rounded-xl bg-theme-elevated border border-theme hover:border-cyan-400 dark:hover:border-cyan-500 transition-all osint-widget"
               >
                 {inner}
               </a>
@@ -110,7 +110,7 @@ export default function Support() {
             <Link
               key={channel.title}
               to={channel.href}
-              className="block p-5 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-cyan-400 dark:hover:border-cyan-500 transition-all osint-widget"
+              className="block p-5 rounded-xl bg-theme-elevated border border-theme hover:border-cyan-400 dark:hover:border-cyan-500 transition-all osint-widget"
             >
               {inner}
             </Link>
@@ -118,7 +118,7 @@ export default function Support() {
         })}
       </section>
 
-      <section className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 osint-widget">
+      <section className="bg-theme-elevated rounded-xl border border-theme p-5 osint-widget">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start gap-3">
             <BookOpen className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />

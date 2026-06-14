@@ -77,13 +77,16 @@
   .text-accent-violet { color: rgb(var(--accent-violet)); }
   .bg-theme-page { background-color: rgb(var(--surface-page)); }
   .bg-theme-elevated { background-color: rgb(var(--surface-elevated)); }
+  .bg-theme-muted { background-color: rgb(var(--surface-muted)); }
   .bg-cockpit-track { background-color: rgb(var(--cockpit-track)); }
+  .bg-cockpit-muted { background-color: rgb(var(--cockpit-bg-muted)); }
   .border-theme { border-color: rgb(var(--border-default)); }
+  .border-cockpit-emerald { border-color: rgb(var(--cockpit-border-emerald) / 0.4); }
 }
 
 /* Light mode (default) */
 body {
-  @apply bg-gray-50 text-gray-900 transition-colors duration-200;
+  @apply bg-theme-page text-cockpit transition-colors duration-200;
 }
 
 html,

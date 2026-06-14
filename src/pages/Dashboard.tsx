@@ -33,6 +33,7 @@ import {
 } from '../services/aiService';
 import OllamaModelManager from '../components/OllamaModelManager';
 import GroqApiKeySection from '../components/GroqApiKeySection';
+import SignInSyncSection from '../components/SignInSyncSection';
 import { 
   Play,
   Target, 
@@ -76,7 +77,7 @@ export default function Dashboard() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Tab Navigation */}
-      <div className="flex gap-1 mb-6 bg-white dark:bg-gray-800 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="flex gap-1 mb-6 bg-theme-elevated p-1.5 rounded-xl border border-theme">
         {[
           { id: 'home' as Tab, label: 'Dashboard', icon: Home },
           { id: 'analytics' as Tab, label: 'Analytics', icon: BarChart3 },
@@ -89,7 +90,7 @@ export default function Dashboard() {
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg font-medium transition-all text-sm ${
               activeTab === tab.id
                 ? 'bg-primary-600 text-white'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                : 'text-cockpit-muted hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
           >
             <tab.icon size={16} />
@@ -185,9 +186,9 @@ function HomeTab() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+        <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Today's Goal</span>
+            <span className="text-xs font-medium text-cockpit-muted">Today's Goal</span>
             <span className="text-xs text-primary-600 dark:text-primary-400 font-semibold">{todayQuizzes}/{dailyGoal}</span>
           </div>
           <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -196,7 +197,7 @@ function HomeTab() {
               style={{ width: `${dailyProgress}%` }}
             />
           </div>
-          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-2 text-xs text-theme-muted">
             {dailyProgress >= 100 ? (
               <span className="text-green-600 dark:text-green-400 flex items-center gap-1"><CheckCircle2 size={12} /> Complete!</span>
             ) : (
@@ -235,13 +236,13 @@ function HomeTab() {
           <button
             key={domain.id}
             onClick={() => startDomainQuiz(domain.id)}
-            className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-primary-400 dark:hover:border-primary-500 hover:shadow-md transition-all text-left group"
+            className="bg-theme-elevated rounded-xl p-4 border border-theme hover:border-primary-400 dark:hover:border-primary-500 hover:shadow-md transition-all text-left group"
           >
             <div className="flex items-start gap-3">
               <div className="text-2xl">{domain.icon}</div>
               <div className="flex-1 min-w-0">
-                <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">Domain {idx + 1}</div>
-                <div className="font-semibold text-gray-900 dark:text-white text-sm truncate">{domain.name}</div>
+                <div className="text-xs text-theme-muted font-medium">Domain {idx + 1}</div>
+                <div className="font-semibold text-cockpit text-sm truncate">{domain.name}</div>
                 <div className="mt-2 flex items-center gap-2">
                   {domain.quizCount > 0 ? (
                     <>
@@ -272,43 +273,43 @@ function HomeTab() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-4 gap-3">
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-lg p-3 border border-theme text-center">
           <Target className="text-blue-500 mx-auto mb-1" size={18} />
-          <div className="text-lg font-bold text-gray-900 dark:text-white">{gameState.totalQuizzesTaken}</div>
-          <div className="text-[10px] text-gray-500 dark:text-gray-400">Quizzes</div>
+          <div className="text-lg font-bold text-cockpit">{gameState.totalQuizzesTaken}</div>
+          <div className="text-[10px] text-theme-muted">Quizzes</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-lg p-3 border border-theme text-center">
           <TrendingUp className="text-green-500 mx-auto mb-1" size={18} />
-          <div className="text-lg font-bold text-gray-900 dark:text-white">{avgScore}%</div>
-          <div className="text-[10px] text-gray-500 dark:text-gray-400">Avg Score</div>
+          <div className="text-lg font-bold text-cockpit">{avgScore}%</div>
+          <div className="text-[10px] text-theme-muted">Avg Score</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-lg p-3 border border-theme text-center">
           <Clock className="text-purple-500 mx-auto mb-1" size={18} />
-          <div className="text-lg font-bold text-gray-900 dark:text-white">{Math.floor(gameState.totalStudyMinutes / 60)}h</div>
-          <div className="text-[10px] text-gray-500 dark:text-gray-400">Study Time</div>
+          <div className="text-lg font-bold text-cockpit">{Math.floor(gameState.totalStudyMinutes / 60)}h</div>
+          <div className="text-[10px] text-theme-muted">Study Time</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-lg p-3 border border-theme text-center">
           <Trophy className="text-yellow-500 mx-auto mb-1" size={18} />
-          <div className="text-lg font-bold text-gray-900 dark:text-white">{gameState.unlockedBadges.length}</div>
-          <div className="text-[10px] text-gray-500 dark:text-gray-400">Badges</div>
+          <div className="text-lg font-bold text-cockpit">{gameState.unlockedBadges.length}</div>
+          <div className="text-[10px] text-theme-muted">Badges</div>
         </div>
       </div>
 
       {/* Recent Achievements */}
       {recentBadges.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+        <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
               <Trophy className="text-yellow-600 dark:text-yellow-400" size={20} />
             </div>
             <div className="flex-1">
-              <div className="font-medium text-gray-900 dark:text-white text-sm">Recent Achievements</div>
+              <div className="font-medium text-cockpit text-sm">Recent Achievements</div>
               <div className="flex items-center gap-2 mt-0.5">
                 {recentBadges.map(badge => badge && (
                   <span key={badge.id} className="text-lg" title={badge.name}>{badge.icon}</span>
                 ))}
                 {gameState.unlockedBadges.length > 3 && (
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                  <span className="text-xs text-theme-muted">
                     +{gameState.unlockedBadges.length - 3} more
                   </span>
                 )}
@@ -335,31 +336,31 @@ function AnalyticsTab() {
     <div className="space-y-4">
       {/* Stats Row */}
       <div className="grid grid-cols-4 gap-3">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-xl p-4 border border-theme text-center">
           <Target className="text-primary-500 mx-auto mb-1" size={20} />
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{gameState.totalQuizzesTaken}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Quizzes</div>
+          <div className="text-2xl font-bold text-cockpit">{gameState.totalQuizzesTaken}</div>
+          <div className="text-xs text-theme-muted">Quizzes</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-xl p-4 border border-theme text-center">
           <CheckCircle className="text-green-500 mx-auto mb-1" size={20} />
           <div className="text-2xl font-bold text-green-600">{gameState.perfectQuizzes}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Perfect</div>
+          <div className="text-xs text-theme-muted">Perfect</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-xl p-4 border border-theme text-center">
           <TrendingUp className="text-blue-500 mx-auto mb-1" size={20} />
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="text-2xl font-bold text-cockpit">
             {state.quizAttempts.length > 0 
               ? Math.round(state.quizAttempts.reduce((sum, a) => sum + a.score, 0) / state.quizAttempts.length) 
               : 0}%
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Avg Score</div>
+          <div className="text-xs text-theme-muted">Avg Score</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-xl p-4 border border-theme text-center">
           <Zap className="text-yellow-500 mx-auto mb-1" size={20} />
           <div className="text-2xl font-bold text-primary-600">
             {Math.floor(gameState.totalStudyMinutes / 60)}h
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Study Time</div>
+          <div className="text-xs text-theme-muted">Study Time</div>
         </div>
       </div>
 
@@ -377,7 +378,7 @@ function AnalyticsTab() {
                   rec.priority === 'high' ? 'bg-red-500' :
                   rec.priority === 'medium' ? 'bg-yellow-500' : 'bg-blue-500'
                 }`} />
-                <span className="text-gray-700 dark:text-gray-300">{rec.action}: {rec.reason}</span>
+                <span className="text-theme-secondary">{rec.action}: {rec.reason}</span>
               </div>
             ))}
           </div>
@@ -385,8 +386,8 @@ function AnalyticsTab() {
       )}
 
       {/* Domain Performance */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+      <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
+        <h3 className="font-semibold text-cockpit mb-3 flex items-center gap-2">
           <Target size={18} className="text-primary-500" />
           Domain Performance
         </h3>
@@ -394,8 +395,8 @@ function AnalyticsTab() {
           {analytics.map((domain) => (
             <div key={domain.domainId}>
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-700 dark:text-gray-300">Domain {domain.domainId}</span>
-                <span className="text-gray-600 dark:text-gray-400">
+                <span className="text-theme-secondary">Domain {domain.domainId}</span>
+                <span className="text-cockpit-muted">
                   {domain.accuracy}% ({domain.totalQuestions} questions)
                 </span>
               </div>
@@ -411,7 +412,7 @@ function AnalyticsTab() {
             </div>
           ))}
           {analytics.length === 0 && (
-            <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
+            <p className="text-theme-muted text-sm text-center py-4">
               Take some quizzes to see your domain performance!
             </p>
           )}
@@ -420,8 +421,8 @@ function AnalyticsTab() {
 
       {/* Insights */}
       {insights.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+        <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
+          <h3 className="font-semibold text-cockpit mb-3 flex items-center gap-2">
             <Lightbulb size={18} className="text-yellow-500" />
             Learning Insights
           </h3>
@@ -434,8 +435,8 @@ function AnalyticsTab() {
                    insight.type === 'milestone' ? '🏆' : '💡'}
                 </span>
                 <div>
-                  <p className="font-medium text-gray-800 dark:text-gray-200">{insight.title}</p>
-                  <p className="text-gray-600 dark:text-gray-400">{insight.description}</p>
+                  <p className="font-medium text-cockpit">{insight.title}</p>
+                  <p className="text-cockpit-muted">{insight.description}</p>
                 </div>
               </div>
             ))}
@@ -444,17 +445,17 @@ function AnalyticsTab() {
       )}
 
       {/* Recent Attempts */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Recent Quiz History</h3>
+      <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
+        <h3 className="font-semibold text-cockpit mb-3">Recent Quiz History</h3>
         {recentAttempts.length > 0 ? (
           <div className="space-y-2">
             {recentAttempts.map((attempt, i) => (
-              <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
+              <div key={i} className="flex items-center justify-between py-2 border-b border-theme last:border-0">
                 <div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-theme-secondary">
                     {attempt.domain === 'all' ? 'All Domains' : `Domain ${attempt.domain}`}
                   </span>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className="text-xs text-theme-muted">
                     {new Date(attempt.date).toLocaleDateString()}
                   </div>
                 </div>
@@ -468,7 +469,7 @@ function AnalyticsTab() {
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">
+          <p className="text-theme-muted text-sm text-center py-4">
             No quiz attempts yet. Start a quiz to track your progress!
           </p>
         )}
@@ -533,25 +534,25 @@ function AchievementsTab() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-4 gap-3">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-3 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-xl p-3 border border-theme text-center">
           <Flame className="text-orange-500 mx-auto mb-1" size={20} />
-          <div className="text-xl font-bold text-gray-900 dark:text-white">{state.currentStreak}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Current</div>
+          <div className="text-xl font-bold text-cockpit">{state.currentStreak}</div>
+          <div className="text-xs text-theme-muted">Current</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-3 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-xl p-3 border border-theme text-center">
           <Flame className="text-red-500 mx-auto mb-1" size={20} />
-          <div className="text-xl font-bold text-gray-900 dark:text-white">{state.longestStreak}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Best</div>
+          <div className="text-xl font-bold text-cockpit">{state.longestStreak}</div>
+          <div className="text-xs text-theme-muted">Best</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-3 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-xl p-3 border border-theme text-center">
           <Trophy className="text-yellow-500 mx-auto mb-1" size={20} />
-          <div className="text-xl font-bold text-gray-900 dark:text-white">{state.unlockedBadges.length}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Badges</div>
+          <div className="text-xl font-bold text-cockpit">{state.unlockedBadges.length}</div>
+          <div className="text-xs text-theme-muted">Badges</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-3 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="bg-theme-elevated rounded-xl p-3 border border-theme text-center">
           <Target className="text-green-500 mx-auto mb-1" size={20} />
-          <div className="text-xl font-bold text-gray-900 dark:text-white">{state.perfectQuizzes}</div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Perfect</div>
+          <div className="text-xl font-bold text-cockpit">{state.perfectQuizzes}</div>
+          <div className="text-xs text-theme-muted">Perfect</div>
         </div>
       </div>
 
@@ -565,7 +566,7 @@ function AchievementsTab() {
           return (
             <div 
               key={category}
-              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+              className="bg-theme-elevated rounded-xl border border-theme overflow-hidden"
             >
               <button
                 onClick={() => setExpandedCategory(isExpanded ? null : category)}
@@ -573,8 +574,8 @@ function AchievementsTab() {
               >
                 <div className="flex items-center gap-3">
                   <span className="text-xl">{info.icon}</span>
-                  <span className="font-medium text-gray-900 dark:text-white">{info.name}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+                  <span className="font-medium text-cockpit">{info.name}</span>
+                  <span className="text-xs text-theme-muted bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
                     {unlockedCount}/{badges.length}
                   </span>
                 </div>
@@ -591,13 +592,13 @@ function AchievementsTab() {
                         className={`p-3 rounded-lg border ${
                           unlocked 
                             ? 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600'
-                            : 'bg-gray-50 dark:bg-gray-800 border-gray-100 dark:border-gray-700 opacity-50'
+                            : 'bg-gray-50 dark:bg-gray-800 border-theme opacity-50'
                         }`}
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-xl">{badge.icon}</span>
                           <div className="flex-1 min-w-0">
-                            <div className={`text-xs font-medium truncate ${unlocked ? 'text-gray-900 dark:text-white' : 'text-gray-500'}`}>
+                            <div className={`text-xs font-medium truncate ${unlocked ? 'text-cockpit' : 'text-gray-500'}`}>
                               {badge.name}
                             </div>
                             <div className={`text-[10px] ${getRarityColor(badge.rarity)}`}>
@@ -652,12 +653,12 @@ function ProgressBackupSection() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-      <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+    <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
+      <h3 className="font-semibold text-cockpit mb-4 flex items-center gap-2">
         <BarChart3 size={18} className="text-emerald-500" />
         Progress
       </h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <p className="text-sm text-cockpit-muted mb-4">
         Unified progress store — domain scores, quiz history, exam attempts, streak, and XP.
         {examAttempts.length > 0 && (
           <span className="block mt-1 text-xs">
@@ -667,7 +668,7 @@ function ProgressBackupSection() {
       </p>
 
       <div className="mb-4">
-        <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-sm text-theme-secondary mb-1">
           Exam pass threshold (%)
         </label>
         <div className="flex items-center gap-3">
@@ -683,7 +684,7 @@ function ProgressBackupSection() {
             }}
             className="flex-1"
           />
-          <span className="text-sm font-mono font-bold text-gray-900 dark:text-white w-10">{passThreshold}%</span>
+          <span className="text-sm font-mono font-bold text-cockpit w-10">{passThreshold}%</span>
         </div>
       </div>
 
@@ -694,7 +695,7 @@ function ProgressBackupSection() {
         >
           <Download size={16} /> Export JSON
         </button>
-        <label className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors cursor-pointer">
+        <label className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-theme-secondary rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors cursor-pointer">
           <Upload size={16} /> Import JSON
           <input type="file" accept=".json" onChange={handleImport} className="hidden" />
         </label>
@@ -757,8 +758,8 @@ function SettingsTab() {
   return (
     <div className="space-y-4">
       {/* AI Settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+      <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
+        <h3 className="font-semibold text-cockpit mb-4 flex items-center gap-2">
           <Settings size={18} className="text-primary-500" />
           AI Provider Settings
         </h3>
@@ -772,7 +773,7 @@ function SettingsTab() {
               className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-colors flex flex-col items-center gap-0.5 ${
                 aiTab === id
                   ? 'bg-white dark:bg-gray-700 text-primary-600 dark:text-primary-400 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                  : 'text-cockpit-muted hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
               <span className="flex items-center gap-1.5">
@@ -803,11 +804,11 @@ function SettingsTab() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Model</label>
+                <label className="block text-sm text-theme-secondary mb-1">Model</label>
                 <select
                   value={config.model}
                   onChange={e => setConfig({ ...config, model: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-cockpit focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   {AAISM_OFFLINE_MODELS.map(m => (
                     <option key={m.name} value={m.name}>
@@ -840,8 +841,8 @@ function SettingsTab() {
                 </div>
               )}
 
-              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-                <h4 className="font-medium text-gray-900 dark:text-white mb-3 text-sm">Offline Model Manager</h4>
+              <div className="pt-2 border-t border-theme">
+                <h4 className="font-medium text-cockpit mb-3 text-sm">Offline Model Manager</h4>
                 <OllamaModelManager
                   baseUrl={config.baseUrl}
                   selectedModel={config.model}
@@ -854,14 +855,14 @@ function SettingsTab() {
           {aiTab === 'cloud' && (
             <>
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Cloud Provider</label>
+                <label className="block text-sm text-theme-secondary mb-1">Cloud Provider</label>
                 <select
                   value={config.provider === 'openai' ? 'openai' : 'claude'}
                   onChange={e => {
                     const provider = e.target.value as 'claude' | 'openai';
                     setConfig({ ...config, provider, ...defaultConfigs[provider] });
                   }}
-                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-cockpit focus:outline-none focus:ring-2 focus:ring-primary-500"
                 >
                   <option value="claude">Claude (Anthropic)</option>
                   <option value="openai">OpenAI (GPT)</option>
@@ -869,24 +870,24 @@ function SettingsTab() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">API Key</label>
+                <label className="block text-sm text-theme-secondary mb-1">API Key</label>
                 <input
                   type="password"
                   value={config.apiKey || ''}
                   onChange={e => setConfig({ ...config, apiKey: e.target.value })}
                   placeholder={`Enter your ${config.provider} API key`}
                   autoComplete="off"
-                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-cockpit focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Model</label>
+                <label className="block text-sm text-theme-secondary mb-1">Model</label>
                 <input
                   type="text"
                   value={config.model}
                   onChange={e => setConfig({ ...config, model: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-cockpit focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
               </div>
             </>
@@ -905,20 +906,23 @@ function SettingsTab() {
         </div>
       </div>
 
+      {/* Cloud Sync */}
+      <SignInSyncSection />
+
       {/* Progress Backup */}
       <ProgressBackupSection />
 
       {/* App Info */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">About</h3>
-        <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+      <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
+        <h3 className="font-semibold text-cockpit mb-4">About</h3>
+        <div className="space-y-2 text-sm text-cockpit-muted">
           <p><strong>AAISM Exam Prep</strong> v1.0.0</p>
           <p>Prepare for the ISACA AI Security Manager certification exam with AI-powered study tools, flashcards, quizzes, and progress tracking.</p>
         </div>
       </div>
 
       {/* Clear Data */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-red-200 dark:border-red-900">
+      <div className="bg-theme-elevated rounded-xl p-6 border border-red-200 dark:border-red-900">
         <h3 className="font-semibold text-red-600 dark:text-red-400 mb-4">Danger Zone</h3>
         <button
           onClick={() => {

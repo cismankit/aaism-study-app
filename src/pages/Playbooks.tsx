@@ -49,7 +49,7 @@ export default function Playbooks() {
           <Briefcase className="w-7 h-7 text-blue-500" />
           Implementation Playbooks
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
+        <p className="text-theme-muted mt-1 text-sm">
           Real-world org-level AI security guidance — POC templates, activity workflows, maturity models
         </p>
       </div>
@@ -59,7 +59,7 @@ export default function Playbooks() {
         <button
           onClick={() => setCategoryFilter(null)}
           className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-            !categoryFilter ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+            !categoryFilter ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-cockpit-muted hover:bg-gray-200'
           }`}
         >
           All
@@ -69,7 +69,7 @@ export default function Playbooks() {
             key={cat.id}
             onClick={() => setCategoryFilter(cat.id)}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
-              categoryFilter === cat.id ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200'
+              categoryFilter === cat.id ? 'bg-blue-600 text-white' : 'bg-gray-100 dark:bg-gray-800 text-cockpit-muted hover:bg-gray-200'
             }`}
           >
             <span>{cat.icon}</span> {cat.label}
@@ -83,7 +83,7 @@ export default function Playbooks() {
           <button
             key={pb.id}
             onClick={() => openPlaybook(pb)}
-            className="w-full text-left bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all group osint-widget"
+            className="w-full text-left bg-theme-elevated rounded-xl border border-theme p-5 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all group osint-widget"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
@@ -91,7 +91,7 @@ export default function Playbooks() {
                   <span className={`text-[10px] px-2 py-0.5 rounded-full ${difficultyColors[pb.difficulty]}`}>
                     {pb.difficulty}
                   </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-cockpit-muted">
                     D{pb.domain}
                   </span>
                   <span className="text-[10px] text-gray-400 flex items-center gap-1">
@@ -101,7 +101,7 @@ export default function Playbooks() {
                 <h3 className="font-semibold text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                   {pb.title}
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{pb.overview}</p>
+                <p className="text-sm text-theme-muted mt-1">{pb.overview}</p>
 
                 <div className="flex items-center gap-4 mt-3">
                   <span className="text-xs text-gray-400 flex items-center gap-1">
@@ -186,7 +186,7 @@ function PlaybookDetail({
           {pb.phases.map((phase, idx) => {
             const isExpanded = expandedPhase === idx;
             return (
-              <div key={idx} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div key={idx} className="bg-theme-elevated rounded-xl border border-theme overflow-hidden">
                 <button
                   onClick={() => setExpandedPhase(isExpanded ? null : idx)}
                   className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
@@ -204,7 +204,7 @@ function PlaybookDetail({
                 </button>
 
                 {isExpanded && (
-                  <div className="px-4 pb-4 space-y-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                  <div className="px-4 pb-4 space-y-4 border-t border-theme pt-4">
                     <div>
                       <h5 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Activities</h5>
                       <ul className="space-y-1.5">
@@ -261,7 +261,7 @@ function PlaybookDetail({
       </div>
 
       {/* Key Metrics */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
         <h3 className="font-semibold mb-3 flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-green-500" /> Key Metrics
         </h3>
@@ -275,7 +275,7 @@ function PlaybookDetail({
       </div>
 
       {/* Maturity Model */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
         <h3 className="font-semibold mb-3 flex items-center gap-2">
           <Layers className="w-4 h-4 text-purple-500" /> Maturity Model
         </h3>
@@ -291,7 +291,7 @@ function PlaybookDetail({
               </div>
               <div>
                 <span className="font-medium text-sm">{ml.name}</span>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{ml.criteria}</p>
+                <p className="text-xs text-theme-muted">{ml.criteria}</p>
               </div>
             </div>
           ))}
