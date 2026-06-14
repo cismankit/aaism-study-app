@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Activity, ExternalLink, RefreshCw, AlertCircle, Radio,
-  X, ChevronRight,
+  X, ChevronRight, PenLine,
 } from 'lucide-react';
 import SlidePanel from './SlidePanel';
 import {
@@ -205,7 +205,7 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
             <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
               {selectedItem.summary}
             </p>
-            <div className="flex gap-2 pt-2">
+            <div className="flex flex-wrap gap-2 pt-2">
               <button
                 type="button"
                 onClick={handleReadAtSource}
@@ -214,6 +214,14 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
                 <ExternalLink className="w-4 h-4" />
                 Read at source
               </button>
+              <Link
+                to={`/studio?headline=${encodeURIComponent(selectedItem.title)}&source=${encodeURIComponent(selectedItem.source)}`}
+                onClick={() => onClose?.()}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium transition-colors"
+              >
+                <PenLine className="w-4 h-4" />
+                Create post from this
+              </Link>
               <a
                 href={selectedItem.sourceUrl}
                 target="_blank"
@@ -436,13 +444,21 @@ export function LiveRssFeedPanel() {
         {selectedItem && (
           <div className="space-y-4">
             <p className="text-sm leading-relaxed">{selectedItem.summary}</p>
-            <button
-              type="button"
-              onClick={() => window.open(selectedItem.link, '_blank', 'noopener,noreferrer')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium"
-            >
-              <ExternalLink className="w-4 h-4" /> Read at source
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => window.open(selectedItem.link, '_blank', 'noopener,noreferrer')}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium"
+              >
+                <ExternalLink className="w-4 h-4" /> Read at source
+              </button>
+              <Link
+                to={`/studio?headline=${encodeURIComponent(selectedItem.title)}&source=${encodeURIComponent(selectedItem.source)}`}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm font-medium"
+              >
+                <PenLine className="w-4 h-4" /> Create post from this
+              </Link>
+            </div>
           </div>
         )}
       </SlidePanel>

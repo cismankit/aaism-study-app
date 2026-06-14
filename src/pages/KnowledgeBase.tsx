@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import {
   Search, BookOpen, ChevronRight, ExternalLink, AlertTriangle,
   Target, Lightbulb, GraduationCap, Route, HelpCircle,
-  Crosshair, Radar, Eye, Zap, Building2, CheckCircle2,
+  Crosshair, Radar, Eye, Zap, Building2, CheckCircle2, PenLine,
 } from 'lucide-react';
 import {
   topics, glossary, owaspLLM, searchKnowledgeBase, Topic, Term,
@@ -413,6 +413,14 @@ export default function KnowledgeBase() {
                           💡 {tip}
                         </p>
                       ))}
+                      <Link
+                        to={`/studio?topic=${encodeURIComponent(topic.title)}&domain=${topic.domain}`}
+                        onClick={e => e.stopPropagation()}
+                        className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium text-violet-600 dark:text-violet-400 hover:underline"
+                      >
+                        <PenLine className="w-3.5 h-3.5" />
+                        Create post from this
+                      </Link>
                     </div>
                   )}
                 </div>

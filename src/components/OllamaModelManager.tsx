@@ -6,13 +6,15 @@ import {
   pullOllamaModel,
   checkOllamaStatus,
   pickBestInstalledModel,
+  watchForModels,
+  getDetectedWatchedModels,
   type OllamaModel,
   type ModelCapability,
 } from '../services/aiService';
 import { detectGpuHint, isLocalhost } from '../services/gpuDetection';
 import {
   Download, Copy, Check, Loader2, Server, Cpu, ExternalLink,
-  AlertTriangle, Star, Terminal, Sparkles, Info,
+  AlertTriangle, Star, Terminal, Sparkles, Info, Bell,
 } from 'lucide-react';
 
 interface OllamaModelManagerProps {
@@ -140,9 +142,16 @@ export default function OllamaModelManager({
   const [pulling, setPulling] = useState<string | null>(null);
   const [pullStatus, setPullStatus] = useState('');
   const [copied, setCopied] = useState<string | null>(null);
+  const [previousModelNames, setPreviousModelNames] = useState<string[]>([]);
   const gpu = detectGpuHint();
 
-  const tierSModels = AAISM_OFFLINE_MODELS.filter(m => m.tierS);
+  const watchedMatches = watchForModels(installedModels, previousModelNames);
+  const detectedTierS = getDetectedWatchedModels(installedModels);
+  const staticTierS = AAISM_OFFLINE_MODELS.filter(m => m.tierS);
+  const tierSModels = [
+    ...detectedTierS,
+    ...staticTierS.filter(m => !detectedTierS.some(d => d.name === m.name)),
+  ];
   const fallbackModels = AAISM_OFFLINE_MODELS.filter(m => !m.tierS);
   const autoPickModel = installedModels.length > 0 ? pickBestInstalledModel(installedModels) : null;
 
@@ -150,7 +159,10 @@ export default function OllamaModelManager({
     if (!localMode) return;
     const status = await checkOllamaStatus(baseUrl);
     setOllamaRunning(status.running);
-    setInstalledModels(status.models);
+    setInstalledModels(prev => {
+      setPreviousModelNames(prev.map(m => m.name));
+      return status.models;
+    });
   }, [baseUrl, localMode]);
 
   useEffect(() => {
@@ -215,10 +227,40 @@ export default function OllamaModelManager({
       {/* Gemma 4 note */}
       <div className="flex items-start gap-2 p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800">
         <Info className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" />
-        <p className="text-xs text-violet-800 dark:text-violet-300">
-          <strong>Gemma 4?</strong> {GEMMA4_STATUS_NOTE}
-        </p>
+        <div className="text-xs text-violet-800 dark:text-violet-300 space-y-1">
+          <p>
+            <strong>Gemma 4 — not yet available in Ollama.</strong> {GEMMA4_STATUS_NOTE}
+          </p>
+          <a
+            href="https://ollama.com/library"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-violet-600 dark:text-violet-400 hover:underline"
+          >
+            Check Ollama library for new tags <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
       </div>
+
+      {/* Newly detected watched models */}
+      {watchedMatches.some(m => m.installed.length > 0) && (
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800">
+          <Bell className="w-4 h-4 text-cyan-600 dark:text-cyan-400 shrink-0 mt-0.5" />
+          <div className="text-xs text-cyan-800 dark:text-cyan-300 space-y-1">
+            {watchedMatches.filter(m => m.installed.length > 0).map(match => (
+              <p key={match.pattern}>
+                <strong>{match.pattern}</strong> detected:{' '}
+                {match.installed.map(m => m.name).join(', ')}
+                {match.isNew && (
+                  <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
+                    newly installed
+                  </span>
+                )}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Auto-pick banner */}
       {autoPickModel && (

@@ -37,6 +37,15 @@ export const releaseFeed: ReleaseEntry[] = [
     shippedAt: '2026-06-12',
     tags: ['command-center', 'changelog'],
   },
+  {
+    id: 'rel-2026-06-13',
+    version: '1.4.0',
+    title: 'Content Studio & Gemma 4 clarity',
+    description:
+      'New /studio route generates LinkedIn posts, YouTube scripts, threads, and READMEs from study intel. Gemma 4 FAQ explains Ollama availability with auto-detect for new tags.',
+    shippedAt: '2026-06-13',
+    tags: ['content-studio', 'ollama', 'gemma4'],
+  },
 ];
 
 export const LAST_SEEN_RELEASE_KEY = 'aaism_last_seen_release';

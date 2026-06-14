@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Radar, Theater, Eye, Bot, Zap,
   Sun, Moon, Flame, ChevronRight, Settings, Menu,
   Activity, Map, Crosshair, Radio, Briefcase, PanelLeftClose,
-  HelpCircle, LifeBuoy, Heart, Sparkles, ChevronDown, Globe,
+  HelpCircle, LifeBuoy, Heart, Sparkles, ChevronDown, Globe, PenLine,
 } from 'lucide-react';
 import Logo from './Logo';
 import { createContext, useContext, useState, ReactNode } from 'react';
@@ -59,6 +59,7 @@ const navSections: NavSection[] = [
       { to: '/osint', icon: Globe, label: 'OSINT Arsenal' },
       { to: '/scenarios', icon: Theater, label: 'Scenario Lab' },
       { to: '/agent', icon: Bot, label: 'Agent Discovery' },
+      { to: '/studio', icon: PenLine, label: 'Content Studio', badge: 'NEW' },
       { to: '/playbooks', icon: Briefcase, label: 'Playbooks' },
     ],
   },

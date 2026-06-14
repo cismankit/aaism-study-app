@@ -71,6 +71,11 @@ export const defaultConfigs: Record<AIProvider, Partial<AIConfig>> = {
 
 /** Agent auto-selection order — first installed match wins */
 export const AGENT_MODEL_PREFERENCE: readonly string[] = [
+  'gemma4:12b',
+  'gemma4:4b',
+  'gemma4:latest',
+  'qwen3.5:latest',
+  'qwen3.5:7b',
   'qwen2.5:7b',
   'qwen2.5:14b',
   'qwen3:8b',
@@ -89,7 +94,62 @@ export const AGENT_MODEL_PREFERENCE: readonly string[] = [
 ];
 
 export const GEMMA4_STATUS_NOTE =
-  'Gemma 4 is not yet available in Ollama. Use gemma3 or gemma2 tags for the latest Google models.';
+  'Gemma 4 is not yet available in Ollama. We ship Gemma 3 (gemma3:4b/12b) and Gemma 2. When Google/Ollama publish gemma4 tags, we auto-detect them via /api/tags and surface them in the Tier S list.';
+
+/** Model name prefixes to watch for newly published Ollama tags */
+export const WATCHED_MODEL_PREFIXES = ['gemma4', 'qwen3.5'] as const;
+
+export interface WatchedModelMatch {
+  pattern: string;
+  installed: OllamaModel[];
+  isNew: boolean;
+}
+
+function matchesWatchedPrefix(modelName: string, pattern: string): boolean {
+  const lower = modelName.toLowerCase();
+  const normalizedPattern = pattern.toLowerCase().replace('.', '');
+  const base = modelBaseName(modelName);
+  return lower.includes(pattern.toLowerCase()) || base.includes(normalizedPattern);
+}
+
+/** Flag newly installed watched models (e.g. gemma4, qwen3.5) from /api/tags */
+export function watchForModels(
+  installed: OllamaModel[],
+  previousNames: string[] = [],
+): WatchedModelMatch[] {
+  const prev = new Set(previousNames);
+  return WATCHED_MODEL_PREFIXES.map(pattern => {
+    const matches = installed.filter(m => matchesWatchedPrefix(m.name, pattern));
+    const isNew = matches.some(m => !prev.has(m.name));
+    return { pattern, installed: matches, isNew };
+  });
+}
+
+/** Build Tier S entries for watched models found in the local Ollama registry */
+export function getDetectedWatchedModels(installed: OllamaModel[]): ModelCapability[] {
+  const seen = new Set<string>();
+  const detected: ModelCapability[] = [];
+
+  for (const model of installed) {
+    for (const pattern of WATCHED_MODEL_PREFIXES) {
+      if (!matchesWatchedPrefix(model.name, pattern) || seen.has(model.name)) continue;
+      seen.add(model.name);
+      const label = pattern === 'gemma4' ? 'Google Gemma 4 (auto-detected)' : 'Qwen 3.5 (auto-detected)';
+      detected.push({
+        name: model.name,
+        tier: 'medium',
+        jsonReliability: pattern === 'gemma4' ? 94 : 93,
+        sizeGb: 'See Ollama',
+        gpuRam: '8GB+',
+        description: `${label} — surfaced from your Ollama install`,
+        tierS: true,
+        recommended: true,
+      });
+    }
+  }
+
+  return detected;
+}
 
 /** Top offline models for AAISM Agent Discovery — Tier S first */
 export const AAISM_OFFLINE_MODELS: ModelCapability[] = [

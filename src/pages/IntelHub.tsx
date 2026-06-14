@@ -3,7 +3,7 @@ import {
   Radar, Flame, AlertTriangle, Search, Lightbulb,
   TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp,
   Play, BookOpen, ExternalLink, Star, Shield, Target,
-  Zap, BarChart3, RefreshCw, Trash2, Globe, ChevronRight,
+  Zap, BarChart3, RefreshCw, Trash2, Globe, ChevronRight, PenLine,
 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SlidePanel from '../components/SlidePanel';
@@ -424,6 +424,13 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
               </div>
 
               <p className="text-xs text-gray-500 dark:text-gray-400">{topic.communityNotes}</p>
+              <Link
+                to={`/studio?topic=${encodeURIComponent(topic.topic)}&domain=${topic.domain}`}
+                className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium text-violet-600 dark:text-violet-400 hover:underline"
+              >
+                <PenLine className="w-3.5 h-3.5" />
+                Create post from this
+              </Link>
             </div>
           );
         })}

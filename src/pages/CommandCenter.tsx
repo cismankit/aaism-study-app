@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Theater, Bot, Briefcase, Crosshair,
   Flame, TrendingUp, Target, ChevronRight, ChevronDown,
-  Shield, BarChart3, Play, Lightbulb, Sparkles, X, Radar, Globe,
+  Shield, BarChart3, Play, Lightbulb, Sparkles, X, Radar, Globe, PenLine,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
@@ -67,6 +67,15 @@ export default function CommandCenter() {
         iconClassName="text-emerald-500"
         title="Command Center"
         subtitle="Quick actions, progress, and intel summaries — open Intel Hub for deep dives."
+        action={
+          <Link
+            to="/studio"
+            className="text-xs px-3 py-1.5 rounded-lg bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-900/50 flex items-center gap-1.5"
+          >
+            <PenLine className="w-3.5 h-3.5" />
+            Content Studio — turn study intel into posts
+          </Link>
+        }
       />
 
       {showWhatsNew && newReleases.length > 0 && (
@@ -281,7 +290,11 @@ export default function CommandCenter() {
                 >
                   <div className="flex items-center justify-between gap-2 mb-0.5">
                     <span className="text-xs font-medium text-gray-800 dark:text-gray-200">{item.title}</span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 shrink-0">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${
+                      item.status === 'shipped'
+                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
+                        : 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400'
+                    }`}>
                       {ROADMAP_STATUS_LABEL[item.status]}
                     </span>
                   </div>

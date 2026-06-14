@@ -2,10 +2,16 @@ export interface RoadmapItem {
   id: string;
   title: string;
   summary: string;
-  status: 'planned' | 'in-progress' | 'exploring';
+  status: 'planned' | 'in-progress' | 'exploring' | 'shipped';
 }
 
 export const PLATFORM_ROADMAP: RoadmapItem[] = [
+  {
+    id: 'content-studio',
+    title: 'Content Studio',
+    summary: 'Generate LinkedIn posts, YouTube scripts, GitHub READMEs, and threads from AAISM study intel — powered by free LLMs.',
+    status: 'shipped',
+  },
   {
     id: 'multi-model-ensemble',
     title: 'Multi-model agent ensemble',
@@ -42,4 +48,5 @@ export const ROADMAP_STATUS_LABEL: Record<RoadmapItem['status'], string> = {
   planned: 'Planned',
   'in-progress': 'In progress',
   exploring: 'Exploring',
+  shipped: 'Shipped',
 };

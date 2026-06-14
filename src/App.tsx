@@ -17,6 +17,7 @@ import Support from './pages/Support'
 import Donate from './pages/Donate'
 import FeatureRequest from './pages/FeatureRequest'
 import MyUpdates from './pages/MyUpdates'
+import ContentStudio from './pages/ContentStudio'
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
         <Route path="donate" element={<Donate />} />
         <Route path="feature-request" element={<FeatureRequest />} />
         <Route path="my-updates" element={<MyUpdates />} />
+        <Route path="studio" element={<ContentStudio />} />
       </Route>
     </Routes>
   )
