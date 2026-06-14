@@ -252,3 +252,42 @@ export function cleanupStaleRuns(): number {
 export function clearPipeline(): void {
   savePipelineState({ ...initialState });
 }
+
+// ============ STUDY QUEUE ============
+
+const STUDY_QUEUE_KEY = 'aaism-agent-study-queue';
+
+export function getStudyQueue(): string[] {
+  try {
+    const raw = localStorage.getItem(STUDY_QUEUE_KEY);
+    if (raw) return JSON.parse(raw) as string[];
+  } catch {
+    // ignore
+  }
+  return [];
+}
+
+export function addLeadToStudyQueue(leadId: string): boolean {
+  const state = loadPipelineState();
+  if (!state.leads.some(l => l.id === leadId)) return false;
+  const queue = getStudyQueue();
+  if (!queue.includes(leadId)) {
+    queue.push(leadId);
+    localStorage.setItem(STUDY_QUEUE_KEY, JSON.stringify(queue));
+  }
+  return true;
+}
+
+export function removeLeadFromStudyQueue(leadId: string): void {
+  const queue = getStudyQueue().filter(id => id !== leadId);
+  localStorage.setItem(STUDY_QUEUE_KEY, JSON.stringify(queue));
+}
+
+export function isLeadInStudyQueue(leadId: string): boolean {
+  return getStudyQueue().includes(leadId);
+}
+
+export function getStudyQueueLeads(): QuestionLead[] {
+  const ids = new Set(getStudyQueue());
+  return loadPipelineState().leads.filter(l => ids.has(l.id));
+}

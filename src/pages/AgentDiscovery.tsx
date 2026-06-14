@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Bot, Play, CheckCircle, Clock, Zap, Target, TrendingUp,
   ChevronDown, ChevronUp, RefreshCw, Trash2, Filter, BarChart3,
@@ -7,6 +7,8 @@ import {
   Activity, Database, Layers, ArrowRight, Settings, Terminal,
   StopCircle,
   ThumbsUp, ThumbsDown,
+  Copy, Download, FileJson, FileText, HelpCircle, BookOpen,
+  RotateCcw, GitCompare, ListPlus, Radar,
 } from 'lucide-react';
 import {
   runDiscoveryAgent,
@@ -24,6 +26,9 @@ import {
   cancelRun,
   deleteRun,
   cleanupStaleRuns,
+  addLeadToStudyQueue,
+  removeLeadFromStudyQueue,
+  isLeadInStudyQueue,
   type QuestionLead,
   type AgentRun,
   type AgentPipelineState,
@@ -36,12 +41,74 @@ import {
   getLeadVoteRecord,
   sortLeadsByCommunityScore,
 } from '../services/leadVotesService';
+import { isEnsembleEnabled } from '../services/ensembleConfig';
 import PageHeader from '../components/PageHeader';
 
 type ViewTab = 'pipeline' | 'leads' | 'analytics' | 'history';
 type LeadFilter = 'all' | 'pending_review' | 'approved' | 'auto_approved' | 'rejected';
+type WorkflowStep = 'configure' | 'discover' | 'review' | 'export';
+
+const QUICK_DISCOVER_PRESET = PRESET_STRATEGIES[0];
+
+const WORKFLOW_STEPS: Array<{ id: WorkflowStep; label: string; icon: typeof Settings }> = [
+  { id: 'configure', label: 'Configure', icon: Settings },
+  { id: 'discover', label: 'Discover', icon: Zap },
+  { id: 'review', label: 'Review', icon: Eye },
+  { id: 'export', label: 'Export', icon: Download },
+];
+
+const AGENT_BADGES: Record<string, { label: string; className: string }> = {
+  AnalystAgent: { label: 'Analyst', className: 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' },
+  DiscoverAgent: { label: 'Discover', className: 'bg-violet-500/20 text-violet-300 border border-violet-500/30' },
+  CriticAgent: { label: 'Critic', className: 'bg-amber-500/20 text-amber-300 border border-amber-500/30' },
+  DedupAgent: { label: 'Dedup', className: 'bg-purple-500/20 text-purple-300 border border-purple-500/30' },
+};
+
+function getWorkflowStep(isRunning: boolean, hasPendingLeads: boolean, hasRuns: boolean): WorkflowStep {
+  if (isRunning) return 'discover';
+  if (hasPendingLeads) return 'review';
+  if (hasRuns) return 'export';
+  return 'configure';
+}
+
+function leadToMarkdown(lead: QuestionLead): string {
+  const q = lead.question;
+  const opts = q.options.map((o, i) => `${i === q.correctAnswer ? '**' : ''}${String.fromCharCode(65 + i)}. ${o}${i === q.correctAnswer ? ' ✓**' : ''}`).join('\n');
+  return `## ${q.topic} (D${q.domain})\n\n**${q.question}**\n\n${opts}\n\n> ${q.explanation}\n\n*Confidence: ${lead.confidence}% · Similarity: ${lead.similarityScore}% · ${lead.status}*`;
+}
+
+function runToMarkdown(run: AgentRun): string {
+  const lines = [
+    `# Agent Run — ${run.strategy.type.replace(/_/g, ' ')}`,
+    `- Started: ${run.startedAt}`,
+    `- Status: ${run.status}`,
+    `- Leads: ${run.leadsFound} · Approved: ${run.leadsApproved}`,
+    `- Strategy: ${run.strategy.questionCount} Qs, auto-approve ≥ ${run.strategy.autoApproveThreshold}%`,
+    '',
+    '## Log',
+    ...run.log.map(e => `- [${e.phase}] ${e.message}`),
+  ];
+  if (run.error) lines.push('', `**Error:** ${run.error}`);
+  return lines.join('\n');
+}
+
+function downloadText(content: string, filename: string, mime = 'text/plain') {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function estimateTokenHint(questionCount: number, modelTier?: string): string {
+  const base = questionCount * (modelTier === 'small' ? 600 : 1200);
+  return `~${(base / 1000).toFixed(1)}k tokens est.`;
+}
 
 export default function AgentDiscovery() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ViewTab>('pipeline');
   const [pipelineState, setPipelineState] = useState<AgentPipelineState>(loadPipelineState());
   const [isRunning, setIsRunning] = useState(false);
@@ -56,6 +123,8 @@ export default function AgentDiscovery() {
   const [showStrategyPicker, setShowStrategyPicker] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [voteTick, setVoteTick] = useState(0);
+  const [studyQueueTick, setStudyQueueTick] = useState(0);
+  const [lastStrategy, setLastStrategy] = useState<DiscoveryStrategy | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -63,9 +132,20 @@ export default function AgentDiscovery() {
   const stats = getPipelineStats();
   const modelCap = getModelCapability(aiConfig.model);
   const showSmallModelBanner = aiConfig.provider === 'ollama' && isSmallModel(aiConfig.model);
+  const ensembleOn = isEnsembleEnabled();
   const activeAgent = liveLogs.length > 0
     ? liveLogs[liveLogs.length - 1].agent || liveLogs.filter(l => l.agent).slice(-1)[0]?.agent
     : null;
+
+  const hasPendingLeads = pipelineState.leads.some(l => l.status === 'pending_review' || l.status === 'discovered');
+  const workflowStep = getWorkflowStep(isRunning, hasPendingLeads, pipelineState.runs.length > 0);
+  const workflowIdx = WORKFLOW_STEPS.findIndex(s => s.id === workflowStep);
+
+  const tokenHint = useMemo(() => {
+    if (!isRunning && liveLogs.length === 0) return null;
+    const count = lastStrategy?.questionCount ?? QUICK_DISCOVER_PRESET.strategy.questionCount;
+    return estimateTokenHint(count, modelCap?.tier);
+  }, [isRunning, liveLogs.length, lastStrategy, modelCap?.tier]);
 
   const refreshState = useCallback(() => {
     setPipelineState(loadPipelineState());
@@ -129,10 +209,15 @@ export default function AgentDiscovery() {
     setRunStartTime(Date.now());
     setIsRunning(true);
     setShowStrategyPicker(false);
+    setLastStrategy(strategy);
     const controller = new AbortController();
     abortControllerRef.current = controller;
     await runDiscoveryAgent(strategy, { ...callbacks, signal: controller.signal });
     abortControllerRef.current = null;
+  };
+
+  const handleQuickDiscover = () => {
+    void handleRunStrategy(QUICK_DISCOVER_PRESET.strategy);
   };
 
   const handleStopAgent = () => {
@@ -141,6 +226,22 @@ export default function AgentDiscovery() {
       abortControllerRef.current = null;
     }
   };
+
+  // Keyboard shortcuts: ⌘/Ctrl+Enter to run, Esc to cancel/close
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !isRunning) {
+        e.preventDefault();
+        void handleRunStrategy(QUICK_DISCOVER_PRESET.strategy);
+      }
+      if (e.key === 'Escape') {
+        if (isRunning) handleStopAgent();
+        else if (showStrategyPicker) setShowStrategyPicker(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isRunning, showStrategyPicker]);
 
   const handleApproveLead = (leadId: string) => {
     updateLeadStatus(leadId, 'approved');
@@ -187,8 +288,9 @@ export default function AgentDiscovery() {
       leadFilter === 'all' ? true : l.status === leadFilter
     )
   );
-  // voteTick triggers re-render after votes
+  // voteTick / studyQueueTick triggers re-render after votes or queue changes
   void voteTick;
+  void studyQueueTick;
 
   const domainNames: Record<number, string> = {
     1: 'AI Governance',
@@ -241,6 +343,37 @@ export default function AgentDiscovery() {
         </div>
       )}
 
+      {/* Workflow step indicator */}
+      <div className="flex items-center gap-1 sm:gap-2 p-2 rounded-xl bg-theme-elevated border border-theme">
+        {WORKFLOW_STEPS.map((step, i) => {
+          const Icon = step.icon;
+          const isActive = step.id === workflowStep;
+          const isDone = i < workflowIdx;
+          return (
+            <div key={step.id} className="flex items-center flex-1 min-w-0">
+              <div className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg flex-1 min-w-0 transition-all ${
+                isActive ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' :
+                isDone ? 'text-emerald-600 dark:text-emerald-400' : 'text-theme-faint'
+              }`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
+                  isActive ? 'bg-violet-500 text-white' :
+                  isDone ? 'bg-emerald-500/20 text-emerald-500' : 'bg-cockpit-track text-theme-muted'
+                }`}>
+                  {isDone && !isActive ? <Check size={12} /> : <Icon size={12} />}
+                </div>
+                <span className="text-[11px] font-medium truncate hidden sm:inline">{step.label}</span>
+              </div>
+              {i < WORKFLOW_STEPS.length - 1 && (
+                <ArrowRight size={12} className="text-theme-faint shrink-0 mx-0.5 hidden sm:block" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Agent capabilities */}
+      <CapabilitiesBar ensembleOn={ensembleOn} />
+
       {/* Live Agent Console — pipeline tab only */}
       {activeTab === 'pipeline' && (isRunning || liveLogs.length > 0) && (
         <div className="bg-gray-900 dark:bg-black rounded-xl border border-gray-700 overflow-hidden shadow-xl">
@@ -260,6 +393,11 @@ export default function AgentDiscovery() {
                 {isRunning && modelCap && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 font-mono">
                     {modelCap.tier} · JSON {modelCap.jsonReliability}%
+                  </span>
+                )}
+                {activeAgent && AGENT_BADGES[activeAgent] && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${AGENT_BADGES[activeAgent].className}`}>
+                    {AGENT_BADGES[activeAgent].label}
                   </span>
                 )}
               </div>
@@ -287,10 +425,15 @@ export default function AgentDiscovery() {
                   );
                 })}
               </div>
-              {/* Elapsed Timer */}
+              {/* Elapsed Timer + token hint */}
               <span className="text-xs font-mono text-theme-faint tabular-nums">
                 {isRunning ? `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}` : 'completed'}
               </span>
+              {tokenHint && (
+                <span className="text-[10px] font-mono text-theme-muted hidden sm:inline" title="Estimated token usage">
+                  {tokenHint}
+                </span>
+              )}
               {isRunning && (
                 <button
                   onClick={handleStopAgent}
@@ -338,14 +481,19 @@ export default function AgentDiscovery() {
                 thinking: 'text-violet-400 animate-pulse',
               };
               const agentTag = entry.agent || (entry.message.match(/^\[(\w+Agent)\]/)?.[1]);
+              const badge = agentTag ? AGENT_BADGES[agentTag] : null;
               return (
                 <div key={i} className="flex items-start gap-2 leading-relaxed">
                   <span className="text-cockpit-muted shrink-0">{time}</span>
-                  {agentTag && (
+                  {badge ? (
+                    <span className={`shrink-0 text-[10px] px-1 py-0.5 rounded font-medium ${badge.className}`}>
+                      {badge.label}
+                    </span>
+                  ) : agentTag ? (
                     <span className="shrink-0 text-[10px] px-1 py-0.5 rounded bg-gray-800 text-cyan-400 font-mono">
                       {agentTag}
                     </span>
-                  )}
+                  ) : null}
                   <span className={`shrink-0 ${phaseColor[entry.phase] || 'text-theme-faint'}`}>
                     [{entry.phase}]
                   </span>
@@ -449,8 +597,10 @@ export default function AgentDiscovery() {
           showStrategyPicker={showStrategyPicker}
           setShowStrategyPicker={setShowStrategyPicker}
           onRunStrategy={handleRunStrategy}
+          onQuickDiscover={handleQuickDiscover}
           stats={stats}
           domainNames={domainNames}
+          hasRuns={pipelineState.runs.length > 0}
         />
       )}
 
@@ -470,6 +620,8 @@ export default function AgentDiscovery() {
           statusColors={statusColors}
           domainNames={domainNames}
           onVote={(leadId, dir) => { voteLead(leadId, dir); setVoteTick(t => t + 1); }}
+          onStudyQueueChange={() => setStudyQueueTick(t => t + 1)}
+          onGenerateQuiz={(domainId) => navigate('/study', { state: { startQuiz: true, domainId } })}
         />
       )}
 
@@ -478,8 +630,44 @@ export default function AgentDiscovery() {
       )}
 
       {activeTab === 'history' && (
-        <HistoryTab runs={pipelineState.runs} onRefresh={refreshState} />
+        <HistoryTab
+          runs={pipelineState.runs}
+          onRefresh={refreshState}
+          onReRun={handleRunStrategy}
+          isRunning={isRunning}
+        />
       )}
+    </div>
+  );
+}
+
+// ============ CAPABILITIES BAR ============
+
+function CapabilitiesBar({ ensembleOn }: { ensembleOn: boolean }) {
+  const caps = [
+    { icon: Radar, label: 'Intel → Questions', tip: 'RSS intel feeds into DiscoverAgent prompts' },
+    { icon: Filter, label: 'Dedup', tip: 'DedupAgent filters similarity ≥60% against your bank' },
+    { icon: Layers, label: 'Ensemble', tip: ensembleOn ? 'Multi-model: Groq discover + Ollama critic' : 'Enable in Settings for multi-model ensemble' },
+    { icon: Shield, label: 'ISACA Match', tip: 'AnalystAgent finds coverage gaps first' },
+  ];
+  return (
+    <div className="flex flex-wrap gap-2">
+      <span className="text-[10px] text-theme-faint flex items-center gap-1 w-full sm:w-auto">
+        <HelpCircle size={10} /> What agents can do
+      </span>
+      {caps.map(c => (
+        <span
+          key={c.label}
+          title={c.tip}
+          className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-cockpit-track dark:bg-gray-800/80 text-[10px] text-theme-muted hover:text-cockpit dark:hover:text-gray-200 transition-colors cursor-help"
+        >
+          <c.icon size={10} className="text-violet-500" />
+          {c.label}
+          {c.label === 'Ensemble' && ensembleOn && (
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
+          )}
+        </span>
+      ))}
     </div>
   );
 }
@@ -487,43 +675,76 @@ export default function AgentDiscovery() {
 // ============ PIPELINE TAB ============
 
 function PipelineTab({
-  isRunning, showStrategyPicker, setShowStrategyPicker, onRunStrategy, stats, domainNames,
+  isRunning, showStrategyPicker, setShowStrategyPicker, onRunStrategy, onQuickDiscover, stats, domainNames, hasRuns,
 }: {
   isRunning: boolean;
   showStrategyPicker: boolean;
   setShowStrategyPicker: (v: boolean) => void;
   onRunStrategy: (s: DiscoveryStrategy) => void;
+  onQuickDiscover: () => void;
   stats: ReturnType<typeof getPipelineStats>;
   domainNames: Record<number, string>;
+  hasRuns: boolean;
 }) {
+  const isEmpty = stats.totalLeads === 0 && !hasRuns;
+
   return (
     <div className="space-y-4">
+      {/* Empty state */}
+      {isEmpty && !isRunning && (
+        <div className="text-center py-10 px-4 rounded-xl border border-dashed border-theme bg-theme-elevated/50">
+          <Bot size={40} className="mx-auto mb-3 text-violet-400 opacity-70" />
+          <h3 className="text-sm font-semibold text-cockpit mb-1">No discoveries yet</h3>
+          <p className="text-xs text-theme-muted mb-4 max-w-sm mx-auto">
+            Launch the multi-agent pipeline to find ISACA-matching exam questions from your coverage gaps.
+          </p>
+          <button
+            onClick={onQuickDiscover}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-purple-600 text-white text-sm font-medium hover:from-violet-600 hover:to-purple-700 shadow-md transition-all"
+          >
+            <Zap size={14} /> Quick Discover — {QUICK_DISCOVER_PRESET.name}
+          </button>
+          <p className="text-[10px] text-theme-faint mt-2">⌘/Ctrl+Enter to start · Esc to cancel</p>
+        </div>
+      )}
+
       {/* Launch Agent */}
       <div className="bg-theme-elevated rounded-xl border border-theme overflow-hidden">
         <div className="p-4 border-b border-theme">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <Sparkles size={18} className="text-violet-500" />
               <h2 className="font-semibold text-cockpit">Launch Discovery Agent</h2>
             </div>
-            <button
-              onClick={() => setShowStrategyPicker(!showStrategyPicker)}
-              disabled={isRunning}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                isRunning
-                  ? 'bg-cockpit-track text-theme-faint cursor-not-allowed'
-                  : 'bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 shadow-md hover:shadow-lg'
-              }`}
-            >
-              {isRunning ? (
-                <><RefreshCw size={14} className="animate-spin" /> Running...</>
-              ) : (
-                <><Play size={14} /> {showStrategyPicker ? 'Close' : 'Run Agent'}</>
+            <div className="flex items-center gap-2">
+              {!isRunning && (
+                <button
+                  onClick={onQuickDiscover}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-cockpit-track text-violet-600 dark:text-violet-400 hover:bg-violet-100 dark:hover:bg-violet-900/20 transition-all"
+                  title="Run Smart Gap Fill preset"
+                >
+                  <Zap size={12} /> Quick
+                </button>
               )}
-            </button>
+              <button
+                onClick={() => setShowStrategyPicker(!showStrategyPicker)}
+                disabled={isRunning}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                  isRunning
+                    ? 'bg-cockpit-track text-theme-faint cursor-not-allowed'
+                    : 'bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 shadow-md hover:shadow-lg'
+                }`}
+              >
+                {isRunning ? (
+                  <><RefreshCw size={14} className="animate-spin" /> Running...</>
+                ) : (
+                  <><Play size={14} /> {showStrategyPicker ? 'Close' : 'Run Agent'}</>
+                )}
+              </button>
+            </div>
           </div>
           <p className="text-xs text-theme-muted mt-1">
-            Choose a discovery strategy to find ISACA-matching exam questions
+            Choose a discovery strategy to find ISACA-matching exam questions · <kbd className="text-[10px] px-1 py-0.5 rounded bg-cockpit-track">⌘↵</kbd> quick run
           </p>
         </div>
 
@@ -623,7 +844,7 @@ function PipelineTab({
 function LeadsTab({
   leads, leadFilter, setLeadFilter, expandedLead, setExpandedLead,
   selectedLeads, toggleLeadSelection, onApprove, onReject, onBulkApprove, onBulkReject,
-  statusColors, domainNames, onVote,
+  statusColors, domainNames, onVote, onStudyQueueChange, onGenerateQuiz,
 }: {
   leads: QuestionLead[];
   leadFilter: LeadFilter;
@@ -639,7 +860,23 @@ function LeadsTab({
   statusColors: Record<string, string>;
   domainNames: Record<number, string>;
   onVote: (leadId: string, direction: 'up' | 'down') => void;
+  onStudyQueueChange: () => void;
+  onGenerateQuiz: (domainId: number) => void;
 }) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyMarkdown = async (lead: QuestionLead) => {
+    await navigator.clipboard.writeText(leadToMarkdown(lead));
+    setCopiedId(lead.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleToggleStudyQueue = (leadId: string) => {
+    if (isLeadInStudyQueue(leadId)) removeLeadFromStudyQueue(leadId);
+    else addLeadToStudyQueue(leadId);
+    onStudyQueueChange();
+  };
+
   return (
     <div className="space-y-3">
       {/* Filter + Bulk Actions */}
@@ -687,14 +924,20 @@ function LeadsTab({
             return (
             <div
               key={lead.id}
-              className="bg-theme-elevated rounded-lg border border-theme overflow-hidden transition-all hover:border-violet-300 dark:hover:border-violet-700"
+              className={`bg-theme-elevated rounded-lg border overflow-hidden transition-all hover:border-violet-300 dark:hover:border-violet-700 ${
+                expandedLead === lead.id ? 'border-violet-400/50 dark:border-violet-600/50 shadow-sm' : 'border-theme'
+              }`}
             >
-              <div className="p-3 flex items-start gap-3">
+              <div
+                className="p-3 flex items-start gap-3 cursor-pointer"
+                onClick={() => setExpandedLead(expandedLead === lead.id ? null : lead.id)}
+              >
                 {/* Select */}
                 <input
                   type="checkbox"
                   checked={selectedLeads.has(lead.id)}
-                  onChange={() => toggleLeadSelection(lead.id)}
+                  onChange={(e) => { e.stopPropagation(); toggleLeadSelection(lead.id); }}
+                  onClick={(e) => e.stopPropagation()}
                   className="mt-1 rounded border-gray-300 text-violet-500 focus:ring-violet-500"
                 />
 
@@ -742,24 +985,51 @@ function LeadsTab({
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1 shrink-0">
-                  <div className="flex flex-col items-center gap-0.5 mr-1">
+                <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-0.5 mr-1 px-1 py-0.5 rounded-lg bg-cockpit-track dark:bg-gray-800/60">
                     <button
                       onClick={() => onVote(lead.id, 'up')}
-                      className="p-1 rounded hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600"
+                      className="p-1.5 rounded-md hover:bg-green-100 dark:hover:bg-green-900/40 text-green-600 dark:text-green-400 transition-colors"
                       title="Upvote"
                     >
-                      <ThumbsUp size={12} />
+                      <ThumbsUp size={14} />
                     </button>
-                    <span className="text-[9px] text-theme-faint tabular-nums">{votes.up - votes.down}</span>
+                    <span className="text-xs font-semibold text-cockpit tabular-nums min-w-[1.25rem] text-center">
+                      {votes.up - votes.down}
+                    </span>
                     <button
                       onClick={() => onVote(lead.id, 'down')}
-                      className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500"
+                      className="p-1.5 rounded-md hover:bg-red-100 dark:hover:bg-red-900/40 text-red-500 dark:text-red-400 transition-colors"
                       title="Downvote"
                     >
-                      <ThumbsDown size={12} />
+                      <ThumbsDown size={14} />
                     </button>
                   </div>
+                  <button
+                    onClick={() => handleCopyMarkdown(lead)}
+                    className="p-1.5 rounded hover:bg-cockpit-track text-theme-faint hover:text-cockpit"
+                    title="Copy as markdown"
+                  >
+                    {copiedId === lead.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />}
+                  </button>
+                  <button
+                    onClick={() => handleToggleStudyQueue(lead.id)}
+                    className={`p-1.5 rounded transition-colors ${
+                      isLeadInStudyQueue(lead.id)
+                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600'
+                        : 'hover:bg-cockpit-track text-theme-faint hover:text-emerald-600'
+                    }`}
+                    title={isLeadInStudyQueue(lead.id) ? 'Remove from study queue' : 'Add to study queue'}
+                  >
+                    <ListPlus size={14} />
+                  </button>
+                  <button
+                    onClick={() => onGenerateQuiz(lead.question.domain)}
+                    className="p-1.5 rounded hover:bg-cockpit-track text-theme-faint hover:text-violet-600"
+                    title="Generate quiz from lead domain"
+                  >
+                    <BookOpen size={14} />
+                  </button>
                   <button
                     onClick={() => setExpandedLead(expandedLead === lead.id ? null : lead.id)}
                     className="p-1.5 rounded hover:bg-cockpit-track text-theme-faint"
@@ -966,8 +1236,16 @@ function AnalyticsTab({ domainNames }: { domainNames: Record<number, string> }) 
 
 // ============ HISTORY TAB ============
 
-function HistoryTab({ runs, onRefresh }: { runs: AgentRun[]; onRefresh: () => void }) {
+function HistoryTab({
+  runs, onRefresh, onReRun, isRunning,
+}: {
+  runs: AgentRun[];
+  onRefresh: () => void;
+  onReRun: (strategy: DiscoveryStrategy) => void;
+  isRunning: boolean;
+}) {
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
+  const [compareIds, setCompareIds] = useState<Set<string>>(new Set());
 
   const handleCancel = (runId: string) => {
     cancelRun(runId);
@@ -980,6 +1258,23 @@ function HistoryTab({ runs, onRefresh }: { runs: AgentRun[]; onRefresh: () => vo
       onRefresh();
     }
   };
+
+  const toggleCompare = (runId: string) => {
+    setCompareIds(prev => {
+      const next = new Set(prev);
+      if (next.has(runId)) next.delete(runId);
+      else if (next.size < 2) next.add(runId);
+      else {
+        const first = [...next][0];
+        next.clear();
+        next.add(first);
+        next.add(runId);
+      }
+      return next;
+    });
+  };
+
+  const compareRuns = runs.filter(r => compareIds.has(r.id));
 
   const formatDuration = (run: AgentRun) => {
     const start = new Date(run.startedAt).getTime();
@@ -1009,12 +1304,40 @@ function HistoryTab({ runs, onRefresh }: { runs: AgentRun[]; onRefresh: () => vo
       <div className="text-center py-12 text-theme-faint">
         <Activity size={48} className="mx-auto mb-3 opacity-50" />
         <p className="text-sm">No agent runs yet. Launch a discovery to get started.</p>
+        <p className="text-[10px] text-theme-muted mt-2">Completed runs can be re-run or exported as JSON/markdown</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
+      {/* Compare panel */}
+      {compareRuns.length === 2 && (
+        <div className="p-3 rounded-xl border border-violet-300/50 dark:border-violet-600/30 bg-violet-50/50 dark:bg-violet-900/10">
+          <div className="flex items-center gap-2 mb-2">
+            <GitCompare size={14} className="text-violet-500" />
+            <span className="text-xs font-semibold text-cockpit">Run Comparison</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-[11px]">
+            {compareRuns.map(run => (
+              <div key={run.id} className="space-y-1">
+                <div className="font-medium text-cockpit truncate">{run.strategy.type.replace(/_/g, ' ')}</div>
+                <div className="text-theme-muted">Leads: <strong className="text-cockpit">{run.leadsFound}</strong></div>
+                <div className="text-theme-muted">Approved: <strong className="text-emerald-600">{run.leadsApproved}</strong></div>
+                <div className="text-theme-muted">Duration: {formatDuration(run)}</div>
+                <div className="text-theme-muted">Status: {run.status}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 pt-2 border-t border-violet-200/50 dark:border-violet-800/30 text-[10px] text-theme-muted">
+            Δ leads: {Math.abs(compareRuns[0].leadsFound - compareRuns[1].leadsFound)} ·
+            Δ approved: {Math.abs(compareRuns[0].leadsApproved - compareRuns[1].leadsApproved)}
+          </div>
+        </div>
+      )}
+
+      <p className="text-[10px] text-theme-faint">Select up to 2 runs to compare · Export or re-run from expanded view</p>
+
       {runs.map(run => {
         const cfg = statusConfig[run.status] || statusConfig.failed;
         const isStuck = run.status === 'running';
@@ -1027,11 +1350,22 @@ function HistoryTab({ runs, onRefresh }: { runs: AgentRun[]; onRefresh: () => vo
               ? 'border-yellow-400/50 dark:border-yellow-500/30'
               : 'border-theme'
           }`}>
-            <button
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => setExpandedRun(expandedRun === run.id ? null : run.id)}
-              className="w-full p-3 flex items-center justify-between hover:bg-cockpit-track/70 transition-colors"
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpandedRun(expandedRun === run.id ? null : run.id); }}
+              className="w-full p-3 flex items-center justify-between hover:bg-cockpit-track/70 transition-colors cursor-pointer"
             >
               <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={compareIds.has(run.id)}
+                  onChange={() => toggleCompare(run.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="rounded border-gray-300 text-violet-500 focus:ring-violet-500"
+                  title="Compare runs"
+                />
                 <div className={`w-2 h-2 rounded-full ${cfg.dot}`} />
                 <div className="text-left">
                   <div className="text-sm font-medium text-cockpit">
@@ -1052,7 +1386,7 @@ function HistoryTab({ runs, onRefresh }: { runs: AgentRun[]; onRefresh: () => vo
                 </span>
                 {expandedRun === run.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </div>
-            </button>
+            </div>
 
             {/* Stuck run warning banner */}
             {isStuck && expandedRun !== run.id && (
@@ -1093,6 +1427,28 @@ function HistoryTab({ runs, onRefresh }: { runs: AgentRun[]; onRefresh: () => vo
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => onReRun(run.strategy)}
+                      disabled={isRunning}
+                      className="flex items-center gap-1 px-2 py-1 rounded bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 text-[11px] font-medium hover:bg-violet-200 disabled:opacity-50 transition-colors"
+                      title="Re-run with same config"
+                    >
+                      <RotateCcw size={11} /> Re-run
+                    </button>
+                    <button
+                      onClick={() => downloadText(runToMarkdown(run), `run-${run.id}.md`, 'text/markdown')}
+                      className="flex items-center gap-1 px-2 py-1 rounded bg-cockpit-track text-theme-muted text-[11px] hover:text-cockpit transition-colors"
+                      title="Export as markdown"
+                    >
+                      <FileText size={11} /> MD
+                    </button>
+                    <button
+                      onClick={() => downloadText(JSON.stringify(run, null, 2), `run-${run.id}.json`, 'application/json')}
+                      className="flex items-center gap-1 px-2 py-1 rounded bg-cockpit-track text-theme-muted text-[11px] hover:text-cockpit transition-colors"
+                      title="Export as JSON"
+                    >
+                      <FileJson size={11} /> JSON
+                    </button>
                     {isStuck && (
                       <button
                         onClick={() => handleCancel(run.id)}

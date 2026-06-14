@@ -100,6 +100,8 @@ const navSections: NavSection[] = [
   },
 ];
 
+const SIDEBAR_SESSION_KEY = 'aaism-sidebar-open';
+
 // ============ SIDEBAR ============
 
 function Sidebar({
@@ -129,7 +131,7 @@ function Sidebar({
 
   return (
     <aside
-      className={`${collapsed ? 'w-[52px]' : 'w-56'} fixed lg:sticky inset-y-0 left-0 flex-shrink-0 bg-theme-elevated dark:bg-gray-950 border-r border-theme dark:border-gray-800 flex flex-col transition-all duration-200 h-screen z-50 group/sidebar ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+      className={`sidebar-panel ${collapsed ? 'w-[52px] sidebar-collapsed' : 'w-56'} fixed lg:sticky inset-y-0 left-0 flex-shrink-0 bg-theme-elevated dark:bg-gray-950 border-r border-theme dark:border-gray-800 flex flex-col h-screen z-50 group/sidebar ${mobileOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 lg:opacity-100'} lg:translate-x-0`}
     >
       {/* Logo + toggle */}
       <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} px-3 py-3 border-b border-theme dark:border-gray-800 relative`}>
@@ -138,7 +140,7 @@ function Sidebar({
         </div>
         {!collapsed && (
           <>
-            <div className="overflow-hidden flex-1">
+            <div className="sidebar-label overflow-hidden flex-1">
               <div className="text-sm font-bold text-cockpit leading-tight tracking-[0.12em] font-sans">AAISM</div>
               <div className="text-[10px] text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-400 dark:to-cyan-400 leading-tight tracking-wide font-medium">
                 Intelligence Platform
@@ -174,7 +176,7 @@ function Sidebar({
               <div className="mx-2 my-2 border-t border-theme dark:border-gray-800" />
             )}
             {!collapsed && (
-              <div className="text-[10px] font-semibold text-theme-muted tracking-widest px-2.5 mb-1 mt-2">
+              <div className="sidebar-label text-[10px] font-semibold text-theme-muted tracking-widest px-2.5 mb-1 mt-2">
                 {section.label}
               </div>
             )}
@@ -198,7 +200,7 @@ function Sidebar({
                   >
                     <Icon className={`w-[18px] h-[18px] flex-shrink-0 ${isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-theme-muted group-hover:text-theme-secondary dark:group-hover:text-gray-300'}`} />
                     {!collapsed && (
-                      <span className="truncate">{item.label}</span>
+                      <span className="sidebar-label truncate">{item.label}</span>
                     )}
                     {!collapsed && item.badge && (
                       <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400">
@@ -426,11 +428,20 @@ function SystemIssueBanner({ issue, onDismiss }: { issue: SystemIssue; onDismiss
 function LayoutContent() {
   const { theme } = useTheme();
   const { bgColor } = usePerformance();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Collapsed on every page load / refresh; stays open during SPA navigation once toggled
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [intelOpen, setIntelOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [showOnboarding, dismissOnboarding] = useOnboarding();
+
+  const handleSidebarToggle = () => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      sessionStorage.setItem(SIDEBAR_SESSION_KEY, next ? 'false' : 'true');
+      return next;
+    });
+  };
 
   useGlobalSearchShortcut(() => setSearchOpen(true));
 
@@ -452,7 +463,7 @@ function LayoutContent() {
 
       <Sidebar
         collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        onToggle={handleSidebarToggle}
         mobileOpen={mobileNavOpen}
         onCloseMobile={() => setMobileNavOpen(false)}
       />
