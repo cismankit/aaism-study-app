@@ -18,12 +18,12 @@ export default function PageHeader({
   return (
     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
       <div className="min-w-0">
-        <h1 className="text-2xl font-bold flex items-center gap-3 text-gray-900 dark:text-white">
+        <h1 className="text-2xl font-bold flex items-center gap-3 text-cockpit">
           {Icon && <Icon className={`w-7 h-7 flex-shrink-0 ${iconClassName}`} />}
           {title}
         </h1>
         {subtitle && (
-          <p className="text-theme-muted dark:text-gray-400 mt-1 text-sm max-w-2xl">{subtitle}</p>
+          <p className="text-theme-muted mt-1 text-sm max-w-2xl">{subtitle}</p>
         )}
       </div>
       {action && <div className="flex-shrink-0">{action}</div>}

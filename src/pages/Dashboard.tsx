@@ -34,6 +34,7 @@ import {
 import OllamaModelManager from '../components/OllamaModelManager';
 import GroqApiKeySection from '../components/GroqApiKeySection';
 import SignInSyncSection from '../components/SignInSyncSection';
+import IntegrationsSettings from '../components/IntegrationsSettings';
 import { 
   Play,
   Target, 
@@ -59,6 +60,7 @@ import {
   Cloud,
   Download,
   Upload,
+  Link2,
 } from 'lucide-react';
 
 type AISettingsTab = 'groq' | 'ollama' | 'cloud';
@@ -708,7 +710,10 @@ function ProgressBackupSection() {
 }
 
 // ============ SETTINGS TAB ============
+type SettingsSection = 'ai' | 'integrations' | 'sync' | 'progress' | 'about';
+
 function SettingsTab() {
+  const [section, setSection] = useState<SettingsSection>('ai');
   const [config, setConfig] = useState<AIConfig>(loadAIConfig);
   const [saved, setSaved] = useState(false);
   const [savedApiKey, setSavedApiKey] = useState(() => loadAIConfig().apiKey);
@@ -755,8 +760,68 @@ function SettingsTab() {
     { id: 'cloud', label: 'Cloud', icon: Cloud, hint: 'Claude & OpenAI' },
   ];
 
+  const settingsSections: { id: SettingsSection; label: string; icon: typeof Settings }[] = [
+    { id: 'ai', label: 'AI Provider', icon: Sparkles },
+    { id: 'integrations', label: 'Integrations', icon: Link2 },
+    { id: 'sync', label: 'Cloud Sync', icon: Cloud },
+    { id: 'progress', label: 'Progress', icon: BarChart3 },
+    { id: 'about', label: 'About', icon: Home },
+  ];
+
   return (
     <div className="space-y-4">
+      <div className="flex gap-1 p-1 rounded-xl bg-cockpit-track border border-theme overflow-x-auto">
+        {settingsSections.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setSection(id)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+              section === id
+                ? 'bg-theme-elevated text-primary-600 dark:text-primary-400 shadow-sm'
+                : 'text-cockpit-muted hover:text-cockpit'
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {section === 'integrations' && <IntegrationsSettings />}
+
+      {section === 'sync' && <SignInSyncSection />}
+
+      {section === 'progress' && <ProgressBackupSection />}
+
+      {section === 'about' && (
+        <>
+          <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
+            <h3 className="font-semibold text-cockpit mb-4">About</h3>
+            <div className="space-y-2 text-sm text-cockpit-muted">
+              <p><strong>AAISM Exam Prep</strong> v1.0.0</p>
+              <p>Prepare for the ISACA AI Security Manager certification exam with AI-powered study tools, flashcards, quizzes, and progress tracking.</p>
+            </div>
+          </div>
+          <div className="bg-theme-elevated rounded-xl p-6 border border-red-200 dark:border-red-900">
+            <h3 className="font-semibold text-red-600 dark:text-red-400 mb-4">Danger Zone</h3>
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to clear all study data? This cannot be undone.')) {
+                  localStorage.clear();
+                  window.location.reload();
+                }
+              }}
+              className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+            >
+              Clear All Data
+            </button>
+          </div>
+        </>
+      )}
+
+      {section === 'ai' && (
+      <>
       {/* AI Settings */}
       <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
         <h3 className="font-semibold text-cockpit mb-4 flex items-center gap-2">
@@ -905,37 +970,8 @@ function SettingsTab() {
           </button>
         </div>
       </div>
-
-      {/* Cloud Sync */}
-      <SignInSyncSection />
-
-      {/* Progress Backup */}
-      <ProgressBackupSection />
-
-      {/* App Info */}
-      <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
-        <h3 className="font-semibold text-cockpit mb-4">About</h3>
-        <div className="space-y-2 text-sm text-cockpit-muted">
-          <p><strong>AAISM Exam Prep</strong> v1.0.0</p>
-          <p>Prepare for the ISACA AI Security Manager certification exam with AI-powered study tools, flashcards, quizzes, and progress tracking.</p>
-        </div>
-      </div>
-
-      {/* Clear Data */}
-      <div className="bg-theme-elevated rounded-xl p-6 border border-red-200 dark:border-red-900">
-        <h3 className="font-semibold text-red-600 dark:text-red-400 mb-4">Danger Zone</h3>
-        <button
-          onClick={() => {
-            if (confirm('Are you sure you want to clear all study data? This cannot be undone.')) {
-              localStorage.clear();
-              window.location.reload();
-            }
-          }}
-          className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-        >
-          Clear All Data
-        </button>
-      </div>
+      </>
+      )}
     </div>
   );
 }

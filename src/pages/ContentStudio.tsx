@@ -241,7 +241,7 @@ export default function ContentStudio() {
           return (
             <div key={label} className="flex items-center gap-2">
               <span className={`w-6 h-6 rounded-full flex items-center justify-center font-bold ${
-                active ? 'bg-violet-600 text-white' : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
+                active ? 'bg-violet-600 text-white' : 'bg-cockpit-track text-theme-muted'
               }`}>
                 {n}
               </span>
@@ -269,7 +269,7 @@ export default function ContentStudio() {
                   className={`p-3 rounded-lg text-xs font-medium border transition-all ${
                     sourceType === opt.id
                       ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300'
-                      : 'border-gray-200 dark:border-gray-700 hover:border-violet-300'
+                      : 'border-theme hover:border-violet-300'
                   }`}
                 >
                   {opt.label}
@@ -279,11 +279,11 @@ export default function ContentStudio() {
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-medium text-gray-500 mb-1 block">AAISM Domain</label>
+                <label className="text-xs font-medium text-theme-muted mb-1 block">AAISM Domain</label>
                 <select
                   value={source.domain ?? 1}
                   onChange={e => updateSource({ domain: parseInt(e.target.value, 10) })}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                  className="w-full px-3 py-2 rounded-lg border border-theme bg-theme-elevated text-sm"
                 >
                   {AAISM_DOMAIN_GUIDES.map(g => (
                     <option key={g.id} value={g.id}>D{g.id}: {g.shortName}</option>
@@ -293,14 +293,14 @@ export default function ContentStudio() {
 
               {sourceType === 'knowledge-topic' && (
                 <div>
-                  <label className="text-xs font-medium text-gray-500 mb-1 block">Knowledge Base Topic</label>
+                  <label className="text-xs font-medium text-theme-muted mb-1 block">Knowledge Base Topic</label>
                   <select
                     value={source.topic ?? ''}
                     onChange={e => {
                       const t = topics.find(x => x.title === e.target.value);
                       updateSource({ topic: e.target.value, domain: t?.domain });
                     }}
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                    className="w-full px-3 py-2 rounded-lg border border-theme bg-theme-elevated text-sm"
                   >
                     <option value="">Select topic…</option>
                     {topics.map(t => (
@@ -312,13 +312,13 @@ export default function ContentStudio() {
 
               {sourceType === 'domain-topic' && (
                 <div>
-                  <label className="text-xs font-medium text-gray-500 mb-1 block">Topic</label>
+                  <label className="text-xs font-medium text-theme-muted mb-1 block">Topic</label>
                   <input
                     type="text"
                     value={source.topic ?? ''}
                     onChange={e => updateSource({ topic: e.target.value })}
                     placeholder="e.g. NIST AI RMF, prompt injection"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                    className="w-full px-3 py-2 rounded-lg border border-theme bg-theme-elevated text-sm"
                   />
                 </div>
               )}
@@ -326,23 +326,23 @@ export default function ContentStudio() {
               {sourceType === 'intel-headline' && (
                 <>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 mb-1 block">RSS / Intel Headline</label>
+                    <label className="text-xs font-medium text-theme-muted mb-1 block">RSS / Intel Headline</label>
                     <input
                       type="text"
                       value={source.headline ?? ''}
                       onChange={e => updateSource({ headline: e.target.value })}
                       placeholder="Paste headline from Intel Hub or Live Feed"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                      className="w-full px-3 py-2 rounded-lg border border-theme bg-theme-elevated text-sm"
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-gray-500 mb-1 block">Source (optional)</label>
+                    <label className="text-xs font-medium text-theme-muted mb-1 block">Source (optional)</label>
                     <input
                       type="text"
                       value={source.intelSource ?? ''}
                       onChange={e => updateSource({ intelSource: e.target.value })}
                       placeholder="e.g. Krebs on Security, NIST"
-                      className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                      className="w-full px-3 py-2 rounded-lg border border-theme bg-theme-elevated text-sm"
                     />
                   </div>
                 </>
@@ -350,13 +350,13 @@ export default function ContentStudio() {
 
               {sourceType === 'custom' && (
                 <div className="sm:col-span-2">
-                  <label className="text-xs font-medium text-gray-500 mb-1 block">Custom Prompt</label>
+                  <label className="text-xs font-medium text-theme-muted mb-1 block">Custom Prompt</label>
                   <textarea
                     value={source.customPrompt ?? ''}
                     onChange={e => updateSource({ customPrompt: e.target.value })}
                     rows={4}
                     placeholder="Describe what you want to create content about…"
-                    className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm"
+                    className="w-full px-3 py-2 rounded-lg border border-theme bg-theme-elevated text-sm"
                   />
                 </div>
               )}
@@ -402,12 +402,12 @@ export default function ContentStudio() {
                     className={`p-4 rounded-xl border text-left transition-all ${
                       selected
                         ? 'border-violet-500 bg-violet-50 dark:bg-violet-900/20 ring-2 ring-violet-500/30'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-violet-300'
+                        : 'border-theme hover:border-violet-300'
                     } ${batchMode && !BATCH_FORMAT_IDS.includes(fmt.id) ? 'opacity-40' : ''}`}
                   >
                     <div className="text-2xl mb-2">{FORMAT_ICONS[fmt.id]}</div>
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">{fmt.shortLabel}</div>
-                    <div className="text-[11px] text-gray-500 mt-1">{fmt.description}</div>
+                    <div className="text-sm font-semibold text-cockpit">{fmt.shortLabel}</div>
+                    <div className="text-[11px] text-theme-muted mt-1">{fmt.description}</div>
                   </button>
                 );
               })}
@@ -420,7 +420,7 @@ export default function ContentStudio() {
             )}
 
             <div className="flex gap-2">
-              <button onClick={() => setStep(1)} className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
+              <button onClick={() => setStep(1)} className="px-4 py-2 rounded-lg border border-theme text-sm">
                 Back
               </button>
               <button
@@ -440,7 +440,7 @@ export default function ContentStudio() {
       {step === 3 && generating && (
         <div className="flex flex-col items-center justify-center py-16 gap-4">
           <Loader2 className="w-10 h-10 text-violet-500 animate-spin" />
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-theme-muted">
             Generating {batchMode ? `${BATCH_FORMAT_IDS.length} formats` : selectedFormats[0]} via {provider?.label ?? 'LLM'}…
           </p>
         </div>
@@ -450,7 +450,7 @@ export default function ContentStudio() {
       {step === 4 && outputs.length > 0 && (
         <div className="space-y-4">
           {outputs.length > 1 && (
-            <div className="flex flex-wrap gap-1 border-b border-gray-200 dark:border-gray-700 pb-2">
+            <div className="flex flex-wrap gap-1 border-b border-theme pb-2">
               {outputs.map(o => (
                 <button
                   key={o.formatId}
@@ -458,7 +458,7 @@ export default function ContentStudio() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                     activeTab === o.formatId
                       ? 'bg-violet-600 text-white'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                      : 'bg-cockpit-track dark:bg-gray-800 text-cockpit-muted'
                   }`}
                 >
                   {o.formatLabel}
@@ -481,7 +481,7 @@ export default function ContentStudio() {
             {/* Editor pane */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Editor</h3>
+                <h3 className="text-sm font-semibold text-cockpit">Editor</h3>
                 <div className="flex items-center gap-2">
                   <span className={`text-[10px] px-2 py-0.5 rounded-full ${
                     activeOutput?.usedLlm
@@ -495,10 +495,10 @@ export default function ContentStudio() {
                       {charStats.count}/{charStats.limit}
                     </span>
                   )}
-                  <button onClick={copyOutput} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Copy">
+                  <button onClick={copyOutput} className="p-1.5 rounded-lg hover:bg-cockpit-track" title="Copy">
                     {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                   </button>
-                  <button onClick={downloadCurrent} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" title="Download .md">
+                  <button onClick={downloadCurrent} className="p-1.5 rounded-lg hover:bg-cockpit-track" title="Download .md">
                     <Download className="w-4 h-4" />
                   </button>
                 </div>
@@ -507,16 +507,16 @@ export default function ContentStudio() {
                 value={activeContent}
                 onChange={e => setEditedContent(prev => ({ ...prev, [activeTab]: e.target.value }))}
                 rows={18}
-                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-gray-700 dark:text-gray-300 font-sans leading-relaxed resize-y"
+                className="w-full px-4 py-3 rounded-xl border border-theme bg-theme-elevated dark:bg-gray-900 text-sm text-theme-secondary font-sans leading-relaxed resize-y"
               />
             </div>
 
             {/* Preview pane */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              <h3 className="text-sm font-semibold text-cockpit">
                 Live Preview — {getContentTemplate(activeTab).platform}
               </h3>
-              <div className="rounded-xl border border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900/30 min-h-[400px]">
+              <div className="rounded-xl border border-theme p-4 bg-theme-muted/30 min-h-[400px]">
                 <ContentPreview formatId={activeTab} content={activeContent} />
               </div>
             </div>
@@ -531,7 +531,7 @@ export default function ContentStudio() {
                     ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                     : <XCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />
                   }
-                  <span className={item.passed ? 'text-gray-600 dark:text-gray-400' : 'text-red-600 dark:text-red-400'}>
+                  <span className={item.passed ? 'text-cockpit-muted' : 'text-red-600 dark:text-red-400'}>
                     {item.label}
                   </span>
                 </li>
@@ -545,10 +545,10 @@ export default function ContentStudio() {
           </SectionCard>
 
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => setStep(2)} className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
+            <button onClick={() => setStep(2)} className="px-4 py-2 rounded-lg border border-theme text-sm">
               Regenerate
             </button>
-            <button onClick={() => { setStep(1); setOutputs([]); setEditedContent({}); }} className="px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
+            <button onClick={() => { setStep(1); setOutputs([]); setEditedContent({}); }} className="px-4 py-2 rounded-lg border border-theme text-sm">
               New source
             </button>
             <button onClick={addCurrentToQueue} className="px-4 py-2 rounded-lg border border-violet-300 dark:border-violet-700 text-violet-700 dark:text-violet-400 text-sm font-medium hover:bg-violet-50 dark:hover:bg-violet-900/20 flex items-center gap-2">
@@ -564,23 +564,23 @@ export default function ContentStudio() {
       )}
 
       {/* Free LLM options */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="rounded-xl border border-theme overflow-hidden">
         <button
           onClick={() => setShowFreeOptions(!showFreeOptions)}
-          className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-left"
+          className="w-full flex items-center justify-between px-4 py-3 bg-theme-muted/50 hover:bg-cockpit-track dark:hover:bg-gray-800 transition-colors text-left"
         >
-          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">Free LLM options</span>
+          <span className="text-sm font-semibold text-cockpit">Free LLM options</span>
           <ChevronDown className={`w-4 h-4 transition-transform ${showFreeOptions ? 'rotate-180' : ''}`} />
         </button>
         {showFreeOptions && (
-          <div className="p-4 space-y-4 text-sm text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
+          <div className="p-4 space-y-4 text-sm text-cockpit-muted border-t border-theme">
             <div className="flex gap-3">
               <Server className="w-5 h-5 text-emerald-500 shrink-0" />
               <div>
-                <p className="font-medium text-gray-800 dark:text-gray-200">Ollama (local, unlimited)</p>
+                <p className="font-medium text-cockpit">Ollama (local, unlimited)</p>
                 <p className="text-xs mt-1">
-                  Run Gemma 4 (<code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">gemma4:e4b</code>,{' '}
-                  <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">gemma4:31b</code>) or qwen2.5:7b on your machine.
+                  Run Gemma 4 (<code className="bg-cockpit-track dark:bg-gray-800 px-1 rounded">gemma4:e4b</code>,{' '}
+                  <code className="bg-cockpit-track dark:bg-gray-800 px-1 rounded">gemma4:31b</code>) or qwen2.5:7b on your machine.
                   Gemma 4 beats Gemma 3 for JSON/agent workflows. No API key — best for privacy.
                 </p>
               </div>
@@ -588,7 +588,7 @@ export default function ContentStudio() {
             <div className="flex gap-3">
               <Sparkles className="w-5 h-5 text-orange-500 shrink-0" />
               <div>
-                <p className="font-medium text-gray-800 dark:text-gray-200">Groq free API</p>
+                <p className="font-medium text-cockpit">Groq free API</p>
                 <p className="text-xs mt-1">
                   Fast cloud inference with a generous free tier. Get a key at{' '}
                   <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-emerald-500 hover:underline">
@@ -604,9 +604,9 @@ export default function ContentStudio() {
             <div className="flex gap-3">
               <ExternalLink className="w-5 h-5 text-blue-500 shrink-0" />
               <div>
-                <p className="font-medium text-gray-800 dark:text-gray-200">Google Colab + notebook LLM</p>
+                <p className="font-medium text-cockpit">Google Colab + notebook LLM</p>
                 <p className="text-xs mt-1">
-                  Export <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">content-studio-payload.json</code> and paste prompts into a Colab notebook running Llama, Mistral, or Gemma.
+                  Export <code className="bg-cockpit-track dark:bg-gray-800 px-1 rounded">content-studio-payload.json</code> and paste prompts into a Colab notebook running Llama, Mistral, or Gemma.
                 </p>
                 <button
                   onClick={exportPayload}
@@ -628,7 +628,7 @@ export default function ContentStudio() {
       </div>
 
       {queueOpen && (
-        <aside className="hidden lg:block w-72 shrink-0 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden h-[calc(100vh-8rem)] sticky top-4">
+        <aside className="hidden lg:block w-72 shrink-0 rounded-xl border border-theme overflow-hidden h-[calc(100vh-8rem)] sticky top-4">
           <ContentQueuePanel onClose={() => setQueueOpen(false)} />
         </aside>
       )}
@@ -636,7 +636,7 @@ export default function ContentStudio() {
       {queueOpen && (
         <div className="lg:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/40" onClick={() => setQueueOpen(false)} aria-hidden />
-          <aside className="absolute right-0 top-0 h-full w-full max-w-sm bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 overflow-hidden">
+          <aside className="absolute right-0 top-0 h-full w-full max-w-sm bg-theme-elevated border-l border-theme overflow-hidden">
             <ContentQueuePanel onClose={() => setQueueOpen(false)} />
           </aside>
         </div>

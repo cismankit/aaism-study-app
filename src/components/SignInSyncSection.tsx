@@ -84,7 +84,7 @@ export default function SignInSyncSection() {
         <Shield className="w-4 h-4 text-accent-emerald flex-shrink-0" />
         <p className="text-xs text-cockpit-muted">
           <strong className="text-cockpit">Privacy:</strong> API keys never leave this device. Cloud sync stores progress only — not Groq/Ollama keys.
-          Data lives in localStorage until you configure Supabase (<code className="text-[10px]">VITE_SUPABASE_URL</code>).
+          Configure Supabase in Settings → Integrations (<code className="text-[10px]">aaism-integrations-config</code> in localStorage).
         </p>
       </div>
 

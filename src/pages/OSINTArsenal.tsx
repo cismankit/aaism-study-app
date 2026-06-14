@@ -51,15 +51,15 @@ function SourceRow({ source, onSelect }: { source: OsintSource; onSelect: (s: Os
   return (
     <button
       onClick={() => onSelect(source)}
-      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+      className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left hover:bg-cockpit-track/50 transition-colors group"
     >
-      <span className="text-sm text-gray-700 dark:text-gray-200 group-hover:text-emerald-500 transition-colors truncate flex-1">
+      <span className="text-sm text-theme-secondary dark:text-gray-200 group-hover:text-emerald-500 transition-colors truncate flex-1">
         {source.name}
       </span>
       <SourceBadge badge={source.badge} />
       {source.highValue && <Star className="w-3 h-3 text-amber-500 flex-shrink-0" />}
       {source.aaismDomain && (
-        <span className="text-[10px] text-gray-400 flex-shrink-0">D{source.aaismDomain}</span>
+        <span className="text-[10px] text-theme-faint flex-shrink-0">D{source.aaismDomain}</span>
       )}
     </button>
   );
@@ -71,7 +71,7 @@ function SourceDetail({ source }: { source: OsintSource }) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-gray-600 dark:text-gray-400">{source.description}</p>
+      <p className="text-sm text-cockpit-muted">{source.description}</p>
 
       <div className="flex flex-wrap gap-2">
         {source.badge && (
@@ -79,7 +79,7 @@ function SourceDetail({ source }: { source: OsintSource }) {
             {BADGE_LEGEND[source.badge].label}
           </span>
         )}
-        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+        <span className="text-xs px-2 py-1 rounded-full bg-cockpit-track text-cockpit-muted">
           {RELEVANCE_LABELS[source.relevance]}
         </span>
         {source.aaismDomain && (
@@ -95,14 +95,14 @@ function SourceDetail({ source }: { source: OsintSource }) {
       </div>
 
       {category && (
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-theme-faint">
           Category: {category.name}
         </p>
       )}
 
       <div className="flex flex-wrap gap-1">
         {source.tags.map(tag => (
-          <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-gray-500">
+          <span key={tag} className="text-[10px] px-1.5 py-0.5 bg-cockpit-track rounded text-theme-muted">
             {tag}
           </span>
         ))}
@@ -186,18 +186,18 @@ export default function OSINTArsenal({ compact = false }: OSINTArsenalProps) {
       )}
 
       {/* Attribution */}
-      <div className="rounded-xl bg-gray-100 dark:bg-gray-800/80 border border-gray-200 dark:border-gray-700 px-4 py-3">
-        <p className="text-xs text-gray-500 dark:text-gray-400 flex items-start gap-2">
+      <div className="rounded-xl bg-cockpit-track dark:bg-gray-800/80 border border-theme px-4 py-3">
+        <p className="text-xs text-theme-muted flex items-start gap-2">
           <Shield className="w-4 h-4 flex-shrink-0 mt-0.5 text-emerald-500" />
           {OSINT_ATTRIBUTION}
         </p>
       </div>
 
       {/* Badge legend */}
-      <SectionCard title="Badge Legend" icon={Filter} iconClassName="text-gray-400" compact>
+      <SectionCard title="Badge Legend" icon={Filter} iconClassName="text-theme-faint" compact>
         <div className="flex flex-wrap gap-3">
           {(Object.entries(BADGE_LEGEND) as [OsintBadge, typeof BADGE_LEGEND.free][]).map(([key, meta]) => (
-            <div key={key} className="flex items-center gap-1.5 text-xs text-gray-500">
+            <div key={key} className="flex items-center gap-1.5 text-xs text-theme-muted">
               <span className={`px-1.5 py-0.5 rounded font-bold ${BADGE_STYLES[key]}`}>{meta.abbr}</span>
               <span>{meta.label} — {meta.description}</span>
             </div>
@@ -211,20 +211,20 @@ export default function OSINTArsenal({ compact = false }: OSINTArsenalProps) {
           title="High Value Picks"
           icon={Star}
           iconClassName="text-amber-500"
-          action={<span className="text-[10px] text-gray-400">{highValueSources.length} editor picks</span>}
+          action={<span className="text-[10px] text-theme-faint">{highValueSources.length} editor picks</span>}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
             {highValueSources.map(source => (
               <button
                 key={source.id}
                 onClick={() => setSelectedSource(source)}
-                className="text-left p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-amber-400 dark:hover:border-amber-600 transition-colors bg-gray-50 dark:bg-gray-700/30"
+                className="text-left p-3 rounded-lg border border-theme hover:border-amber-400 dark:hover:border-amber-600 transition-colors bg-theme-muted dark:bg-gray-700/30"
               >
                 <div className="flex items-center gap-2 mb-1">
                   <Star className="w-3 h-3 text-amber-500 flex-shrink-0" />
                   <span className="text-xs font-medium truncate">{source.name}</span>
                 </div>
-                <p className="text-[10px] text-gray-400 line-clamp-2">{source.description}</p>
+                <p className="text-[10px] text-theme-faint line-clamp-2">{source.description}</p>
               </button>
             ))}
           </div>
@@ -234,19 +234,19 @@ export default function OSINTArsenal({ compact = false }: OSINTArsenalProps) {
       {/* Search & filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-theme-faint" />
           <input
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Search sources, tags, descriptions..."
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-sm"
+            className="w-full pl-10 pr-4 py-2.5 border border-theme rounded-xl bg-theme-elevated text-sm"
           />
         </div>
         <select
           value={domainFilter}
           onChange={e => setDomainFilter(e.target.value ? Number(e.target.value) : '')}
-          className="px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-sm"
+          className="px-3 py-2.5 border border-theme rounded-xl bg-theme-elevated text-sm"
         >
           <option value="">All Domains</option>
           <option value="1">D1 Governance</option>
@@ -257,7 +257,7 @@ export default function OSINTArsenal({ compact = false }: OSINTArsenalProps) {
         <select
           value={badgeFilter}
           onChange={e => setBadgeFilter(e.target.value as OsintBadge | '')}
-          className="px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-sm"
+          className="px-3 py-2.5 border border-theme rounded-xl bg-theme-elevated text-sm"
         >
           <option value="">All Badges</option>
           {(Object.keys(BADGE_LEGEND) as OsintBadge[]).map(b => (
@@ -266,7 +266,7 @@ export default function OSINTArsenal({ compact = false }: OSINTArsenalProps) {
         </select>
       </div>
 
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-theme-faint">
         {filteredSources.length} of {OSINT_SOURCES.length} sources
         {query || domainFilter || badgeFilter ? ' matching filters' : ''}
       </p>
@@ -282,32 +282,32 @@ export default function OSINTArsenal({ compact = false }: OSINTArsenalProps) {
           return (
             <div
               key={category.id}
-              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+              className="bg-theme-elevated rounded-xl border border-theme overflow-hidden"
             >
               <button
                 onClick={() => toggleCategory(category.id)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left"
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-cockpit-track/50 transition-colors text-left"
               >
                 <div className="min-w-0">
                   <h3 className="font-semibold text-sm flex items-center gap-2">
                     {category.name}
-                    <span className="text-[10px] font-normal text-gray-400">
+                    <span className="text-[10px] font-normal text-theme-faint">
                       ({sources.length}{sources.length !== totalInCategory ? ` / ${totalInCategory}` : ''})
                     </span>
                   </h3>
                   {!compact && (
-                    <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{category.description}</p>
+                    <p className="text-xs text-theme-faint mt-0.5 line-clamp-1">{category.description}</p>
                   )}
                 </div>
                 {isExpanded ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <ChevronUp className="w-4 h-4 text-theme-faint flex-shrink-0" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  <ChevronDown className="w-4 h-4 text-theme-faint flex-shrink-0" />
                 )}
               </button>
 
               {isExpanded && sources.length > 0 && (
-                <div className="px-2 pb-2 border-t border-gray-100 dark:border-gray-700 pt-1">
+                <div className="px-2 pb-2 border-t border-theme pt-1">
                   {sources.map(source => (
                     <SourceRow key={source.id} source={source} onSelect={setSelectedSource} />
                   ))}
@@ -315,7 +315,7 @@ export default function OSINTArsenal({ compact = false }: OSINTArsenalProps) {
               )}
 
               {isExpanded && sources.length === 0 && (
-                <p className="px-4 pb-3 text-xs text-gray-400">No sources match current filters.</p>
+                <p className="px-4 pb-3 text-xs text-theme-faint">No sources match current filters.</p>
               )}
             </div>
           );
@@ -339,7 +339,7 @@ export function OSINTArsenalPreview() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-theme-faint">
         {OSINT_SOURCES.length} curated sources across {OSINT_CATEGORIES.length} categories — practitioner-grade intel for AAISM.
       </p>
       <div className="grid grid-cols-2 gap-2">
@@ -348,7 +348,7 @@ export function OSINTArsenalPreview() {
             <Link
               key={s.id}
               to={s.url}
-              className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+              className="p-2 rounded-lg bg-theme-muted dark:bg-gray-700/50 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
             >
               <span className="font-medium truncate block">{s.name}</span>
             </Link>
@@ -358,7 +358,7 @@ export function OSINTArsenalPreview() {
               href={s.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+              className="p-2 rounded-lg bg-theme-muted dark:bg-gray-700/50 text-xs hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
             >
               <span className="font-medium truncate block">{s.name}</span>
             </a>

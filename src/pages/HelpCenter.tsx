@@ -101,13 +101,13 @@ function FAQAccordion() {
           >
             <button
               onClick={() => setOpenIndex(isOpen ? null : idx)}
-              className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+              className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-cockpit-track/50 transition-colors"
             >
               <span className="font-medium text-sm sm:text-base">{faq.question}</span>
               {isOpen ? (
                 <ChevronUp className="w-4 h-4 text-emerald-500 flex-shrink-0" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                <ChevronDown className="w-4 h-4 text-theme-faint flex-shrink-0" />
               )}
             </button>
             {isOpen && (
@@ -126,7 +126,7 @@ function ContactSection() {
   return (
     <div className="bg-theme-elevated rounded-xl border border-theme p-5 osint-widget space-y-4">
       <h3 className="font-semibold text-sm">Need more help?</h3>
-      <p className="text-sm text-gray-400">
+      <p className="text-sm text-theme-faint">
         Bug reports and GitHub community links are on the Support page. Paid feature requests use the dedicated form.
       </p>
       <div className="flex flex-wrap gap-2">
@@ -139,13 +139,13 @@ function ContactSection() {
         </Link>
         <Link
           to="/privacy"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-theme text-sm font-medium hover:bg-theme-muted dark:hover:bg-gray-700 transition-colors"
         >
           <Shield className="w-4 h-4" /> Data &amp; privacy
         </Link>
         <Link
           to="/feature-request"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-theme text-sm font-medium hover:bg-theme-muted dark:hover:bg-gray-700 transition-colors"
         >
           Feature request form
         </Link>
@@ -200,8 +200,8 @@ export default function HelpCenter() {
                 to={area.to}
                 className="flex items-center gap-3 p-3 rounded-xl bg-theme-elevated border border-theme hover:border-emerald-400 dark:hover:border-emerald-500 transition-all group osint-widget"
               >
-                <div className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center group-hover:bg-emerald-500/15 transition-colors">
-                  <Icon className="w-4 h-4 text-gray-500 group-hover:text-emerald-500" />
+                <div className="w-9 h-9 rounded-lg bg-cockpit-track flex items-center justify-center group-hover:bg-emerald-500/15 transition-colors">
+                  <Icon className="w-4 h-4 text-theme-muted group-hover:text-emerald-500" />
                 </div>
                 <div className="min-w-0">
                   <div className="font-medium text-sm">{area.label}</div>
@@ -222,7 +222,7 @@ export default function HelpCenter() {
               <h2 className="text-lg font-semibold mb-1">Configure AI in Settings</h2>
               <p className="text-sm text-cockpit-muted mb-3">
                 AI features are opt-in. Navigate to <strong>Settings → Settings tab</strong>, choose your provider, and paste your API key.
-                Keys stay in your browser only (<code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">{AI_CONFIG_STORAGE_KEY}</code> in localStorage) — never sent to our servers.
+                Keys stay in your browser only (<code className="text-xs bg-cockpit-track dark:bg-gray-800 px-1 rounded">{AI_CONFIG_STORAGE_KEY}</code> in localStorage) — never sent to our servers.
               </p>
               <Link
                 to="/settings"
@@ -233,7 +233,7 @@ export default function HelpCenter() {
               </Link>
             </div>
 
-            <div className="p-4 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-emerald-500/10">
+            <div className="p-4 rounded-lg bg-theme-elevated/60 dark:bg-gray-800/60 border border-emerald-500/10">
               <h3 className="font-medium text-sm mb-2">How to add Groq API key</h3>
               <ol className="text-sm text-cockpit-muted space-y-1 list-decimal list-inside">
                 <li>Get a free key at <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">console.groq.com</a></li>
@@ -242,12 +242,12 @@ export default function HelpCenter() {
               </ol>
             </div>
 
-            <div className="p-4 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-violet-500/10">
+            <div className="p-4 rounded-lg bg-theme-elevated/60 dark:bg-gray-800/60 border border-violet-500/10">
               <h3 className="font-medium text-sm mb-2">Gemma 4 for offline agents</h3>
               <p className="text-sm text-cockpit-muted">
                 Gemma 4 (Apr 2026) runs locally via Ollama with native JSON and agentic workflows.
-                Pull <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">gemma4:e4b</code> or{' '}
-                <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">gemma4:31b</code> in Settings → Offline Model Manager.{' '}
+                Pull <code className="text-xs bg-cockpit-track dark:bg-gray-800 px-1 rounded">gemma4:e4b</code> or{' '}
+                <code className="text-xs bg-cockpit-track dark:bg-gray-800 px-1 rounded">gemma4:31b</code> in Settings → Offline Model Manager.{' '}
                 <a href={GEMMA4_BLOG_URL} target="_blank" rel="noopener noreferrer" className="text-violet-600 dark:text-violet-400 hover:underline">
                   Read the Google Gemma 4 blog →
                 </a>

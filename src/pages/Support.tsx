@@ -56,7 +56,7 @@ export default function Support() {
         <AlertCircle className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
         <div className="text-sm">
           <p className="font-medium text-emerald-700 dark:text-emerald-300">Community-supported project</p>
-          <p className="text-gray-400 mt-1">
+          <p className="text-theme-faint mt-1">
             GitHub Issues on{' '}
             <a
               href={`https://github.com/${GITHUB_REPO}`}
@@ -76,11 +76,11 @@ export default function Support() {
           const Icon = channel.icon;
           const inner = (
             <div className="flex flex-col h-full">
-              <div className="w-10 h-10 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center mb-3">
+              <div className="w-10 h-10 rounded-lg bg-cockpit-track flex items-center justify-center mb-3">
                 <Icon className="w-5 h-5 text-cyan-500" />
               </div>
               <h3 className="font-semibold text-sm">{channel.title}</h3>
-              <p className="text-sm text-gray-400 mt-1 flex-1">{channel.description}</p>
+              <p className="text-sm text-theme-faint mt-1 flex-1">{channel.description}</p>
               <span className="inline-flex items-center gap-1 mt-4 text-sm font-medium text-emerald-600 dark:text-emerald-400">
                 {channel.action}
                 {channel.external ? (
@@ -124,7 +124,7 @@ export default function Support() {
             <BookOpen className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-semibold text-sm">Help Center</h3>
-              <p className="text-sm text-gray-400 mt-1">
+              <p className="text-sm text-theme-faint mt-1">
                 Getting started, FAQs, AI setup, and exam day checklist.
               </p>
             </div>

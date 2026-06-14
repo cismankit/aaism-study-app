@@ -25,7 +25,7 @@ import {
 import PageHeader from '../components/PageHeader';
 
 const priorityOptions: { id: FeatureRequestPriority; label: string; color: string }[] = [
-  { id: 'nice', label: 'Nice to have', color: 'border-gray-300 dark:border-gray-600' },
+  { id: 'nice', label: 'Nice to have', color: 'border-theme' },
   { id: 'important', label: 'Important', color: 'border-blue-400' },
   { id: 'exam_blocker', label: 'Exam blocker', color: 'border-red-400' },
 ];
@@ -75,23 +75,23 @@ function PaymentPanel({
         <Sparkles className="w-5 h-5 text-amber-500" />
         <h3 className="font-semibold">One click to complete payment</h3>
       </div>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
+      <p className="text-sm text-cockpit-muted">
         Include this reference in your payment note so we can match your request:
       </p>
       <div className="flex items-center gap-2 flex-wrap">
-        <code className="text-sm font-mono bg-white dark:bg-gray-900 px-3 py-2 rounded-lg border border-amber-300/50 dark:border-amber-700/50">
+        <code className="text-sm font-mono bg-theme-elevated dark:bg-gray-900 px-3 py-2 rounded-lg border border-amber-300/50 dark:border-amber-700/50">
           {request.paymentNote}
         </code>
         <CopyButton value={request.paymentNote} />
       </div>
 
       {upi && (
-        <div className="p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 space-y-2">
+        <div className="p-3 rounded-lg bg-theme-elevated border border-theme space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium">
             <Smartphone className="w-4 h-4 text-amber-500" />
             UPI option (India)
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-theme-muted">
             UPI ID: <code className="font-mono">{upi.upiId}</code> · Amount: ₹{upi.amount} · Note: {upi.note}
           </p>
           <CopyButton value={`${upi.upiId} · ₹${upi.amount} · ${upi.note}`} />
@@ -130,7 +130,7 @@ function SuccessView({ request }: { request: FeatureRequest }) {
       </div>
       <div>
         <h2 className="text-2xl font-bold">Thank you! 🎉</h2>
-        <p className="text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto">
+        <p className="text-theme-muted mt-2 max-w-md mx-auto">
           Your feature request is saved. Complete payment to boost priority, or track progress on My Updates.
         </p>
       </div>
@@ -146,7 +146,7 @@ function SuccessView({ request }: { request: FeatureRequest }) {
           href={issueUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-theme text-sm font-medium hover:bg-cockpit-track dark:hover:bg-gray-800 transition-colors"
         >
           <Github className="w-4 h-4" />
           Backup on GitHub
@@ -220,7 +220,7 @@ export default function FeatureRequest() {
             rows={3}
             required
             placeholder="e.g. Add a timed mock exam mode with 150 questions… · Export my weak areas as PDF… · Dark mode for cheat sheet…"
-            className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none resize-none"
+            className="w-full px-4 py-3 rounded-xl border border-theme bg-theme-elevated text-sm focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none resize-none"
           />
         </div>
 
@@ -236,7 +236,7 @@ export default function FeatureRequest() {
                 className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-all ${
                   priority === opt.id
                     ? 'bg-amber-500/20 border-amber-500 text-amber-800 dark:text-amber-200'
-                    : `${opt.color} bg-white dark:bg-gray-800 hover:border-amber-400`
+                    : `${opt.color} bg-theme-elevated hover:border-amber-400`
                 }`}
               >
                 {opt.label}
@@ -248,14 +248,14 @@ export default function FeatureRequest() {
         {/* Email (optional) */}
         <div className="space-y-2">
           <label className="text-sm font-medium">
-            Email for updates <span className="text-gray-400 font-normal">(optional)</span>
+            Email for updates <span className="text-theme-faint font-normal">(optional)</span>
           </label>
           <input
             type="email"
             value={email}
             onChange={e => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
+            className="w-full px-4 py-2.5 rounded-xl border border-theme bg-theme-elevated text-sm focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500 outline-none"
           />
         </div>
 
@@ -271,7 +271,7 @@ export default function FeatureRequest() {
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                   region === r.id
                     ? 'bg-amber-600 text-white border-amber-500'
-                    : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-amber-400'
+                    : 'bg-theme-elevated border-theme hover:border-amber-400'
                 }`}
               >
                 {r.flag} {r.label}
@@ -295,7 +295,7 @@ export default function FeatureRequest() {
                   className={`p-4 rounded-xl border-2 text-left transition-all osint-widget ${
                     selected
                       ? 'border-amber-500 bg-amber-500/10 shadow-lg shadow-amber-500/10'
-                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-amber-400'
+                      : 'border-theme bg-theme-elevated hover:border-amber-400'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
@@ -305,7 +305,7 @@ export default function FeatureRequest() {
                   <p className="text-lg font-bold text-amber-600 dark:text-amber-400">
                     {formatTierPrice(tier, region)}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                  <p className="text-xs text-theme-muted mt-1 leading-relaxed">
                     {tier.description}
                   </p>
                 </button>
@@ -324,7 +324,7 @@ export default function FeatureRequest() {
         </button>
       </form>
 
-      <p className="text-xs text-gray-500 dark:text-gray-500 border-t border-gray-200 dark:border-gray-700 pt-4">
+      <p className="text-xs text-theme-muted border-t border-theme pt-4">
         Requests are saved locally and optionally backed up to GitHub Issues. Payment opens your regional
         provider — include the AAISM-REQ reference in the note.
       </p>

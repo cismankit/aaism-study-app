@@ -18,17 +18,17 @@ interface CollapsibleProps {
 function Collapsible({ title, icon, children, defaultOpen = false, highlight = false }: CollapsibleProps) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className={`rounded-xl border ${highlight ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800'} overflow-hidden`}>
+    <div className={`rounded-xl border ${highlight ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-theme bg-theme-elevated'} overflow-hidden`}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 p-4 text-left font-semibold hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+        className="w-full flex items-center gap-3 p-4 text-left font-semibold hover:bg-cockpit-track/50 transition-colors"
       >
         {icon}
         <span className="flex-1">{title}</span>
         {highlight && <span className="text-xs bg-yellow-500 text-black px-2 py-0.5 rounded-full font-bold">HIGH YIELD</span>}
         {open ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
       </button>
-      {open && <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-700">{children}</div>}
+      {open && <div className="px-4 pb-4 border-t border-theme">{children}</div>}
     </div>
   );
 }
@@ -36,7 +36,7 @@ function Collapsible({ title, icon, children, defaultOpen = false, highlight = f
 function KeyValue({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
     <div className="flex gap-2 py-1">
-      <span className="text-gray-500 dark:text-gray-400 min-w-[140px] text-sm">{label}:</span>
+      <span className="text-theme-muted min-w-[140px] text-sm">{label}:</span>
       <span className={`text-sm ${bold ? 'font-semibold text-primary-600 dark:text-primary-400' : ''}`}>{value}</span>
     </div>
   );
@@ -79,7 +79,7 @@ export default function CheatSheet() {
         <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
           AAISM Exam Cheat Sheet
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-theme-muted mt-1">
           Everything you MUST know — 90 questions, 150 minutes, pass = 450/800
         </p>
         <div className="flex justify-center gap-4 mt-3">
@@ -90,7 +90,7 @@ export default function CheatSheet() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 overflow-x-auto bg-white/80 dark:bg-gray-800/80 p-1.5 rounded-xl border border-gray-200 dark:border-gray-700 scrollbar-none">
+      <div className="flex gap-1 overflow-x-auto bg-theme-elevated/80 p-1.5 rounded-xl border border-theme scrollbar-none">
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -98,7 +98,7 @@ export default function CheatSheet() {
             className={`flex items-center gap-1.5 py-2 px-3 rounded-lg font-medium transition-all text-xs whitespace-nowrap ${
               activeTab === tab.id
                 ? 'bg-gradient-to-r from-yellow-500 to-orange-500 text-white shadow-lg'
-                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                : 'text-cockpit-muted hover:bg-cockpit-track'
             }`}
           >
             <tab.icon size={14} />
@@ -131,12 +131,12 @@ function FrameworksTab() {
 
       <Collapsible title="NIST AI Risk Management Framework (AI RMF 1.0)" icon={<Shield size={18} className="text-blue-500" />} defaultOpen highlight>
         <div className="space-y-3 mt-3">
-          <p className="text-sm text-gray-600 dark:text-gray-300">Released January 2023. Voluntary framework. 4 core functions with subcategories.</p>
+          <p className="text-sm text-cockpit-muted">Released January 2023. Voluntary framework. 4 core functions with subcategories.</p>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
               <h4 className="font-bold text-blue-700 dark:text-blue-300 text-sm">1. GOVERN</h4>
-              <p className="text-xs text-gray-500 mt-1">Cross-cutting function — applies to all others</p>
+              <p className="text-xs text-theme-muted mt-1">Cross-cutting function — applies to all others</p>
               <BulletList items={[
                 'Policies, processes, procedures for AI risk',
                 'Organizational accountability structures',
@@ -148,7 +148,7 @@ function FrameworksTab() {
             </div>
             <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
               <h4 className="font-bold text-green-700 dark:text-green-300 text-sm">2. MAP</h4>
-              <p className="text-xs text-gray-500 mt-1">Context establishment — know your AI system</p>
+              <p className="text-xs text-theme-muted mt-1">Context establishment — know your AI system</p>
               <BulletList items={[
                 'Identify intended purpose & context of use',
                 'Map AI system characteristics & capabilities',
@@ -160,7 +160,7 @@ function FrameworksTab() {
             </div>
             <div className="bg-orange-50 dark:bg-orange-900/20 rounded-lg p-3">
               <h4 className="font-bold text-orange-700 dark:text-orange-300 text-sm">3. MEASURE</h4>
-              <p className="text-xs text-gray-500 mt-1">Assessment & analysis — quantify the risk</p>
+              <p className="text-xs text-theme-muted mt-1">Assessment & analysis — quantify the risk</p>
               <BulletList items={[
                 'Establish metrics for AI trustworthiness',
                 'Track & assess risks over time',
@@ -172,7 +172,7 @@ function FrameworksTab() {
             </div>
             <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
               <h4 className="font-bold text-red-700 dark:text-red-300 text-sm">4. MANAGE</h4>
-              <p className="text-xs text-gray-500 mt-1">Treatment — take action on risks</p>
+              <p className="text-xs text-theme-muted mt-1">Treatment — take action on risks</p>
               <BulletList items={[
                 'Prioritize & allocate resources to risks',
                 'Plan & implement risk treatment',
@@ -192,7 +192,7 @@ function FrameworksTab() {
 
       <Collapsible title="ISO/IEC 42001:2023 — AI Management System (AIMS)" icon={<Globe size={18} className="text-green-500" />} highlight>
         <div className="space-y-3 mt-3">
-          <p className="text-sm text-gray-600 dark:text-gray-300">World's FIRST certifiable AI management system standard. Uses PDCA cycle.</p>
+          <p className="text-sm text-cockpit-muted">World's FIRST certifiable AI management system standard. Uses PDCA cycle.</p>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {[
@@ -203,7 +203,7 @@ function FrameworksTab() {
             ].map(p => (
               <div key={p.phase} className={`bg-${p.color}-50 dark:bg-${p.color}-900/20 rounded-lg p-2 text-center`}>
                 <div className={`font-bold text-${p.color}-700 dark:text-${p.color}-300 text-sm`}>{p.phase}</div>
-                <div className="text-xs text-gray-500">Clauses {p.clauses}</div>
+                <div className="text-xs text-theme-muted">Clauses {p.clauses}</div>
                 <div className="text-xs mt-1">{p.desc}</div>
               </div>
             ))}
@@ -229,7 +229,7 @@ function FrameworksTab() {
 
       <Collapsible title="EU AI Act — Risk-Based Classification" icon={<Scale size={18} className="text-purple-500" />} highlight>
         <div className="space-y-3 mt-3">
-          <p className="text-sm text-gray-600 dark:text-gray-300">World's first comprehensive AI regulation. Risk-based approach with 4 levels.</p>
+          <p className="text-sm text-cockpit-muted">World's first comprehensive AI regulation. Risk-based approach with 4 levels.</p>
           
           <div className="space-y-2">
             <div className="bg-red-100 dark:bg-red-900/30 rounded-lg p-3 border-l-4 border-red-500">
@@ -298,11 +298,11 @@ function FrameworksTab() {
             { num: 'LLM09', name: 'Misinformation', desc: 'LLM generates false/misleading content (hallucination). Defense: RAG, grounding, human review.' },
             { num: 'LLM10', name: 'Unbounded Consumption', desc: 'Resource exhaustion via excessive queries. Defense: rate limiting, token budgets, monitoring.' },
           ].map((item, i) => (
-            <div key={i} className="flex gap-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/30">
+            <div key={i} className="flex gap-3 p-2 rounded-lg bg-theme-muted dark:bg-gray-700/30">
               <span className="text-xs font-mono font-bold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 px-2 py-1 rounded h-fit whitespace-nowrap">{item.num}</span>
               <div>
                 <span className="font-semibold text-sm">{item.name}</span>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.desc}</p>
+                <p className="text-xs text-theme-muted mt-0.5">{item.desc}</p>
               </div>
             </div>
           ))}
@@ -311,7 +311,7 @@ function FrameworksTab() {
 
       <Collapsible title="MITRE ATLAS (Adversarial Threat Landscape for AI Systems)" icon={<Eye size={18} className="text-indigo-500" />}>
         <div className="space-y-2 mt-3">
-          <p className="text-sm text-gray-600 dark:text-gray-300">Knowledge base of adversarial ML tactics modeled after ATT&CK framework.</p>
+          <p className="text-sm text-cockpit-muted">Knowledge base of adversarial ML tactics modeled after ATT&CK framework.</p>
           <BulletList items={[
             'Reconnaissance: Gathering info about target AI system',
             'Resource Development: Creating tools, acquiring data for attacks',
@@ -386,7 +386,7 @@ function Domain1Tab() {
         <h2 className="font-bold text-blue-700 dark:text-blue-300 text-lg flex items-center gap-2">
           <Scale size={20} /> Domain 1: AI Governance and Program Management (31%)
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+        <p className="text-sm text-cockpit-muted mt-1">
           Advise stakeholders on implementing AI security solutions through policy, data governance, program management and incident response.
         </p>
       </div>
@@ -482,7 +482,7 @@ function Domain2Tab() {
         <h2 className="font-bold text-red-700 dark:text-red-300 text-lg flex items-center gap-2">
           <Shield size={20} /> Domain 2: AI Risk Management (31%)
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+        <p className="text-sm text-cockpit-muted mt-1">
           Assess and manage risks, threats, vulnerabilities and supply chain issues related to enterprise AI adoption.
         </p>
       </div>
@@ -516,10 +516,10 @@ function Domain2Tab() {
               { attack: 'Backdoor Attack', when: 'Training time', what: 'Hidden trigger causes specific behavior' },
               { attack: 'Supply Chain Attack', when: 'Development', what: 'Compromised models/libraries/data sources' },
             ].map((a, i) => (
-              <div key={i} className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-2 text-xs">
+              <div key={i} className="bg-theme-muted dark:bg-gray-700/30 rounded-lg p-2 text-xs">
                 <span className="font-bold">{a.attack}</span>
-                <span className="text-gray-500 ml-2">({a.when})</span>
-                <p className="text-gray-500 dark:text-gray-400 mt-0.5">{a.what}</p>
+                <span className="text-theme-muted ml-2">({a.when})</span>
+                <p className="text-theme-muted mt-0.5">{a.what}</p>
               </div>
             ))}
           </div>
@@ -577,7 +577,7 @@ function Domain3Tab() {
         <h2 className="font-bold text-purple-700 dark:text-purple-300 text-lg flex items-center gap-2">
           <Cpu size={20} /> Domain 3: AI Technologies and Controls (38%) — HEAVIEST DOMAIN
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+        <p className="text-sm text-cockpit-muted mt-1">
           Optimize AI security: security technologies, techniques and controls tailored to AI systems.
         </p>
       </div>
@@ -688,7 +688,7 @@ function ISACATipsTab() {
         <h2 className="font-bold text-orange-700 dark:text-orange-300 text-lg flex items-center gap-2">
           <Target size={20} /> ISACA Exam Technique — The Secret Sauce
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+        <p className="text-sm text-cockpit-muted mt-1">
           These techniques can gain you 10-15% on your score. ISACA exams test JUDGMENT, not memory.
         </p>
       </div>
@@ -706,7 +706,7 @@ function ISACATipsTab() {
               { keyword: 'GREATEST', meaning: 'Biggest impact. Which option has the most significant effect?' },
               { keyword: 'LEAST likely', meaning: 'Invert your thinking. Three options are correct — find the one that\'s wrong.' },
             ].map((item, i) => (
-              <div key={i} className="flex gap-3 p-3 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+              <div key={i} className="flex gap-3 p-3 bg-theme-muted dark:bg-gray-700/30 rounded-lg">
                 <span className="font-mono font-bold text-orange-600 dark:text-orange-400 text-sm whitespace-nowrap min-w-[120px]">"{item.keyword}"</span>
                 <span className="text-sm">{item.meaning}</span>
               </div>
@@ -781,7 +781,7 @@ function SupportingTasksTab() {
         <h2 className="font-bold text-green-700 dark:text-green-300 text-lg flex items-center gap-2">
           <FileText size={20} /> 22 Official Supporting Tasks (from ISACA Exam Outline)
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+        <p className="text-sm text-cockpit-muted mt-1">
           These are the ACTUAL job tasks the exam validates. Each question maps to one or more of these.
         </p>
       </div>
@@ -829,7 +829,7 @@ function SupportingTasksTab() {
         <Collapsible key={gi} title={group.group} icon={<CheckCircle size={18} className="text-green-500" />} defaultOpen={gi === 0}>
           <div className="space-y-2 mt-2">
             {group.tasks.map((task, ti) => (
-              <div key={ti} className="flex gap-3 p-2 bg-gray-50 dark:bg-gray-700/30 rounded-lg">
+              <div key={ti} className="flex gap-3 p-2 bg-theme-muted dark:bg-gray-700/30 rounded-lg">
                 <span className="text-xs font-mono font-bold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-1 rounded h-fit">T{task.num}</span>
                 <span className="text-sm">{task.text}</span>
               </div>
@@ -849,7 +849,7 @@ function YouTubeTab() {
         <h2 className="font-bold text-red-700 dark:text-red-300 text-lg flex items-center gap-2">
           <ExternalLink size={20} /> Video Study Resources
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+        <p className="text-sm text-cockpit-muted mt-1">
           Key YouTube content for AAISM exam preparation. Watch at 1.5x-2x speed to save time.
         </p>
       </div>
@@ -867,7 +867,7 @@ function YouTubeTab() {
             </div>
             <div>
               <span className="font-bold block">AI Security Manager (AAISM) Playlist</span>
-              <span className="text-sm text-gray-500">Watch all videos — covers all 3 domains</span>
+              <span className="text-sm text-theme-muted">Watch all videos — covers all 3 domains</span>
             </div>
           </a>
           
@@ -880,11 +880,11 @@ function YouTubeTab() {
       <Collapsible title="AAISM Exam Overview Videos" icon={<ExternalLink size={18} />}>
         <div className="space-y-2 mt-3">
           <a href="https://www.youtube.com/watch?v=xV2vUssgjSs" target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+            className="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 hover:bg-theme-muted dark:hover:bg-gray-700/30 transition-colors">
             <span className="text-red-500"><ExternalLink size={18} /></span>
             <div>
               <span className="font-semibold text-sm">AAISM Exam Explained! Everything You Need to Know</span>
-              <span className="block text-xs text-gray-500">Complete domain breakdown with real-world scenarios</span>
+              <span className="block text-xs text-theme-muted">Complete domain breakdown with real-world scenarios</span>
             </div>
           </a>
         </div>
@@ -893,11 +893,11 @@ function YouTubeTab() {
       <Collapsible title="Framework Deep Dives" icon={<BookOpen size={18} />}>
         <div className="space-y-2 mt-3">
           <a href="https://www.youtube.com/playlist?list=PLMyllGTEerJMXF-zhfGNhKpQU7tKxmRlh" target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+            className="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 hover:bg-theme-muted dark:hover:bg-gray-700/30 transition-colors">
             <span className="text-blue-500"><ExternalLink size={18} /></span>
             <div>
               <span className="font-semibold text-sm">NIST AI Risk Management Framework 1.0 Playlist</span>
-              <span className="block text-xs text-gray-500">Complete walkthrough of Govern, Map, Measure, Manage</span>
+              <span className="block text-xs text-theme-muted">Complete walkthrough of Govern, Map, Measure, Manage</span>
             </div>
           </a>
         </div>
@@ -923,15 +923,15 @@ function YouTubeTab() {
             <span className="text-blue-500"><Star size={18} /></span>
             <div>
               <span className="font-bold text-sm text-blue-700 dark:text-blue-300">FREE ISACA Practice Quiz (MUST DO)</span>
-              <span className="block text-xs text-gray-500">Same difficulty as actual exam — best indicator of readiness</span>
+              <span className="block text-xs text-theme-muted">Same difficulty as actual exam — best indicator of readiness</span>
             </div>
           </a>
           <a href="https://isaca.org/credentialing/aaism/aaism-exam-content-outline" target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+            className="flex items-center gap-3 p-3 rounded-lg border dark:border-gray-700 hover:bg-theme-muted dark:hover:bg-gray-700/30 transition-colors">
             <span className="text-green-500"><FileText size={18} /></span>
             <div>
               <span className="font-semibold text-sm">Official AAISM Exam Content Outline</span>
-              <span className="block text-xs text-gray-500">The definitive list of what's tested</span>
+              <span className="block text-xs text-theme-muted">The definitive list of what's tested</span>
             </div>
           </a>
         </div>

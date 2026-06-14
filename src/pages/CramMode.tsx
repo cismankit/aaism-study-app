@@ -296,7 +296,7 @@ export default function CramMode() {
           24-Hour Cram Mode
           <Flame size={32} className="text-orange-500" />
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-theme-muted mt-1">
           Structured 24-hour study plan to maximize your AAISM exam score
         </p>
       </div>
@@ -316,13 +316,13 @@ export default function CramMode() {
           <div className="flex gap-2">
             <button
               onClick={() => setTimerRunning(!timerRunning)}
-              className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm font-medium"
+              className="px-4 py-2 bg-theme-elevated/20 hover:bg-theme-elevated/30 rounded-lg transition-colors text-sm font-medium"
             >
               {timerRunning ? 'Pause' : 'Resume'}
             </button>
             <button
               onClick={() => { setTimer(0); setTimerRunning(false); }}
-              className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm font-medium"
+              className="px-4 py-2 bg-theme-elevated/20 hover:bg-theme-elevated/30 rounded-lg transition-colors text-sm font-medium"
             >
               Stop
             </button>
@@ -331,30 +331,30 @@ export default function CramMode() {
       )}
 
       {/* Progress Overview */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-theme-elevated rounded-xl border border-theme p-4">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-bold flex items-center gap-2">
             <Trophy size={18} className="text-yellow-500" /> Your Progress
           </h2>
-          <button onClick={resetProgress} className="text-xs text-gray-400 hover:text-red-500 transition-colors">
+          <button onClick={resetProgress} className="text-xs text-theme-faint hover:text-red-500 transition-colors">
             Reset Progress
           </button>
         </div>
         <div className="grid grid-cols-3 gap-4 mb-3">
           <div className="text-center">
             <div className="text-2xl font-bold text-primary-600">{completedBlocks.length}/{CRAM_BLOCKS.length}</div>
-            <div className="text-xs text-gray-500">Blocks Done</div>
+            <div className="text-xs text-theme-muted">Blocks Done</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">{completedHours}h</div>
-            <div className="text-xs text-gray-500">of ~{totalStudyHours}h</div>
+            <div className="text-xs text-theme-muted">of ~{totalStudyHours}h</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-orange-600">{progress}%</div>
-            <div className="text-xs text-gray-500">Complete</div>
+            <div className="text-xs text-theme-muted">Complete</div>
           </div>
         </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+        <div className="w-full bg-cockpit-track rounded-full h-3">
           <div
             className="bg-gradient-to-r from-red-500 to-orange-500 h-3 rounded-full transition-all duration-500"
             style={{ width: `${progress}%` }}
@@ -379,7 +379,7 @@ export default function CramMode() {
           return (
             <div
               key={block.id}
-              className={`bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 border-l-4 ${typeColors[block.type]} overflow-hidden transition-all ${
+              className={`bg-theme-elevated rounded-xl border border-theme border-l-4 ${typeColors[block.type]} overflow-hidden transition-all ${
                 isCompleted ? 'opacity-60' : ''
               } ${isActive ? 'ring-2 ring-red-500 shadow-lg' : ''}`}
             >
@@ -393,17 +393,17 @@ export default function CramMode() {
                     {isCompleted ? (
                       <CheckCircle size={22} className="text-green-500" />
                     ) : (
-                      <Circle size={22} className="text-gray-300 dark:text-gray-600" />
+                      <Circle size={22} className="text-theme-faint" />
                     )}
                   </button>
 
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       {block.icon}
-                      <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-gray-500">
+                      <span className="text-xs font-mono bg-cockpit-track px-2 py-0.5 rounded text-theme-muted">
                         {block.hour}
                       </span>
-                      <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-gray-500">
+                      <span className="text-xs bg-cockpit-track px-2 py-0.5 rounded text-theme-muted">
                         {block.duration} min
                       </span>
                       {block.domain && (
@@ -417,15 +417,15 @@ export default function CramMode() {
                       )}
                     </div>
                     
-                    <h3 className={`font-bold ${isCompleted ? 'line-through text-gray-400' : ''}`}>
+                    <h3 className={`font-bold ${isCompleted ? 'line-through text-theme-faint' : ''}`}>
                       {block.title}
                     </h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{block.description}</p>
+                    <p className="text-sm text-theme-muted mt-1">{block.description}</p>
 
                     {/* Tips */}
                     <div className="mt-3 space-y-1">
                       {block.tips.map((tip, i) => (
-                        <div key={i} className="flex gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <div key={i} className="flex gap-2 text-xs text-theme-muted">
                           <Zap size={12} className="text-yellow-500 mt-0.5 flex-shrink-0" />
                           <span>{tip}</span>
                         </div>
@@ -437,7 +437,7 @@ export default function CramMode() {
                       {!isCompleted && (
                         <button
                           onClick={() => startTimer(block.duration, block.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-xs font-medium transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-cockpit-track hover:bg-cockpit-track dark:hover:bg-gray-600 rounded-lg text-xs font-medium transition-colors"
                         >
                           <Play size={12} /> Start Timer ({block.duration}m)
                         </button>
@@ -463,7 +463,7 @@ export default function CramMode() {
       <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 rounded-xl p-6 border border-green-200 dark:border-green-800 text-center">
         <Trophy size={32} className="mx-auto text-yellow-500 mb-2" />
         <h3 className="font-bold text-lg">You've Got This!</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-lg mx-auto">
+        <p className="text-sm text-theme-muted mt-1 max-w-lg mx-auto">
           The AAISM pass score is 450/800 (~56%). Focus on understanding the ISACA mindset: governance first, 
           business alignment always, and risk-based thinking. When in doubt, pick the most strategic answer.
         </p>

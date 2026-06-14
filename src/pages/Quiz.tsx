@@ -92,7 +92,7 @@ export default function Quiz() {
           <p className="text-cockpit-muted mt-2">Test your knowledge with practice questions</p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border p-8 max-w-2xl">
+        <div className="bg-theme-elevated rounded-xl shadow-sm border p-8 max-w-2xl">
           <h2 className="text-xl font-semibold mb-6">Select Domain</h2>
           
           <div className="space-y-3 mb-8">
@@ -101,7 +101,7 @@ export default function Quiz() {
               className={`w-full p-4 rounded-lg border text-left transition-colors ${
                 selectedDomain === 'all'
                   ? 'border-primary-500 bg-primary-50 text-primary-700'
-                  : 'border-gray-200 hover:border-gray-300'
+                  : 'border-theme hover:border-theme'
               }`}
             >
               <span className="font-medium">All Domains</span>
@@ -117,7 +117,7 @@ export default function Quiz() {
                   className={`w-full p-4 rounded-lg border text-left transition-colors ${
                     selectedDomain === domain.id
                       ? 'border-primary-500 bg-primary-50 text-primary-700'
-                      : 'border-gray-200 hover:border-gray-300'
+                      : 'border-theme hover:border-theme'
                   }`}
                 >
                   <span className="text-xl mr-2">{domain.icon}</span>
@@ -140,7 +140,7 @@ export default function Quiz() {
 
         {/* Recent Attempts */}
         {state.quizAttempts.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm border p-6">
+          <div className="bg-theme-elevated rounded-xl shadow-sm border p-6">
             <h2 className="text-xl font-semibold mb-4">Recent Attempts</h2>
             <div className="space-y-3">
               {state.quizAttempts.slice(-5).reverse().map(attempt => (
@@ -190,7 +190,7 @@ export default function Quiz() {
         </div>
 
         {/* Question Card */}
-        <div className="bg-white rounded-xl shadow-sm border p-8">
+        <div className="bg-theme-elevated rounded-xl shadow-sm border p-8">
           <h2 className="text-xl font-medium text-cockpit mb-6">{currentQuestion.question}</h2>
 
           <div className="space-y-3">
@@ -199,7 +199,7 @@ export default function Quiz() {
               const isCorrect = index === currentQuestion.correctAnswer;
               const showResult = showExplanation;
 
-              let buttonClass = 'border-gray-200 hover:border-gray-300';
+              let buttonClass = 'border-theme hover:border-theme';
               if (showResult) {
                 if (isCorrect) {
                   buttonClass = 'border-green-500 bg-green-50';
@@ -224,7 +224,7 @@ export default function Quiz() {
                       ? 'bg-red-500 text-white'
                       : isSelected
                       ? 'bg-primary-500 text-white'
-                      : 'bg-gray-100 text-cockpit-muted'
+                      : 'bg-cockpit-track text-cockpit-muted'
                   }`}>
                     {String.fromCharCode(65 + index)}
                   </span>
@@ -277,7 +277,7 @@ export default function Quiz() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8">
-      <div className="bg-white rounded-xl shadow-sm border p-8 text-center">
+      <div className="bg-theme-elevated rounded-xl shadow-sm border p-8 text-center">
         <h1 className="text-3xl font-bold text-cockpit mb-4">Quiz Complete!</h1>
         
         <div className={`text-6xl font-bold mb-2 ${
@@ -322,7 +322,7 @@ export default function Quiz() {
       </div>
 
       {/* Question Review */}
-      <div className="bg-white rounded-xl shadow-sm border p-6">
+      <div className="bg-theme-elevated rounded-xl shadow-sm border p-6">
         <h2 className="text-xl font-semibold mb-6">Review Answers</h2>
         <div className="space-y-4">
           {filteredQuestions.map((question, index) => {

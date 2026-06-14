@@ -99,14 +99,26 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
   {
     id: 'auth-cloud-sync',
     title: 'Auth & cloud sync',
-    summary: 'Local-first sign-in scaffold with email session, cloud blob push/pull, and latest-wins merge for progress.',
-    status: 'partial',
+    summary: 'In-app Supabase config, sign-in scaffold, cloud blob push/pull, and latest-wins merge for progress.',
+    status: 'shipped',
   },
   {
     id: 'payments-mvp',
     title: 'Payments MVP',
-    summary: 'Hosted checkout URLs with success/cancel return pages for Stripe, Razorpay, and regional donation methods.',
-    status: 'partial',
+    summary: 'In-app Stripe/Razorpay checkout config, hosted URLs, success/cancel return pages, and security callouts.',
+    status: 'shipped',
+  },
+  {
+    id: 'integrations-settings',
+    title: 'Settings → Integrations',
+    summary: 'Configure Supabase sync and payment checkout URLs in-app — localStorage only, env vars as fallback.',
+    status: 'shipped',
+  },
+  {
+    id: 'system-health',
+    title: 'System health alerts',
+    summary: 'Dismissible banners for Ollama offline, sync failures, payment misconfig, and Supabase connectivity.',
+    status: 'shipped',
   },
   {
     id: 'question-bank-300',

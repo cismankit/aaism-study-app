@@ -123,7 +123,7 @@ export default function IntelHub() {
       />
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 overflow-x-auto">
+      <div className="flex gap-1 bg-cockpit-track dark:bg-gray-800 rounded-xl p-1 overflow-x-auto">
         {tabs.map(tab => {
           const Icon = tab.icon;
           return (
@@ -132,8 +132,8 @@ export default function IntelHub() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 min-w-fit flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg text-sm font-medium transition-all ${
                 activeTab === tab.id
-                  ? 'bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                  ? 'bg-theme-elevated dark:bg-gray-700 text-purple-600 dark:text-purple-400 shadow-sm'
+                  : 'text-theme-muted hover:text-theme-secondary dark:hover:text-gray-200'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -239,14 +239,14 @@ export default function IntelHub() {
 function TrapDetail({ trap }: { trap: typeof TRAP_PATTERNS[0] }) {
   return (
     <div className="space-y-4">
-      <p className="text-sm text-gray-600 dark:text-gray-400">{trap.description}</p>
+      <p className="text-sm text-cockpit-muted">{trap.description}</p>
       <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
         <h4 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-1">Example</h4>
         <p className="text-sm">{trap.example}</p>
       </div>
       <div>
         <h4 className="text-sm font-semibold text-orange-600 dark:text-orange-400 mb-1">Why Students Fall For It</h4>
-        <p className="text-sm text-gray-600 dark:text-gray-400">{trap.whyStudentsFail}</p>
+        <p className="text-sm text-cockpit-muted">{trap.whyStudentsFail}</p>
       </div>
       <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
         <h4 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-1">How to Avoid</h4>
@@ -254,7 +254,7 @@ function TrapDetail({ trap }: { trap: typeof TRAP_PATTERNS[0] }) {
       </div>
       <div className="flex gap-1 flex-wrap">
         {trap.domains.map(d => (
-          <span key={d} className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">D{d}</span>
+          <span key={d} className="text-xs px-2 py-0.5 bg-cockpit-track rounded">D{d}</span>
         ))}
       </div>
     </div>
@@ -280,16 +280,16 @@ function PatternsTab({
     <div className="space-y-4">
       {/* Pattern distribution summary */}
       {analysis && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+        <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
           <h3 className="font-semibold mb-3 flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-purple-500" />
             Your Question Bank Pattern Distribution
           </h3>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
             {Object.entries(analysis.patternDistribution).map(([pattern, count]) => (
-              <div key={pattern} className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div key={pattern} className="text-center p-2 bg-theme-muted dark:bg-gray-700/50 rounded-lg">
                 <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{count}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">{pattern}</div>
+                <div className="text-xs text-theme-muted">{pattern}</div>
               </div>
             ))}
           </div>
@@ -303,11 +303,11 @@ function PatternsTab({
           return (
             <div
               key={pattern.id}
-              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+              className="bg-theme-elevated rounded-xl border border-theme overflow-hidden"
             >
               <button
                 onClick={() => setExpandedPattern(isExpanded ? null : pattern.id)}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-cockpit-track/50 transition-colors"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
@@ -315,7 +315,7 @@ function PatternsTab({
                   </div>
                   <div>
                     <h3 className="font-semibold">{pattern.name}</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">{pattern.description}</p>
+                    <p className="text-sm text-theme-muted line-clamp-1">{pattern.description}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -327,7 +327,7 @@ function PatternsTab({
               </button>
 
               {isExpanded && (
-                <div className="px-4 pb-4 space-y-4 border-t border-gray-100 dark:border-gray-700 pt-4">
+                <div className="px-4 pb-4 space-y-4 border-t border-theme pt-4">
                   <div>
                     <h4 className="text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">Strategy</h4>
                     <p className="text-sm">{pattern.strategy}</p>
@@ -345,7 +345,7 @@ function PatternsTab({
                     </ul>
                   </div>
 
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                  <div className="bg-theme-muted dark:bg-gray-700/50 rounded-lg p-3">
                     <h4 className="text-sm font-semibold text-blue-600 dark:text-blue-400 mb-2">Example</h4>
                     <p className="text-sm font-medium mb-1">{pattern.example.stem}</p>
                     <div className="text-xs space-y-1 mt-2">
@@ -357,7 +357,7 @@ function PatternsTab({
                         <Shield className="w-3 h-3 inline mr-1" />
                         Correct: {pattern.example.correct}
                       </p>
-                      <p className="text-gray-500 dark:text-gray-400 italic mt-1">{pattern.example.reasoning}</p>
+                      <p className="text-theme-muted italic mt-1">{pattern.example.reasoning}</p>
                     </div>
                   </div>
 
@@ -397,12 +397,12 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
 
   return (
     <div className="space-y-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
         <h3 className="font-semibold mb-2 flex items-center gap-2">
           <Flame className="w-4 h-4 text-orange-500" />
           Topic Heat Map — Community-Reported Exam Frequency
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        <p className="text-sm text-theme-muted mb-4">
           Topics ranked by how frequently communities report seeing them on the AAISM exam. Higher heat = more likely to appear.
         </p>
       </div>
@@ -413,10 +413,10 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
           const trendColor = topic.trend === 'rising' ? 'text-green-500' : topic.trend === 'declining' ? 'text-red-500' : 'text-theme-faint';
 
           return (
-            <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+            <div key={i} className="bg-theme-elevated rounded-xl p-4 border border-theme">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
-                  <span className="text-lg font-bold text-gray-300 dark:text-gray-600 w-6">#{i + 1}</span>
+                  <span className="text-lg font-bold text-theme-faint w-6">#{i + 1}</span>
                   <div>
                     <h4 className="font-medium">{topic.topic}</h4>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${domainColors[topic.domain]}`}>
@@ -426,7 +426,7 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
                 </div>
                 <div className="flex items-center gap-3">
                   <TrendIcon className={`w-4 h-4 ${trendColor}`} />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">{topic.trend}</span>
+                  <span className="text-sm text-theme-muted">{topic.trend}</span>
                   <div className="text-right">
                     <div className="text-lg font-bold" style={{
                       color: `hsl(${120 - (topic.heat / 100) * 120}, 70%, 50%)`,
@@ -439,7 +439,7 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
               </div>
 
               {/* Heat bar */}
-              <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-2">
+              <div className="w-full bg-cockpit-track rounded-full h-2 mb-2">
                 <div
                   className="h-2 rounded-full transition-all"
                   style={{
@@ -449,7 +449,7 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
                 />
               </div>
 
-              <p className="text-xs text-gray-500 dark:text-gray-400">{topic.communityNotes}</p>
+              <p className="text-xs text-theme-muted">{topic.communityNotes}</p>
               <Link
                 to={`/studio?topic=${encodeURIComponent(topic.topic)}&domain=${topic.domain}`}
                 className="inline-flex items-center gap-1.5 mt-2 text-xs font-medium text-violet-600 dark:text-violet-400 hover:underline"
@@ -463,14 +463,14 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
       </div>
 
       {/* Forum sources */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
         <h3 className="font-semibold mb-3 flex items-center gap-2">
           <ExternalLink className="w-4 h-4 text-blue-500" />
           Intelligence Sources
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {FORUM_SOURCES.map((source, i) => (
-            <div key={i} className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <div key={i} className="p-3 bg-theme-muted dark:bg-gray-700/50 rounded-lg">
               <div className="flex items-center justify-between mb-1">
                 <h4 className="font-medium text-sm">{source.platform}</h4>
                 <span className={`text-[10px] px-2 py-0.5 rounded-full ${
@@ -478,7 +478,7 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                     : source.reliability === 'medium'
                     ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                    : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                    : 'bg-cockpit-track text-theme-secondary dark:bg-gray-700 dark:text-gray-300'
                 }`}>
                   {source.reliability} reliability
                 </span>
@@ -490,7 +490,7 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
                   </span>
                 ))}
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{source.notes}</p>
+              <p className="text-xs text-theme-muted">{source.notes}</p>
             </div>
           ))}
         </div>
@@ -531,7 +531,7 @@ function TrapsTab({
           <button
             key={trap.id}
             onClick={() => onSelectTrap(trap)}
-            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-left hover:border-red-400 dark:hover:border-red-600 transition-colors"
+            className="bg-theme-elevated rounded-xl border border-theme p-4 text-left hover:border-red-400 dark:hover:border-red-600 transition-colors"
           >
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
@@ -542,7 +542,7 @@ function TrapsTab({
                 <p className="text-xs text-theme-muted mt-1 line-clamp-2">{trap.description}</p>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                   {trap.domains.map(d => (
-                    <span key={d} className="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">D{d}</span>
+                    <span key={d} className="text-[10px] px-1.5 py-0.5 bg-cockpit-track rounded">D{d}</span>
                   ))}
                   <span className={`text-[10px] px-2 py-0.5 rounded-full ${frequencyColors[freqMap[trap.frequency]]}`}>
                     {trap.frequency.replace('_', ' ')}
@@ -586,12 +586,12 @@ function ResearchTab({
 
   return (
     <div className="space-y-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
         <h3 className="font-semibold mb-3 flex items-center gap-2">
           <Search className="w-4 h-4 text-blue-500" />
           LLM Research Agent
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        <p className="text-sm text-theme-muted mb-4">
           Use your AI provider ({aiConfig.provider} / {aiConfig.model}) to research exam patterns and discover new traps on-demand.
         </p>
 
@@ -602,7 +602,7 @@ function ResearchTab({
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 researchType === 'patterns'
                   ? 'bg-purple-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  : 'bg-cockpit-track text-cockpit-muted'
               }`}
             >
               <BookOpen className="w-4 h-4 inline mr-1" />
@@ -613,7 +613,7 @@ function ResearchTab({
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 researchType === 'traps'
                   ? 'bg-red-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                  : 'bg-cockpit-track text-cockpit-muted'
               }`}
             >
               <AlertTriangle className="w-4 h-4 inline mr-1" />
@@ -627,13 +627,13 @@ function ResearchTab({
               value={researchFocus}
               onChange={(e) => setResearchFocus(e.target.value)}
               placeholder="Optional focus area (e.g., 'BEST pattern questions', 'EU AI Act')"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm"
+              className="w-full px-3 py-2 border border-theme rounded-lg bg-theme-elevated dark:bg-gray-700 text-sm"
             />
           ) : (
             <select
               value={researchDomain ?? ''}
               onChange={(e) => setResearchDomain(e.target.value ? Number(e.target.value) : undefined)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm"
+              className="w-full px-3 py-2 border border-theme rounded-lg bg-theme-elevated dark:bg-gray-700 text-sm"
             >
               <option value="">All Domains</option>
               <option value="1">Domain 1: AI Governance</option>
@@ -737,13 +737,13 @@ function InsightsTab({
             };
 
             return (
-              <div key={insight.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div key={insight.id} className="bg-theme-elevated rounded-xl border border-theme overflow-hidden">
                 <button
                   onClick={() => setExpandedInsight(isExpanded ? null : insight.id)}
-                  className="w-full p-3 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                  className="w-full p-3 flex items-center justify-between text-left hover:bg-cockpit-track/50 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${typeColors[insight.type] || 'bg-gray-100'}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${typeColors[insight.type] || 'bg-cockpit-track'}`}>
                       {insight.type.replace('_', ' ')}
                     </span>
                     <span className="font-medium text-sm">{insight.title}</span>
@@ -757,7 +757,7 @@ function InsightsTab({
                 </button>
 
                 {isExpanded && (
-                  <div className="px-4 pb-4 border-t border-gray-100 dark:border-gray-700 pt-3">
+                  <div className="px-4 pb-4 border-t border-theme pt-3">
                     <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap text-sm">
                       {insight.content.length > 2000 ? insight.content.slice(0, 2000) + '...' : insight.content}
                     </div>

@@ -201,7 +201,7 @@ export default function CommandCenter() {
             <Radio className="w-3 h-3 animate-pulse-dot" />
             Mission Control · AAISM-OPS
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mt-1 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-cockpit mt-1 flex items-center gap-2">
             <LayoutDashboard className="w-6 h-6 text-emerald-600 dark:text-emerald-500" />
             Command Center
           </h1>
@@ -475,7 +475,7 @@ export default function CommandCenter() {
           >
             <div className="space-y-1.5">
               {(showRoadmap ? PLATFORM_ROADMAP : PLATFORM_ROADMAP.slice(0, 3)).map(item => (
-                <div key={item.id} className="p-2 rounded-lg bg-gray-100/80 dark:bg-gray-800/50 border border-gray-200/80 dark:border-gray-700/40">
+                <div key={item.id} className="p-2 rounded-lg bg-cockpit-track/80 dark:bg-gray-800/50 border border-theme/80 dark:border-gray-700/40">
                   <div className="flex items-center justify-between gap-2 mb-0.5">
                     <span className="text-[10px] font-medium text-cockpit">{item.title}</span>
                     <span className={`text-[9px] px-1.5 py-0.5 rounded-full shrink-0 ${
@@ -530,7 +530,7 @@ export default function CommandCenter() {
       </div>
 
       {/* Collapsed secondary widgets */}
-      <div className="border-t border-gray-200 dark:border-gray-800 pt-4">
+      <div className="border-t border-theme dark:border-gray-800 pt-4">
         <button
           onClick={() => setShowMore(!showMore)}
           className="flex items-center gap-2 text-sm font-medium text-theme-muted hover:text-theme-secondary transition-colors"
@@ -608,7 +608,7 @@ export default function CommandCenter() {
             <SecondaryCard title="Question Pattern Analysis" icon={BarChart3} iconColor="text-purple-600 dark:text-purple-400" className="lg:col-span-3">
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 mb-3">
                 {Object.entries(patternAnalysis.patternDistribution).map(([pattern, count]) => (
-                  <div key={pattern} className="text-center p-2 bg-gray-100/80 dark:bg-gray-800/50 rounded-lg border border-gray-200/80 dark:border-gray-700/40">
+                  <div key={pattern} className="text-center p-2 bg-cockpit-track/80 dark:bg-gray-800/50 rounded-lg border border-theme/80 dark:border-gray-700/40">
                     <div className="text-lg font-bold text-purple-700 dark:text-purple-400">{count}</div>
                     <div className="text-[10px] text-cockpit-subtle">{pattern}</div>
                   </div>

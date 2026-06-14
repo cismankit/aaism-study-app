@@ -1,4 +1,6 @@
 import { loadAIConfig, saveAIConfig, type AIConfig } from './aiService';
+import { getEffectiveSupabaseConfig, isSupabaseConfigured } from './integrationsConfigService';
+import { reportSyncError, clearSyncError } from './systemHealthService';
 import { getCurrentSession, isSignedIn } from './authService';
 import {
   loadProgress,
@@ -133,15 +135,37 @@ function buildCloudBlob(): CloudBlob {
   };
 }
 
-/** Push local progress to simulated cloud blob (localStorage keyed by userId) */
+/** Push local progress to cloud — Supabase when configured, always local blob fallback */
 export async function pushProgressToCloud(): Promise<{ ok: boolean; message: string }> {
   const session = getCurrentSession();
-  if (!session) return { ok: false, message: 'No session.' };
+  if (!session) {
+    reportSyncError('No active session — sign in first.');
+    return { ok: false, message: 'No session.' };
+  }
 
   const blob = buildCloudBlob();
   writeJson(cloudKey(session.userId), blob);
   updateSyncMeta({ lastPushAt: blob.updatedAt });
 
+  if (isSupabaseConfigured()) {
+    const remote = await pushToSupabase(blob, session.userId);
+    if (remote.ok) {
+      clearSyncError();
+      return {
+        ok: true,
+        message: isSignedIn()
+          ? 'Progress synced to Supabase and local backup.'
+          : 'Progress saved locally; Supabase backup attempted.',
+      };
+    }
+    reportSyncError(remote.message);
+    return {
+      ok: true,
+      message: `Saved locally. Supabase: ${remote.message}`,
+    };
+  }
+
+  clearSyncError();
   return {
     ok: true,
     message: isSignedIn()
@@ -150,21 +174,86 @@ export async function pushProgressToCloud(): Promise<{ ok: boolean; message: str
   };
 }
 
+async function pushToSupabase(blob: CloudBlob, userId: string): Promise<{ ok: boolean; message: string }> {
+  const cfg = getEffectiveSupabaseConfig();
+  if (!cfg) return { ok: false, message: 'Supabase not configured' };
+
+  try {
+    const res = await fetch(`${cfg.url.replace(/\/$/, '')}/rest/v1/aaism_sync_blobs`, {
+      method: 'POST',
+      headers: {
+        apikey: cfg.anonKey,
+        Authorization: `Bearer ${cfg.anonKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        blob,
+        updated_at: blob.updatedAt,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (res.ok) return { ok: true, message: 'Synced to Supabase.' };
+    return { ok: false, message: `Push failed (${res.status}) — ensure aaism_sync_blobs table exists.` };
+  } catch (e) {
+    return { ok: false, message: e instanceof Error ? e.message : 'Network error' };
+  }
+}
+
+async function pullFromSupabase(userId: string): Promise<CloudBlob | null> {
+  const cfg = getEffectiveSupabaseConfig();
+  if (!cfg) return null;
+
+  try {
+    const res = await fetch(
+      `${cfg.url.replace(/\/$/, '')}/rest/v1/aaism_sync_blobs?user_id=eq.${encodeURIComponent(userId)}&select=blob`,
+      {
+        headers: {
+          apikey: cfg.anonKey,
+          Authorization: `Bearer ${cfg.anonKey}`,
+        },
+        signal: AbortSignal.timeout(10000),
+      },
+    );
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Array<{ blob: CloudBlob }>;
+    return rows[0]?.blob ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Pull and merge remote blob into local progress */
 export async function pullProgressFromCloud(): Promise<{ ok: boolean; message: string; merged: boolean }> {
   const session = getCurrentSession();
-  if (!session) return { ok: false, message: 'No session.', merged: false };
+  if (!session) {
+    reportSyncError('No active session — sign in first.');
+    return { ok: false, message: 'No session.', merged: false };
+  }
 
-  const remote = readJson<CloudBlob>(cloudKey(session.userId));
+  let remote = readJson<CloudBlob>(cloudKey(session.userId));
+
+  if (isSupabaseConfigured()) {
+    const supabaseBlob = await pullFromSupabase(session.userId);
+    if (supabaseBlob?.progress) {
+      remote = supabaseBlob;
+      writeJson(cloudKey(session.userId), supabaseBlob);
+    }
+  }
+
   if (!remote?.progress) {
-    return { ok: false, message: 'No cloud backup found for this account.', merged: false };
+    const msg = isSupabaseConfigured()
+      ? 'No cloud backup found — push first or check Supabase table.'
+      : 'No cloud backup found for this account.';
+    reportSyncError(msg);
+    return { ok: false, message: msg, merged: false };
   }
 
   const local = loadProgress();
   const merged = mergeProgress(local, remote.progress);
   saveProgress(merged);
 
-  // Optionally merge non-secret AI config fields
   if (remote.aiConfigMeta) {
     const localConfig = loadAIConfig();
     saveAIConfig({ ...localConfig, ...remote.aiConfigMeta });
@@ -175,6 +264,7 @@ export async function pullProgressFromCloud(): Promise<{ ok: boolean; message: s
     lastMergeAt: new Date().toISOString(),
   });
 
+  clearSyncError();
   return {
     ok: true,
     message: 'Cloud progress merged (latest wins per field). Reload to refresh UI.',

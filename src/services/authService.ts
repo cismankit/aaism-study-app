@@ -1,4 +1,6 @@
-/** Local-first auth scaffold — no backend required until Supabase/Clerk env is configured */
+import { getEffectiveSupabaseConfig } from './integrationsConfigService';
+
+/** Local-first auth scaffold — Supabase optional via Settings → Integrations */
 
 export const AUTH_STORAGE_KEY = 'aaism-auth';
 export const PENDING_MAGIC_LINK_KEY = 'aaism-pending-magic-link';
@@ -63,11 +65,11 @@ export async function signInWithEmail(email: string): Promise<{ ok: boolean; mes
     return { ok: false, message: 'Enter a valid email address.' };
   }
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  if (supabaseUrl && typeof supabaseUrl === 'string' && !supabaseUrl.includes('placeholder')) {
+  const supabase = getEffectiveSupabaseConfig();
+  if (supabase) {
     return {
       ok: false,
-      message: 'Supabase URL detected — configure VITE_SUPABASE_ANON_KEY and wire auth in syncService.',
+      message: 'Supabase is configured — use Sign in to Sync after email verification is wired.',
     };
   }
 

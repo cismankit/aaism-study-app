@@ -79,7 +79,7 @@ export default function Study() {
     <div className="min-h-[calc(100vh-120px)] flex flex-col">
       {/* Floating Tab Navigation */}
       <div className="flex justify-center mb-8">
-        <div className="flex gap-1 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg p-1.5 rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl">
+        <div className="flex gap-1 bg-theme-elevated/80 backdrop-blur-lg p-1.5 rounded-2xl border border-theme/50 dark:border-gray-700/50 shadow-xl">
           {[
             { id: 'tutor' as Tab, label: 'AI Tutor', icon: MessageSquare, color: 'from-purple-500 to-indigo-600' },
             { id: 'notes' as Tab, label: 'Notes', icon: FileText, color: 'from-blue-500 to-cyan-600' },
@@ -93,7 +93,7 @@ export default function Study() {
               className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium transition-all text-sm ${
                 activeTab === tab.id
                   ? `bg-gradient-to-r ${tab.color} text-white shadow-lg scale-105`
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  : 'text-cockpit-muted hover:bg-cockpit-track'
               }`}
             >
               <tab.icon size={16} />
@@ -114,8 +114,8 @@ export default function Study() {
               <div className="flex items-center gap-2">
                 <ClipboardList className="w-5 h-5 text-red-500" />
                 <div>
-                  <div className="text-sm font-semibold text-gray-900 dark:text-white">Timed Exam Mode</div>
-                  <div className="text-xs text-gray-500">90 questions · 150 min · ISACA AAISM sim</div>
+                  <div className="text-sm font-semibold text-cockpit">Timed Exam Mode</div>
+                  <div className="text-xs text-theme-muted">90 questions · 150 min · ISACA AAISM sim</div>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-red-400 group-hover:translate-x-0.5 transition-transform" />
@@ -340,13 +340,13 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
     ];
 
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-8">
+      <div className="bg-theme-elevated rounded-xl border border-theme p-8">
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Target className="text-primary-600" size={32} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Practice Quiz</h2>
-          <p className="text-gray-500 mt-2">Test your knowledge across AAISM exam domains</p>
+          <h2 className="text-2xl font-bold text-cockpit">Practice Quiz</h2>
+          <p className="text-theme-muted mt-2">Test your knowledge across AAISM exam domains</p>
         </div>
 
         {/* Mode Selection */}
@@ -356,22 +356,22 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
             className={`flex-1 p-3 rounded-lg border text-center ${
               quizMode === 'practice' 
                 ? 'border-primary-500 bg-primary-50' 
-                : 'border-gray-200'
+                : 'border-theme'
             }`}
           >
             <div className="font-medium">Practice</div>
-            <div className="text-xs text-gray-500">With explanations</div>
+            <div className="text-xs text-theme-muted">With explanations</div>
           </button>
           <button
             onClick={() => setQuizMode('exam')}
             className={`flex-1 p-3 rounded-lg border text-center ${
               quizMode === 'exam' 
                 ? 'border-orange-500 bg-orange-50' 
-                : 'border-gray-200'
+                : 'border-theme'
             }`}
           >
             <div className="font-medium">Exam Sim</div>
-            <div className="text-xs text-gray-500">Timed, no hints</div>
+            <div className="text-xs text-theme-muted">Timed, no hints</div>
           </button>
         </div>
 
@@ -381,11 +381,11 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
             className={`w-full p-4 rounded-lg border text-left transition-all ${
               selectedDomain === 'all'
                 ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200'
-                : 'border-gray-200 hover:border-gray-300'
+                : 'border-theme hover:border-theme'
             }`}
           >
             <span className="font-medium">All Domains</span>
-            <span className="text-gray-500 ml-2">({allQuestions.length} questions)</span>
+            <span className="text-theme-muted ml-2">({allQuestions.length} questions)</span>
           </button>
           
           {domainInfo.map(domain => {
@@ -397,13 +397,13 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
                 className={`w-full p-4 rounded-lg border text-left transition-all flex items-center gap-3 ${
                   selectedDomain === domain.id
                     ? 'border-primary-500 bg-primary-50 ring-2 ring-primary-200'
-                    : 'border-gray-200 hover:border-gray-300'
+                    : 'border-theme hover:border-theme'
                 }`}
               >
                 <span className="text-xl">{domain.icon}</span>
                 <div className="flex-1">
                   <div className="font-medium">{domain.name}</div>
-                  <div className="text-sm text-gray-500">{count} questions</div>
+                  <div className="text-sm text-theme-muted">{count} questions</div>
                 </div>
               </button>
             );
@@ -426,23 +426,23 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
     const isCorrect = answers[currentQ] === current.shuffledCorrectAnswer;
     
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-theme-elevated rounded-xl border border-theme p-6">
         {/* Progress + Timer */}
         <div className="flex items-center gap-4 mb-6">
-          <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="flex-1 h-2 bg-cockpit-track rounded-full overflow-hidden">
             <div 
               className="h-full bg-primary-500 transition-all duration-300"
               style={{ width: `${((currentQ + 1) / questions.length) * 100}%` }}
             />
           </div>
-          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+          <span className="text-sm font-medium text-cockpit-muted">
             {currentQ + 1} / {questions.length}
           </span>
           {quizMode === 'exam' && examTimer > 0 && (
             <span className={`text-sm font-mono font-bold px-3 py-1 rounded-full ${
               examTimer < 300 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 animate-pulse' : 
               examTimer < 600 ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-              'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+              'bg-cockpit-track text-theme-secondary dark:bg-gray-700 dark:text-gray-300'
             }`}>
               {formatTimer(examTimer)}
             </span>
@@ -450,7 +450,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
         </div>
 
         {/* Question */}
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">{current.question}</h3>
+        <h3 className="text-xl font-semibold text-cockpit mb-6">{current.question}</h3>
 
         {/* Options - using shuffled options */}
         <div className="space-y-3 mb-6">
@@ -459,7 +459,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
             const isAnswer = i === current.shuffledCorrectAnswer;
             const wasSelected = answers[currentQ] === i;
 
-            let style = 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500';
+            let style = 'border-theme hover:border-theme dark:hover:border-gray-500';
             if (showExp) {
               if (isAnswer) style = 'border-green-500 bg-green-50 dark:bg-green-900/30';
               else if (wasSelected && !isAnswer) style = 'border-red-500 bg-red-50 dark:bg-red-900/30';
@@ -478,11 +478,11 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
                   showExp && isAnswer ? 'border-green-500 text-green-600 dark:text-green-400' :
                   showExp && wasSelected && !isAnswer ? 'border-red-500 text-red-600 dark:text-red-400' :
                   isSelected ? 'border-primary-500 text-primary-600 dark:text-primary-400' :
-                  'border-gray-300 dark:border-gray-500 text-gray-500 dark:text-gray-400'
+                  'border-theme text-theme-muted'
                 }`}>
                   {String.fromCharCode(65 + i)}
                 </div>
-                <span className="flex-1 text-gray-900 dark:text-white">{opt}</span>
+                <span className="flex-1 text-cockpit">{opt}</span>
                 {showExp && isAnswer && <CheckCircle className="text-green-500" size={20} />}
                 {showExp && wasSelected && !isAnswer && <XCircle className="text-red-500" size={20} />}
               </button>
@@ -540,7 +540,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
   const passed = examScore >= 450;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
+    <div className="bg-theme-elevated rounded-xl border border-theme p-8 text-center">
       {/* Pass/Fail Banner */}
       <div className={`inline-block px-6 py-2 rounded-full text-sm font-bold mb-4 ${
         passed ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
@@ -553,7 +553,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
       }`}>
         {score}%
       </div>
-      <p className="text-gray-600 dark:text-gray-400 mb-4">
+      <p className="text-cockpit-muted mb-4">
         {correct} of {questions.length} correct
       </p>
 
@@ -716,8 +716,8 @@ function NotesTab() {
       {/* Header with stats */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">Your Notes</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <h2 className="text-lg font-bold text-cockpit">Your Notes</h2>
+          <p className="text-sm text-theme-muted">
             {totalNotes} note{totalNotes !== 1 ? 's' : ''} total
             {filteredNotes.length !== totalNotes && ` • ${filteredNotes.length} shown`}
           </p>
@@ -735,13 +735,13 @@ function NotesTab() {
       <div className="flex flex-col sm:flex-row gap-3">
         {/* Search */}
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-theme-faint" />
           <input
             type="text"
             placeholder="Search notes..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="w-full pl-9 pr-4 py-2 border border-theme bg-theme-elevated text-cockpit rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
         
@@ -752,7 +752,7 @@ function NotesTab() {
             className={`px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
               activeDomain === 'all'
                 ? 'bg-primary-600 text-white'
-                : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
+                : 'bg-theme-elevated text-cockpit-muted border border-theme'
             }`}
           >
             All
@@ -764,7 +764,7 @@ function NotesTab() {
               className={`px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-all ${
                 activeDomain === d.id
                   ? 'bg-primary-600 text-white'
-                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700'
+                  : 'bg-theme-elevated text-cockpit-muted border border-theme'
               }`}
             >
               {d.icon}
@@ -775,14 +775,14 @@ function NotesTab() {
 
       {/* Add Note Form */}
       {isAdding && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border-2 border-primary-500 p-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-3">New Note</h3>
+        <div className="bg-theme-elevated rounded-xl border-2 border-primary-500 p-4">
+          <h3 className="font-semibold text-cockpit mb-3">New Note</h3>
           <div className="space-y-3">
             <div className="flex gap-3">
               <select
                 value={selectedDomainForNew}
                 onChange={e => setSelectedDomainForNew(Number(e.target.value))}
-                className="px-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg"
+                className="px-3 py-2 border border-theme bg-theme-elevated dark:bg-gray-700 text-cockpit rounded-lg"
               >
                 {state.domains.map(d => (
                   <option key={d.id} value={d.id}>{d.icon} Domain {d.id}</option>
@@ -793,7 +793,7 @@ function NotesTab() {
                 placeholder="Note title..."
                 value={noteTitle}
                 onChange={e => setNoteTitle(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                className="flex-1 px-3 py-2 border border-theme bg-theme-elevated dark:bg-gray-700 text-cockpit rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <textarea
@@ -801,7 +801,7 @@ function NotesTab() {
               value={noteContent}
               onChange={e => setNoteContent(e.target.value)}
               rows={4}
-              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-3 py-2 border border-theme bg-theme-elevated dark:bg-gray-700 text-cockpit rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
             <div className="flex gap-2">
               <button
@@ -813,7 +813,7 @@ function NotesTab() {
               </button>
               <button
                 onClick={cancelEdit}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center gap-2"
+                className="px-4 py-2 bg-cockpit-track text-theme-secondary rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center gap-2"
               >
                 <X size={16} />
                 Cancel
@@ -825,12 +825,12 @@ function NotesTab() {
 
       {/* Notes List */}
       {sortedNotes.length === 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-8 text-center">
-          <FileText size={40} className="mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-          <p className="text-gray-500 dark:text-gray-400 mb-2">
+        <div className="bg-theme-elevated rounded-xl border border-theme p-8 text-center">
+          <FileText size={40} className="mx-auto text-theme-faint mb-3" />
+          <p className="text-theme-muted mb-2">
             {searchQuery ? 'No notes match your search' : 'No notes yet'}
           </p>
-          <p className="text-sm text-theme-muted dark:text-gray-500">
+          <p className="text-sm text-theme-muted dark:text-theme-muted">
             {!searchQuery && (
               <>
                 Create notes here or save AI Tutor responses as notes with the
@@ -845,7 +845,7 @@ function NotesTab() {
           {sortedNotes.map(note => (
             <div
               key={note.id}
-              className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
+              className="bg-theme-elevated rounded-xl border border-theme p-4"
             >
               {isEditing === note.id ? (
                 <div className="space-y-3">
@@ -853,13 +853,13 @@ function NotesTab() {
                     type="text"
                     value={noteTitle}
                     onChange={e => setNoteTitle(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg"
+                    className="w-full px-3 py-2 border border-theme bg-theme-elevated dark:bg-gray-700 text-cockpit rounded-lg"
                   />
                   <textarea
                     value={noteContent}
                     onChange={e => setNoteContent(e.target.value)}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg"
+                    className="w-full px-3 py-2 border border-theme bg-theme-elevated dark:bg-gray-700 text-cockpit rounded-lg"
                   />
                   <div className="flex gap-2">
                     <button
@@ -871,7 +871,7 @@ function NotesTab() {
                     </button>
                     <button
                       onClick={cancelEdit}
-                      className="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm flex items-center gap-1"
+                      className="px-3 py-1.5 bg-cockpit-track text-theme-secondary rounded-lg text-sm flex items-center gap-1"
                     >
                       <X size={14} />
                       Cancel
@@ -885,7 +885,7 @@ function NotesTab() {
                       <span className="text-lg flex-shrink-0">{note.domainIcon}</span>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-gray-900 dark:text-white truncate">{note.title}</h3>
+                          <h3 className="font-medium text-cockpit truncate">{note.title}</h3>
                           {isFromTutor(note.title) && (
                             <span className="px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-[10px] rounded font-medium flex items-center gap-0.5">
                               <Bot size={10} />
@@ -893,7 +893,7 @@ function NotesTab() {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                        <p className="text-xs text-theme-faint">
                           {new Date(note.updatedAt).toLocaleDateString()} • Domain {note.domainId}
                         </p>
                       </div>
@@ -903,7 +903,7 @@ function NotesTab() {
                       {!note.id.startsWith('combined-') && !convertedToCards.has(note.id) && (
                         <button
                           onClick={() => handleNoteToFlashcard(note)}
-                          className="p-1.5 text-gray-400 hover:text-green-600 rounded transition-colors"
+                          className="p-1.5 text-theme-faint hover:text-green-600 rounded transition-colors"
                           title="Convert to Flashcard"
                         >
                           <Layers size={14} />
@@ -918,13 +918,13 @@ function NotesTab() {
                         <>
                           <button
                             onClick={() => startEdit(note)}
-                            className="p-1.5 text-gray-400 hover:text-primary-600 rounded transition-colors"
+                            className="p-1.5 text-theme-faint hover:text-primary-600 rounded transition-colors"
                           >
                             <Edit2 size={14} />
                           </button>
                           <button
                             onClick={() => deleteNote(note.domainId, note.id)}
-                            className="p-1.5 text-gray-400 hover:text-red-500 rounded transition-colors"
+                            className="p-1.5 text-theme-faint hover:text-red-500 rounded transition-colors"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -941,7 +941,7 @@ function NotesTab() {
                       )}
                     </div>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 whitespace-pre-wrap line-clamp-3">
+                  <p className="text-sm text-cockpit-muted mt-2 whitespace-pre-wrap line-clamp-3">
                     {note.content}
                   </p>
                 </>
@@ -1028,30 +1028,30 @@ function FlashcardsTab() {
       <div className="space-y-4">
         {/* Stats Row */}
         <div className="grid grid-cols-5 gap-3">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+          <div className="bg-theme-elevated rounded-xl p-4 border border-theme text-center">
             <Layers className="text-primary-500 mx-auto mb-1" size={20} />
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Total Cards</div>
+            <div className="text-2xl font-bold text-cockpit">{stats.total}</div>
+            <div className="text-xs text-theme-muted">Total Cards</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+          <div className="bg-theme-elevated rounded-xl p-4 border border-theme text-center">
             <RotateCw className="text-orange-500 mx-auto mb-1" size={20} />
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.due}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Due Today</div>
+            <div className="text-2xl font-bold text-cockpit">{stats.due}</div>
+            <div className="text-xs text-theme-muted">Due Today</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+          <div className="bg-theme-elevated rounded-xl p-4 border border-theme text-center">
             <Brain className="text-blue-500 mx-auto mb-1" size={20} />
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.learning}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Learning</div>
+            <div className="text-2xl font-bold text-cockpit">{stats.learning}</div>
+            <div className="text-xs text-theme-muted">Learning</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+          <div className="bg-theme-elevated rounded-xl p-4 border border-theme text-center">
             <CheckCircle className="text-green-500 mx-auto mb-1" size={20} />
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.mastered}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Mastered</div>
+            <div className="text-2xl font-bold text-cockpit">{stats.mastered}</div>
+            <div className="text-xs text-theme-muted">Mastered</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 text-center">
+          <div className="bg-theme-elevated rounded-xl p-4 border border-theme text-center">
             <Lightbulb className="text-yellow-500 mx-auto mb-1" size={20} />
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.new}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">New</div>
+            <div className="text-2xl font-bold text-cockpit">{stats.new}</div>
+            <div className="text-xs text-theme-muted">New</div>
           </div>
         </div>
 
@@ -1070,21 +1070,21 @@ function FlashcardsTab() {
           </button>
           <button
             onClick={() => setMode('create')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-primary-400 text-gray-900 dark:text-white rounded-xl p-4 flex items-center justify-center gap-3 transition-all"
+            className="bg-theme-elevated border border-theme hover:border-primary-400 text-cockpit rounded-xl p-4 flex items-center justify-center gap-3 transition-all"
           >
             <Plus size={20} className="text-primary-500" />
             <div className="text-left">
               <div className="font-semibold">Create New Card</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Add to your deck</div>
+              <div className="text-xs text-theme-muted">Add to your deck</div>
             </div>
           </button>
         </div>
 
         {/* Card List */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Your Flashcards</h3>
+        <div className="bg-theme-elevated rounded-xl border border-theme p-4">
+          <h3 className="font-semibold text-cockpit mb-3">Your Flashcards</h3>
           {cards.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">
+            <div className="text-center py-8 text-theme-faint">
               <Layers size={32} className="mx-auto mb-2 opacity-50" />
               <p>No flashcards yet. Create your first one!</p>
             </div>
@@ -1093,17 +1093,17 @@ function FlashcardsTab() {
               {cards.slice(0, 20).map(card => (
                 <div 
                   key={card.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-theme-muted dark:bg-gray-700/50 rounded-lg"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium text-gray-900 dark:text-white text-sm truncate">{card.front}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                    <div className="font-medium text-cockpit text-sm truncate">{card.front}</div>
+                    <div className="text-xs text-theme-muted">
                       Domain {card.domainId} • {card.repetitions} reviews
                     </div>
                   </div>
                   <button
                     onClick={() => handleDeleteCard(card.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                    className="p-1.5 text-theme-faint hover:text-red-500 transition-colors"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -1123,7 +1123,7 @@ function FlashcardsTab() {
     return (
       <div className="max-w-lg mx-auto space-y-4">
         {/* Progress */}
-        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+        <div className="flex items-center justify-between text-sm text-theme-muted">
           <span>Card {currentCardIndex + 1} of {dueCards.length}</span>
           <button onClick={() => setMode('overview')} className="text-primary-500 hover:underline">
             Exit Review
@@ -1133,17 +1133,17 @@ function FlashcardsTab() {
         {/* Flashcard */}
         <div 
           onClick={() => setShowAnswer(!showAnswer)}
-          className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 min-h-[300px] flex items-center justify-center cursor-pointer hover:shadow-lg transition-all"
+          className="bg-theme-elevated rounded-2xl border border-theme p-8 min-h-[300px] flex items-center justify-center cursor-pointer hover:shadow-lg transition-all"
         >
           <div className="text-center">
             <div className="text-xs text-theme-muted uppercase mb-4">
               {showAnswer ? 'Answer' : 'Question'}
             </div>
-            <div className="text-xl font-medium text-gray-900 dark:text-white">
+            <div className="text-xl font-medium text-cockpit">
               {showAnswer ? currentCard.back : currentCard.front}
             </div>
             {!showAnswer && (
-              <div className="mt-6 text-sm text-gray-400">Tap to reveal answer</div>
+              <div className="mt-6 text-sm text-theme-faint">Tap to reveal answer</div>
             )}
           </div>
         </div>
@@ -1186,41 +1186,41 @@ function FlashcardsTab() {
     return (
       <div className="max-w-lg mx-auto space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Create Flashcard</h3>
+          <h3 className="font-semibold text-cockpit">Create Flashcard</h3>
           <button onClick={() => setMode('overview')} className="text-theme-faint hover:text-theme-secondary">
             ← Back
           </button>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+        <div className="bg-theme-elevated rounded-xl border border-theme p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Question (Front)</label>
+            <label className="block text-sm font-medium text-theme-secondary mb-1">Question (Front)</label>
             <textarea
               value={newCard.front}
               onChange={e => setNewCard({ ...newCard, front: e.target.value })}
               placeholder="What is..."
-              className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+              className="w-full px-4 py-3 border border-theme bg-theme-elevated dark:bg-gray-700 text-cockpit rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
               rows={3}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Answer (Back)</label>
+            <label className="block text-sm font-medium text-theme-secondary mb-1">Answer (Back)</label>
             <textarea
               value={newCard.back}
               onChange={e => setNewCard({ ...newCard, back: e.target.value })}
               placeholder="The answer is..."
-              className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+              className="w-full px-4 py-3 border border-theme bg-theme-elevated dark:bg-gray-700 text-cockpit rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
               rows={3}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Domain</label>
+            <label className="block text-sm font-medium text-theme-secondary mb-1">Domain</label>
             <select
               value={newCard.domainId}
               onChange={e => setNewCard({ ...newCard, domainId: Number(e.target.value) })}
-              className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full px-4 py-3 border border-theme bg-theme-elevated dark:bg-gray-700 text-cockpit rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
               <option value={1}>Domain 1: AI Governance</option>
               <option value={2}>Domain 2: AI Risk Management</option>
@@ -1241,7 +1241,7 @@ function FlashcardsTab() {
     );
   }
 
-  return <div className="text-center py-8 text-gray-500">No cards due for review!</div>;
+  return <div className="text-center py-8 text-theme-muted">No cards due for review!</div>;
 }
 
 // ============ EXAM SIMULATION TAB ============
@@ -1329,30 +1329,30 @@ function ExamSimTab() {
 
   if (examState === 'setup') {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700 text-center">
+      <div className="bg-theme-elevated rounded-xl p-8 border border-theme text-center">
         <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <ClipboardList className="text-white" size={32} />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-2xl font-bold text-cockpit mb-2">
           Exam Simulation
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+        <p className="text-cockpit-muted mb-6 max-w-md mx-auto">
           Simulate the real AAISM exam experience with {EXAM_QUESTION_COUNT} questions and a 150-minute timer.
           For the full timed mode with flagging and domain breakdown, use the dedicated exam route.
         </p>
         
         <div className="grid grid-cols-3 gap-4 mb-6 max-w-md mx-auto">
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{EXAM_QUESTION_COUNT}</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Questions</div>
+          <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
+            <div className="text-2xl font-bold text-cockpit">{EXAM_QUESTION_COUNT}</div>
+            <div className="text-xs text-theme-muted">Questions</div>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">150</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Minutes</div>
+          <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
+            <div className="text-2xl font-bold text-cockpit">150</div>
+            <div className="text-xs text-theme-muted">Minutes</div>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">65%</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Pass Score</div>
+          <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
+            <div className="text-2xl font-bold text-cockpit">65%</div>
+            <div className="text-xs text-theme-muted">Pass Score</div>
           </div>
         </div>
 
@@ -1377,21 +1377,21 @@ function ExamSimTab() {
   if (examState === 'active') {
     const q = questions[currentQ];
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+      <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
         {/* Exam Header */}
         <div className="flex items-center justify-between mb-4">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
+          <div className="text-sm text-cockpit-muted">
             Question {currentQ + 1} of {questions.length}
           </div>
           <div className={`px-3 py-1.5 rounded-lg font-mono font-bold ${
-            timeRemaining < 600 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+            timeRemaining < 600 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-cockpit-track text-cockpit'
           }`}>
             ⏱️ {formatTime(timeRemaining)}
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full mb-6">
+        <div className="h-2 bg-cockpit-track rounded-full mb-6">
           <div 
             className="h-full bg-primary-600 rounded-full transition-all"
             style={{ width: `${(answers.filter(a => a !== null).length / questions.length) * 100}%` }}
@@ -1399,7 +1399,7 @@ function ExamSimTab() {
         </div>
 
         {/* Question */}
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{q.question}</h3>
+        <h3 className="text-lg font-medium text-cockpit mb-4">{q.question}</h3>
 
         {/* Options */}
         <div className="space-y-2 mb-6">
@@ -1414,11 +1414,11 @@ function ExamSimTab() {
               className={`w-full p-4 text-left rounded-xl border-2 transition-all ${
                 answers[currentQ] === i
                   ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                  : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+                  : 'border-theme hover:border-theme'
               }`}
             >
               <span className="font-medium mr-2">{String.fromCharCode(65 + i)}.</span>
-              <span className="text-gray-700 dark:text-gray-300">{opt}</span>
+              <span className="text-theme-secondary">{opt}</span>
             </button>
           ))}
         </div>
@@ -1428,7 +1428,7 @@ function ExamSimTab() {
           <button
             onClick={() => setCurrentQ(Math.max(0, currentQ - 1))}
             disabled={currentQ === 0}
-            className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50"
+            className="px-4 py-2 text-cockpit-muted hover:bg-cockpit-track rounded-lg disabled:opacity-50"
           >
             Previous
           </button>
@@ -1443,7 +1443,7 @@ function ExamSimTab() {
                     ? 'bg-primary-600 text-white'
                     : answers[i] !== null
                       ? 'bg-green-500 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                      : 'bg-cockpit-track text-cockpit-muted'
                 }`}
               >
                 {i + 1}
@@ -1481,7 +1481,7 @@ function ExamSimTab() {
     .filter(({ question, userAnswer }) => userAnswer !== question.shuffledCorrectAnswer);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700 text-center">
+    <div className="bg-theme-elevated rounded-xl p-8 border border-theme text-center">
       <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
         passed ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'
       }`}>
@@ -1495,10 +1495,10 @@ function ExamSimTab() {
       <h2 className={`text-3xl font-bold mb-2 ${passed ? 'text-green-600' : 'text-red-600'}`}>
         {score}%
       </h2>
-      <p className="text-gray-600 dark:text-gray-400 mb-4">
+      <p className="text-cockpit-muted mb-4">
         {passed ? '🎉 Congratulations! You passed!' : '📚 Keep studying, you\'ll get there!'}
       </p>
-      <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
+      <p className="text-sm text-theme-muted mb-6">
         {correct} of {questions.length} correct • Pass mark: 65%
       </p>
 

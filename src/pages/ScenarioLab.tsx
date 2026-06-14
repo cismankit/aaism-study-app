@@ -240,7 +240,7 @@ function MenuView({
           <Theater className="w-8 h-8 text-indigo-500" />
           Scenario Learning Lab
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-theme-muted mt-1">
           Learn through real-world scenarios and targeted pattern drills
         </p>
       </div>
@@ -248,14 +248,14 @@ function MenuView({
       {/* Two mode cards */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Scenarios */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+        <div className="bg-theme-elevated rounded-xl border border-theme p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
               <BookOpen className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
               <h2 className="text-lg font-bold">Interactive Scenarios</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Real-world case studies with multi-act decisions</p>
+              <p className="text-sm text-theme-muted">Real-world case studies with multi-act decisions</p>
             </div>
           </div>
 
@@ -264,7 +264,7 @@ function MenuView({
               <button
                 key={scenario.id}
                 onClick={() => onStartScenario(scenario)}
-                className="w-full text-left p-3 rounded-lg border border-gray-100 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group"
+                className="w-full text-left p-3 rounded-lg border border-theme hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all group"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="font-medium text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400">{scenario.title}</h3>
@@ -278,26 +278,26 @@ function MenuView({
                     }`}>
                       {scenario.difficulty}
                     </span>
-                    <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">
+                    <span className="text-[10px] px-1.5 py-0.5 bg-cockpit-track rounded">
                       D{scenario.domain}
                     </span>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{scenario.context}</p>
+                <p className="text-xs text-theme-muted mt-1 line-clamp-2">{scenario.context}</p>
                 <div className="flex items-center gap-1 mt-1">
                   {scenario.topics.slice(0, 3).map((t, i) => (
                     <span key={i} className="text-[10px] px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 rounded">
                       {t}
                     </span>
                   ))}
-                  <span className="text-[10px] text-gray-400">{scenario.acts.length} acts</span>
+                  <span className="text-[10px] text-theme-faint">{scenario.acts.length} acts</span>
                 </div>
               </button>
             ))}
           </div>
 
           {/* Generate custom scenario */}
-          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+          <div className="mt-4 pt-4 border-t border-theme">
             <h4 className="text-sm font-semibold mb-2 flex items-center gap-1">
               <Zap className="w-3 h-3 text-yellow-500" />
               Generate Custom Scenario ({aiConfig.provider})
@@ -308,12 +308,12 @@ function MenuView({
                 value={customTopic}
                 onChange={(e) => setCustomTopic(e.target.value)}
                 placeholder="Topic (e.g., Shadow AI, Supply Chain)"
-                className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                className="flex-1 px-3 py-2 text-sm border border-theme rounded-lg bg-theme-elevated dark:bg-gray-700"
               />
               <select
                 value={customDomain}
                 onChange={(e) => setCustomDomain(Number(e.target.value))}
-                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+                className="px-3 py-2 text-sm border border-theme rounded-lg bg-theme-elevated dark:bg-gray-700"
               >
                 <option value={1}>D1</option>
                 <option value={2}>D2</option>
@@ -333,14 +333,14 @@ function MenuView({
         </div>
 
         {/* Pattern Drills */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5">
+        <div className="bg-theme-elevated rounded-xl border border-theme p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
               <Target className="w-6 h-6 text-orange-600 dark:text-orange-400" />
             </div>
             <div>
               <h2 className="text-lg font-bold">Pattern Drills</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Targeted practice on specific question patterns</p>
+              <p className="text-sm text-theme-muted">Targeted practice on specific question patterns</p>
             </div>
           </div>
 
@@ -348,7 +348,7 @@ function MenuView({
             <select
               value={drillDomain ?? ''}
               onChange={(e) => setDrillDomain(e.target.value ? Number(e.target.value) : undefined)}
-              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700"
+              className="w-full px-3 py-2 text-sm border border-theme rounded-lg bg-theme-elevated dark:bg-gray-700"
             >
               <option value="">All Domains</option>
               <option value="1">Domain 1: AI Governance</option>
@@ -371,7 +371,7 @@ function MenuView({
                   key={pattern.id}
                   onClick={() => onStartDrill(pattern, drillDomain)}
                   disabled={generating}
-                  className="w-full text-left p-3 rounded-lg border border-gray-100 dark:border-gray-700 hover:border-orange-300 dark:hover:border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all group disabled:opacity-50"
+                  className="w-full text-left p-3 rounded-lg border border-theme hover:border-orange-300 dark:hover:border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all group disabled:opacity-50"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -380,14 +380,14 @@ function MenuView({
                       </div>
                       <div>
                         <h3 className="font-medium text-sm group-hover:text-orange-600 dark:group-hover:text-orange-400">{pattern.name}</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{pattern.strategy}</p>
+                        <p className="text-xs text-theme-muted line-clamp-1">{pattern.strategy}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full ${freqColors[pattern.examFrequency]}`}>
                         {pattern.examFrequency.replace('_', ' ')}
                       </span>
-                      <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-orange-500" />
+                      <ChevronRight className="w-4 h-4 text-theme-faint group-hover:text-orange-500" />
                     </div>
                   </div>
                 </button>
@@ -395,7 +395,7 @@ function MenuView({
             })}
           </div>
 
-          <p className="text-xs text-gray-400 mt-3 text-center">
+          <p className="text-xs text-theme-faint mt-3 text-center">
             Questions generated on-demand by {aiConfig.provider} ({aiConfig.model})
           </p>
         </div>
@@ -446,14 +446,14 @@ function ScenarioView({
 
     return (
       <div className="max-w-3xl mx-auto space-y-6">
-        <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm">
+        <button onClick={onBack} className="flex items-center gap-2 text-theme-muted hover:text-theme-secondary dark:hover:text-gray-300 text-sm">
           <ArrowLeft className="w-4 h-4" /> Back to Lab
         </button>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 text-center">
-          <Trophy className={`w-16 h-16 mx-auto mb-4 ${pct >= 80 ? 'text-yellow-500' : pct >= 50 ? 'text-blue-500' : 'text-gray-400'}`} />
+        <div className="bg-theme-elevated rounded-xl border border-theme p-6 text-center">
+          <Trophy className={`w-16 h-16 mx-auto mb-4 ${pct >= 80 ? 'text-yellow-500' : pct >= 50 ? 'text-blue-500' : 'text-theme-faint'}`} />
           <h2 className="text-2xl font-bold mb-2">Scenario Complete!</h2>
-          <h3 className="text-lg text-gray-500 dark:text-gray-400 mb-4">{scenario.title}</h3>
+          <h3 className="text-lg text-theme-muted mb-4">{scenario.title}</h3>
 
           <div className="text-4xl font-bold mb-2" style={{
             color: pct >= 80 ? '#22c55e' : pct >= 50 ? '#3b82f6' : '#ef4444',
@@ -476,7 +476,7 @@ function ScenarioView({
                   )}
                   <span className="text-sm font-medium">Act {i + 1}: {act.question}</span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 ml-6">{act.examConnection}</p>
+                <p className="text-xs text-theme-muted ml-6">{act.examConnection}</p>
               </div>
             ))}
           </div>
@@ -497,7 +497,7 @@ function ScenarioView({
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm">
+      <button onClick={onBack} className="flex items-center gap-2 text-theme-muted hover:text-theme-secondary dark:hover:text-gray-300 text-sm">
         <ArrowLeft className="w-4 h-4" /> Back to Lab
       </button>
 
@@ -522,10 +522,10 @@ function ScenarioView({
       </div>
 
       {/* Current act */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        <div className="text-xs text-gray-400 mb-2 uppercase tracking-wide">Act {currentAct + 1} of {scenario.acts.length}</div>
+      <div className="bg-theme-elevated rounded-xl border border-theme p-6">
+        <div className="text-xs text-theme-faint mb-2 uppercase tracking-wide">Act {currentAct + 1} of {scenario.acts.length}</div>
 
-        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-4">
+        <div className="bg-theme-muted dark:bg-gray-700/50 rounded-lg p-4 mb-4">
           <p className="text-sm leading-relaxed">{act.situation}</p>
         </div>
 
@@ -533,7 +533,7 @@ function ScenarioView({
 
         <div className="space-y-2">
           {act.options.map((option, i) => {
-            let optionClass = 'border-gray-200 dark:border-gray-600 hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer';
+            let optionClass = 'border-theme hover:border-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer';
 
             if (showExplanation) {
               if (i === act.correctAnswer) {
@@ -541,7 +541,7 @@ function ScenarioView({
               } else if (i === currentAnswer?.selected && !currentAnswer.correct) {
                 optionClass = 'border-red-500 bg-red-50 dark:bg-red-900/20';
               } else {
-                optionClass = 'border-gray-200 dark:border-gray-600 opacity-50';
+                optionClass = 'border-theme opacity-50';
               }
             }
 
@@ -638,14 +638,14 @@ function DrillView({
   if (loading || generating) {
     return (
       <div className="max-w-3xl mx-auto space-y-6">
-        <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm">
+        <button onClick={onBack} className="flex items-center gap-2 text-theme-muted hover:text-theme-secondary dark:hover:text-gray-300 text-sm">
           <ArrowLeft className="w-4 h-4" /> Back to Lab
         </button>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 text-center">
+        <div className="bg-theme-elevated rounded-xl border border-theme p-6 text-center">
           <RefreshCw className="w-12 h-12 mx-auto mb-4 text-orange-500 animate-spin" />
           <h3 className="text-lg font-bold mb-2">Generating {pattern.keyword} Pattern Questions...</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Using AI to create targeted practice questions</p>
+          <p className="text-sm text-theme-muted">Using AI to create targeted practice questions</p>
         </div>
 
         {logs.length > 0 && (
@@ -666,13 +666,13 @@ function DrillView({
   if (questions.length === 0) {
     return (
       <div className="max-w-3xl mx-auto space-y-6">
-        <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm">
+        <button onClick={onBack} className="flex items-center gap-2 text-theme-muted hover:text-theme-secondary dark:hover:text-gray-300 text-sm">
           <ArrowLeft className="w-4 h-4" /> Back to Lab
         </button>
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 text-center">
+        <div className="bg-theme-elevated rounded-xl border border-theme p-6 text-center">
           <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
           <h3 className="text-lg font-bold mb-2">Could not generate questions</h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Try again or switch to a different AI provider</p>
+          <p className="text-sm text-theme-muted mb-4">Try again or switch to a different AI provider</p>
           <button onClick={onBack} className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">Back to Lab</button>
         </div>
         {logs.length > 0 && (
@@ -694,11 +694,11 @@ function DrillView({
 
     return (
       <div className="max-w-3xl mx-auto space-y-6">
-        <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm">
+        <button onClick={onBack} className="flex items-center gap-2 text-theme-muted hover:text-theme-secondary dark:hover:text-gray-300 text-sm">
           <ArrowLeft className="w-4 h-4" /> Back to Lab
         </button>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 text-center">
+        <div className="bg-theme-elevated rounded-xl border border-theme p-6 text-center">
           <BarChart3 className={`w-16 h-16 mx-auto mb-4 ${pct >= 80 ? 'text-green-500' : pct >= 50 ? 'text-blue-500' : 'text-red-500'}`} />
           <h2 className="text-2xl font-bold mb-1">{pattern.name} Drill Complete</h2>
           <div className="text-4xl font-bold my-3" style={{
@@ -707,12 +707,12 @@ function DrillView({
             {correct}/{total} ({pct}%)
           </div>
 
-          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 text-left mt-4">
+          <div className="bg-theme-muted dark:bg-gray-700/50 rounded-lg p-3 text-left mt-4">
             <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
               <Star className="w-4 h-4 text-yellow-500" />
               Pattern Tip
             </h4>
-            <p className="text-sm text-gray-600 dark:text-gray-300">{pattern.strategy}</p>
+            <p className="text-sm text-cockpit-muted">{pattern.strategy}</p>
           </div>
 
           <button onClick={onBack} className="mt-6 px-6 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors">
@@ -728,7 +728,7 @@ function DrillView({
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm">
+      <button onClick={onBack} className="flex items-center gap-2 text-theme-muted hover:text-theme-secondary dark:hover:text-gray-300 text-sm">
         <ArrowLeft className="w-4 h-4" /> Back to Lab
       </button>
 
@@ -758,22 +758,22 @@ function DrillView({
       </div>
 
       {/* Question */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-theme-elevated rounded-xl border border-theme p-6">
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">D{q.domain}</span>
+          <span className="text-xs px-2 py-0.5 bg-cockpit-track rounded">D{q.domain}</span>
           <span className={`text-xs px-2 py-0.5 rounded ${
             q.difficulty === 'hard' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
             q.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
             'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
           }`}>{q.difficulty}</span>
-          <span className="text-xs text-gray-400">{q.topic}</span>
+          <span className="text-xs text-theme-faint">{q.topic}</span>
         </div>
 
         <h3 className="font-semibold text-lg mb-4">{q.question}</h3>
 
         <div className="space-y-2">
           {q.options.map((option, i) => {
-            let cls = 'border-gray-200 dark:border-gray-600 hover:border-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 cursor-pointer';
+            let cls = 'border-theme hover:border-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 cursor-pointer';
 
             if (showExplanation) {
               if (i === q.correctAnswer) {
@@ -781,7 +781,7 @@ function DrillView({
               } else if (i === currentAnswer?.selected && !currentAnswer.correct) {
                 cls = 'border-red-500 bg-red-50 dark:bg-red-900/20';
               } else {
-                cls = 'border-gray-200 dark:border-gray-600 opacity-50';
+                cls = 'border-theme opacity-50';
               }
             }
 

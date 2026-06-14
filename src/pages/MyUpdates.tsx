@@ -23,7 +23,7 @@ function StatusIcon({ status }: { status: FeatureRequest['status'] }) {
     case 'payment_pending':
       return <AlertCircle className="w-4 h-4 text-amber-500" />;
     default:
-      return <Package className="w-4 h-4 text-gray-400" />;
+      return <Package className="w-4 h-4 text-theme-faint" />;
   }
 }
 
@@ -33,7 +33,7 @@ function RequestCard({ request }: { request: FeatureRequest }) {
   const hasShippedRelease = matchingReleases.length > 0;
 
   return (
-    <div className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 osint-widget space-y-3">
+    <div className="p-4 rounded-xl bg-theme-elevated border border-theme osint-widget space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-medium leading-relaxed">{request.description}</p>
@@ -41,10 +41,10 @@ function RequestCard({ request }: { request: FeatureRequest }) {
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusColors[request.status]}`}>
               {statusLabels[request.status]}
             </span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-cockpit-track text-cockpit-muted">
               {priorityLabels[request.priority]}
             </span>
-            <span className="text-[10px] text-gray-400">
+            <span className="text-[10px] text-theme-faint">
               {tier.emoji} {tier.name} · {request.paymentNote}
             </span>
           </div>
@@ -60,7 +60,7 @@ function RequestCard({ request }: { request: FeatureRequest }) {
               ✨ Your requested feature shipped!
             </p>
             {matchingReleases.map(rel => (
-              <p key={rel.id} className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p key={rel.id} className="text-xs text-cockpit-muted mt-1">
                 <strong>{rel.version}</strong> — {rel.title}
               </p>
             ))}
@@ -68,7 +68,7 @@ function RequestCard({ request }: { request: FeatureRequest }) {
         </div>
       )}
 
-      <p className="text-[10px] text-gray-400">
+      <p className="text-[10px] text-theme-faint">
         Submitted {new Date(request.createdAt).toLocaleDateString()}
       </p>
     </div>
@@ -85,7 +85,7 @@ export default function MyUpdates() {
           <Radio className="w-7 h-7 text-cyan-500" />
           My Updates
         </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
+        <p className="text-theme-muted mt-1 text-sm">
           Track your feature requests and see when they ship over-the-air
         </p>
       </div>
@@ -103,26 +103,26 @@ export default function MyUpdates() {
             .map(entry => (
               <div
                 key={entry.id}
-                className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 osint-widget"
+                className="p-4 rounded-xl bg-theme-elevated border border-theme osint-widget"
               >
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <span className="text-xs font-mono px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
                     v{entry.version}
                   </span>
-                  <span className="text-xs text-gray-400">
+                  <span className="text-xs text-theme-faint">
                     {new Date(entry.shippedAt).toLocaleDateString()}
                   </span>
                   {entry.tags?.map(tag => (
                     <span
                       key={tag}
-                      className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500"
+                      className="text-[10px] px-1.5 py-0.5 rounded bg-cockpit-track text-theme-muted"
                     >
                       {tag}
                     </span>
                   ))}
                 </div>
                 <h3 className="font-semibold text-sm">{entry.title}</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                <p className="text-xs text-theme-muted mt-1 leading-relaxed">
                   {entry.description}
                 </p>
               </div>
@@ -147,9 +147,9 @@ export default function MyUpdates() {
         </div>
 
         {requests.length === 0 ? (
-          <div className="text-center py-12 rounded-xl border border-dashed border-gray-300 dark:border-gray-600">
+          <div className="text-center py-12 rounded-xl border border-dashed border-theme">
             <Coffee className="w-10 h-10 text-amber-500/50 mx-auto mb-3" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">No requests yet</p>
+            <p className="text-sm text-theme-muted">No requests yet</p>
             <Link
               to="/feature-request"
               className="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium transition-colors"

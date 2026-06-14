@@ -80,7 +80,12 @@
   .bg-theme-muted { background-color: rgb(var(--surface-muted)); }
   .bg-cockpit-track { background-color: rgb(var(--cockpit-track)); }
   .bg-cockpit-muted { background-color: rgb(var(--cockpit-bg-muted)); }
+  .bg-sidebar { background-color: rgb(var(--sidebar-bg)); }
   .border-theme { border-color: rgb(var(--border-default)); }
+  .border-sidebar { border-color: rgb(var(--sidebar-border)); }
+  .input-theme {
+    @apply w-full px-3 py-2 border border-theme rounded-lg bg-theme-page text-cockpit focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm;
+  }
   .border-cockpit-emerald { border-color: rgb(var(--cockpit-border-emerald) / 0.4); }
 }
 

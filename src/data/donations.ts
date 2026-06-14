@@ -38,9 +38,30 @@ export interface DonationRegion {
   note?: string;
 }
 
+import {
+  getEffectiveRazorpayUrl,
+  getEffectiveStripeUrl,
+} from '../services/integrationsConfigService';
+
 function envOrDefault(key: string, fallback: string): string {
   const val = import.meta.env[key];
   return typeof val === 'string' && val.trim() ? val.trim() : fallback;
+}
+
+function resolveStripeUrl(): string {
+  return getEffectiveStripeUrl() ?? envOrDefault('VITE_DONATE_STRIPE', 'https://buy.stripe.com/placeholder-aaism');
+}
+
+function resolveRazorpayUrl(): string {
+  return getEffectiveRazorpayUrl() ?? envOrDefault('VITE_DONATE_RAZORPAY', 'https://razorpay.me/placeholder-aaism');
+}
+
+function isStripePlaceholder(): boolean {
+  return !getEffectiveStripeUrl() && isPlaceholderValue(envOrDefault('VITE_DONATE_STRIPE', 'placeholder'));
+}
+
+function isRazorpayPlaceholder(): boolean {
+  return !getEffectiveRazorpayUrl() && isPlaceholderValue(envOrDefault('VITE_DONATE_RAZORPAY', 'placeholder'));
 }
 
 function isPlaceholderValue(value: string): boolean {
@@ -158,12 +179,12 @@ export const donationRegions: DonationRegion[] = [
 ];
 
 const UPI_ID = envOrDefault('VITE_DONATE_UPI', 'yourname@upi');
-const RAZORPAY_URL = envOrDefault('VITE_DONATE_RAZORPAY', 'https://razorpay.me/placeholder-aaism');
+const RAZORPAY_URL = resolveRazorpayUrl();
 const BANK_INDIA = envOrDefault(
   'VITE_DONATE_BANK_INDIA',
   'Account: XXXX0000 · IFSC: HDFC0000XXX · Name: AAISM Study Fund (PLACEHOLDER)'
 );
-const STRIPE_URL = envOrDefault('VITE_DONATE_STRIPE', 'https://buy.stripe.com/placeholder-aaism');
+const STRIPE_URL = resolveStripeUrl();
 const WISE_URL = envOrDefault('VITE_DONATE_WISE', 'https://wise.com/pay/me/placeholder-aaism');
 
 export const regionalPaymentMethods: RegionalPaymentMethod[] = [
@@ -187,7 +208,7 @@ export const regionalPaymentMethods: RegionalPaymentMethod[] = [
     value: RAZORPAY_URL,
     howToPay: 'Open link → choose UPI/card/netbanking → complete payment',
     icon: 'card',
-    isPlaceholder: isPlaceholderValue(RAZORPAY_URL),
+    isPlaceholder: isRazorpayPlaceholder(),
     regions: ['india'],
   },
   {
@@ -221,7 +242,7 @@ export const regionalPaymentMethods: RegionalPaymentMethod[] = [
     value: STRIPE_URL,
     howToPay: 'Open link → enter card details → confirm one-time payment',
     icon: 'card',
-    isPlaceholder: isPlaceholderValue(STRIPE_URL),
+    isPlaceholder: isStripePlaceholder(),
     regions: ['us'],
   },
   {
@@ -255,7 +276,7 @@ export const regionalPaymentMethods: RegionalPaymentMethod[] = [
     value: STRIPE_URL,
     howToPay: 'Open link → pay in EUR with debit/credit card',
     icon: 'card',
-    isPlaceholder: isPlaceholderValue(STRIPE_URL),
+    isPlaceholder: isStripePlaceholder(),
     regions: ['europe'],
   },
   {
@@ -314,7 +335,7 @@ export const regionalPaymentMethods: RegionalPaymentMethod[] = [
     value: STRIPE_URL,
     howToPay: 'Open link → enter card → confirm payment',
     icon: 'card',
-    isPlaceholder: isPlaceholderValue(STRIPE_URL),
+    isPlaceholder: isStripePlaceholder(),
     regions: ['global', 'us', 'europe'],
   },
   {
@@ -365,9 +386,23 @@ export const regionalPaymentMethods: RegionalPaymentMethod[] = [
 
 // Fix duplicate howToPay in wise-eu entry - I made an error. Let me fix when writing.
 
+export function getAllRegionalPaymentMethods(): RegionalPaymentMethod[] {
+  const stripeUrl = resolveStripeUrl();
+  const razorpayUrl = resolveRazorpayUrl();
+  return regionalPaymentMethods.map(method => {
+    if (method.id.includes('stripe')) {
+      return { ...method, value: stripeUrl, isPlaceholder: isStripePlaceholder() };
+    }
+    if (method.id === 'razorpay') {
+      return { ...method, value: razorpayUrl, isPlaceholder: isRazorpayPlaceholder() };
+    }
+    return method;
+  });
+}
+
 export function getPaymentMethodsForRegion(regionId: DonationRegionId): RegionalPaymentMethod[] {
   const seen = new Set<string>();
-  return regionalPaymentMethods.filter(method => {
+  return getAllRegionalPaymentMethods().filter(method => {
     if (!method.regions.includes(regionId)) return false;
     if (seen.has(method.id)) return false;
     seen.add(method.id);
@@ -376,7 +411,7 @@ export function getPaymentMethodsForRegion(regionId: DonationRegionId): Regional
 }
 
 export function hasPlaceholderPayments(regionId?: DonationRegionId): boolean {
-  const methods = regionId ? getPaymentMethodsForRegion(regionId) : regionalPaymentMethods;
+  const methods = regionId ? getPaymentMethodsForRegion(regionId) : getAllRegionalPaymentMethods();
   return (
     methods.some(m => m.isPlaceholder) ||
     cryptoDonations.some(c => c.isPlaceholder) ||

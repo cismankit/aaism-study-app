@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Coffee, Copy, Check, Bitcoin, Coins, CreditCard, ExternalLink,
   AlertTriangle, Code2, Smartphone, Building2, Globe,
-  Wallet, ArrowRightLeft, Heart, Users, Zap, BookOpen,
+  Wallet, ArrowRightLeft, Heart, Users, Zap, BookOpen, Settings,
 } from 'lucide-react';
 import {
   donationRegions,
@@ -11,7 +11,6 @@ import {
   hasPlaceholderPayments,
   donationDisclaimer,
   GITHUB_REPO,
-  DONATE_ENV_KEYS,
   withCheckoutReturnUrls,
   type DonationRegionId,
   type RegionalPaymentMethod,
@@ -71,6 +70,8 @@ const paymentIcons: Record<RegionalPaymentMethod['icon'], typeof CreditCard> = {
 
 function PaymentMethodCard({ method }: { method: RegionalPaymentMethod }) {
   const Icon = paymentIcons[method.icon] || CreditCard;
+  const isStripeOrRazorpay =
+    method.id.includes('stripe') || method.id === 'razorpay';
 
   return (
     <div className="bg-theme-elevated rounded-xl border border-amber-200/50 dark:border-amber-800/30 p-4 osint-widget">
@@ -84,7 +85,7 @@ function PaymentMethodCard({ method }: { method: RegionalPaymentMethod }) {
               <h3 className="font-semibold text-sm">{method.name}</h3>
               {method.isPlaceholder && (
                 <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-yellow-500/20 text-yellow-600 dark:text-yellow-400">
-                  PLACEHOLDER
+                  NOT CONFIGURED
                 </span>
               )}
             </div>
@@ -92,7 +93,7 @@ function PaymentMethodCard({ method }: { method: RegionalPaymentMethod }) {
           </div>
         </div>
         {method.type === 'copy' && <CopyButton value={method.value} />}
-        {method.type === 'link' && (
+        {method.type === 'link' && !method.isPlaceholder && (
           <a
             href={withCheckoutReturnUrls(method.value)}
             target="_blank"
@@ -102,6 +103,15 @@ function PaymentMethodCard({ method }: { method: RegionalPaymentMethod }) {
             Pay
             <ExternalLink className="w-3 h-3" />
           </a>
+        )}
+        {method.type === 'link' && method.isPlaceholder && isStripeOrRazorpay && (
+          <Link
+            to="/settings"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-cockpit-track text-cockpit border border-theme hover:border-emerald-500/40 transition-colors flex-shrink-0"
+          >
+            <Settings className="w-3 h-3" />
+            Settings → Integrations
+          </Link>
         )}
       </div>
 
@@ -113,7 +123,7 @@ function PaymentMethodCard({ method }: { method: RegionalPaymentMethod }) {
 
       <p className="text-xs text-theme-muted flex items-start gap-1.5">
         <ArrowRightLeft className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
-        <span><strong className="text-gray-600 dark:text-gray-300">How to pay:</strong> {method.howToPay}</span>
+        <span><strong className="text-cockpit-muted">How to pay:</strong> {method.howToPay}</span>
       </p>
     </div>
   );
@@ -203,12 +213,13 @@ export default function Donate() {
         <div className="flex items-start gap-3 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
           <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
-            <p className="font-medium text-yellow-700 dark:text-yellow-300">Placeholder payment details</p>
+            <p className="font-medium text-yellow-700 dark:text-yellow-300">Payment links not configured</p>
             <p className="text-cockpit-muted mt-1">
-              Addresses and links below are placeholders until configured. Edit{' '}
-              <code className="text-xs px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-700">src/data/donations.ts</code>{' '}
-              or set <code className="text-xs px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-700">VITE_DONATE_*</code>{' '}
-              environment variables before accepting real donations.
+              Add Stripe and Razorpay hosted checkout URLs in{' '}
+              <Link to="/settings" className="text-accent-emerald font-medium hover:underline">
+                Settings → Integrations
+              </Link>
+              . Your config stays in this browser only — never committed to GitHub.
             </p>
           </div>
         </div>
@@ -297,11 +308,11 @@ export default function Donate() {
                     </div>
                     <CopyButton value={method.value} />
                   </div>
-                  <code className="block text-xs sm:text-sm font-mono bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-lg border border-theme break-all text-theme-secondary mb-2">
+                  <code className="block text-xs sm:text-sm font-mono bg-theme-muted px-3 py-2 rounded-lg border border-theme break-all text-theme-secondary mb-2">
                     {method.value}
                   </code>
                   <p className="text-xs text-theme-muted">
-                    <strong className="text-gray-600 dark:text-gray-300">How to pay:</strong> {method.howToPay}
+                    <strong className="text-cockpit-muted">How to pay:</strong> {method.howToPay}
                   </p>
                 </div>
               );
@@ -312,19 +323,14 @@ export default function Donate() {
 
 
       {/* Config hint for maintainers */}
-      <section className="flex items-start gap-3 p-4 rounded-xl bg-gray-100 dark:bg-gray-800/50 border border-theme">
-        <Code2 className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
+      <section className="flex items-start gap-3 p-4 rounded-xl bg-cockpit-track dark:bg-gray-800/50 border border-theme">
+        <Code2 className="w-5 h-5 text-theme-muted flex-shrink-0 mt-0.5" />
         <div className="text-sm text-cockpit-muted">
           <p className="font-medium text-theme-secondary">For maintainers</p>
           <p className="mt-1">
-            Update payment details in <code className="text-xs px-1 py-0.5 rounded bg-gray-200 dark:bg-gray-700">src/data/donations.ts</code>.
-            Optional env overrides:{' '}
-            {DONATE_ENV_KEYS.map((key, i) => (
-              <span key={key}>
-                <code className="text-xs">{key}</code>
-                {i < DONATE_ENV_KEYS.length - 1 ? ', ' : '.'}
-              </span>
-            ))}
+            End users configure checkout in{' '}
+            <Link to="/settings" className="text-accent-emerald hover:underline">Settings → Integrations</Link>.
+            Build-time env overrides (<code className="text-xs">VITE_DONATE_*</code>) apply when in-app config is empty.
           </p>
           <a
             href={`https://github.com/${GITHUB_REPO}`}
@@ -338,7 +344,7 @@ export default function Donate() {
         </div>
       </section>
 
-      <p className="text-xs text-gray-500 dark:text-gray-500 leading-relaxed border-t border-theme pt-4">
+      <p className="text-xs text-theme-muted leading-relaxed border-t border-theme pt-4">
         {donationDisclaimer}
       </p>
     </div>

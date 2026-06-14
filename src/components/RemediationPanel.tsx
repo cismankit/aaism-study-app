@@ -49,13 +49,13 @@ export default function RemediationPanel({ wrongAnswers, onPracticeSimilar, comp
               key={question.id ?? i}
               className="p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/10"
             >
-              <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
+              <p className="text-sm font-medium text-cockpit line-clamp-2">
                 {question.question}
               </p>
               <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
                 Missed: {question.topic || `Domain ${question.domain}`}
               </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 line-clamp-2">
+              <p className="text-xs text-cockpit-muted mt-2 line-clamp-2">
                 {question.explanation}
               </p>
 

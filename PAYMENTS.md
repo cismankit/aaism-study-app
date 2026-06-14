@@ -4,9 +4,10 @@ AAISM runs as a static SPA on GitHub Pages. Payments use **hosted checkout URLs*
 
 ## Setup
 
-1. Copy `.env.example` to `.env.local`
-2. Add hosted checkout URLs from your payment provider dashboard
-3. Rebuild with `npm run build:pages`
+1. **In-app (recommended for GitHub Pages users):** Settings → Integrations — add Stripe/Razorpay hosted checkout URLs and optional Supabase config. Stored in `localStorage` only.
+2. **Build-time (maintainers):** Copy `.env.example` to `.env.local`, add hosted checkout URLs, rebuild with `npm run build:pages`
+
+In-app config overrides env vars when set.
 
 ## Supported providers
 
@@ -43,3 +44,6 @@ Static GitHub Pages cannot receive webhooks directly. Options:
 
 - Never commit API secrets or webhook signing keys
 - Client-side env vars (`VITE_*`) are public — only use publishable keys and hosted checkout URLs
+- In-app Integrations settings (`aaism-integrations-config`) stay in the user's browser — not in the public GitHub repo
+- ✅ Safe: hosted checkout URLs, Stripe publishable key, Razorpay key_id
+- ❌ Never: Stripe secret key (sk_…), Razorpay key_secret, webhook secrets, Supabase service role key

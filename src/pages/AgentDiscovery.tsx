@@ -253,7 +253,7 @@ export default function AgentDiscovery() {
                 <div className="w-3 h-3 rounded-full bg-gray-600" />
               </div>
               <div className="flex items-center gap-2">
-                <Terminal size={14} className="text-gray-400" />
+                <Terminal size={14} className="text-theme-faint" />
                 <span className="text-xs font-mono text-gray-300">
                   agent-discovery {isRunning ? `— ${activeAgent || currentPhase || 'init'}` : '— done'}
                 </span>
@@ -288,7 +288,7 @@ export default function AgentDiscovery() {
                 })}
               </div>
               {/* Elapsed Timer */}
-              <span className="text-xs font-mono text-gray-400 tabular-nums">
+              <span className="text-xs font-mono text-theme-faint tabular-nums">
                 {isRunning ? `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}` : 'completed'}
               </span>
               {isRunning && (
@@ -304,7 +304,7 @@ export default function AgentDiscovery() {
               {!isRunning && liveLogs.length > 0 && (
                 <button
                   onClick={() => setLiveLogs([])}
-                  className="text-gray-500 hover:text-gray-300 transition-colors"
+                  className="text-theme-muted hover:text-gray-300 transition-colors"
                   title="Clear console"
                 >
                   <X size={12} />
@@ -332,7 +332,7 @@ export default function AgentDiscovery() {
                 thinking: '◌',
               };
               const typeColor: Record<string, string> = {
-                info: 'text-gray-400',
+                info: 'text-theme-faint',
                 success: 'text-green-400',
                 warning: 'text-yellow-400',
                 thinking: 'text-violet-400 animate-pulse',
@@ -340,13 +340,13 @@ export default function AgentDiscovery() {
               const agentTag = entry.agent || (entry.message.match(/^\[(\w+Agent)\]/)?.[1]);
               return (
                 <div key={i} className="flex items-start gap-2 leading-relaxed">
-                  <span className="text-gray-600 shrink-0">{time}</span>
+                  <span className="text-cockpit-muted shrink-0">{time}</span>
                   {agentTag && (
                     <span className="shrink-0 text-[10px] px-1 py-0.5 rounded bg-gray-800 text-cyan-400 font-mono">
                       {agentTag}
                     </span>
                   )}
-                  <span className={`shrink-0 ${phaseColor[entry.phase] || 'text-gray-400'}`}>
+                  <span className={`shrink-0 ${phaseColor[entry.phase] || 'text-theme-faint'}`}>
                     [{entry.phase}]
                   </span>
                   <span className={`shrink-0 ${typeColor[entry.type]}`}>
@@ -374,12 +374,12 @@ export default function AgentDiscovery() {
           {/* Console Footer */}
           {isRunning && (
             <div className="px-4 py-2 bg-gray-800 dark:bg-gray-900 border-t border-gray-700 flex items-center justify-between">
-              <div className="text-[10px] text-gray-500 flex items-center gap-2">
+              <div className="text-[10px] text-theme-muted flex items-center gap-2">
                 <RefreshCw size={10} className="animate-spin" />
                 {phaseMessage}
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-[10px] text-gray-500">
+                <span className="text-[10px] text-theme-muted">
                   {liveLogs.length} log entries
                 </span>
                 <button
@@ -420,7 +420,7 @@ export default function AgentDiscovery() {
       )}
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+      <div className="flex gap-1 bg-cockpit-track dark:bg-gray-800 p-1 rounded-lg">
         {([
           { id: 'pipeline' as ViewTab, label: 'Pipeline', icon: Zap },
           { id: 'leads' as ViewTab, label: 'Leads', icon: Database },
@@ -432,8 +432,8 @@ export default function AgentDiscovery() {
             onClick={() => setActiveTab(tab.id)}
             className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-md text-sm font-medium transition-all ${
               activeTab === tab.id
-                ? 'bg-white dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm'
-                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                ? 'bg-theme-elevated dark:bg-gray-700 text-violet-600 dark:text-violet-400 shadow-sm'
+                : 'text-theme-muted hover:text-theme-secondary dark:hover:text-gray-300'
             }`}
           >
             <tab.icon size={14} />
@@ -499,19 +499,19 @@ function PipelineTab({
   return (
     <div className="space-y-4">
       {/* Launch Agent */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="p-4 border-b border-gray-100 dark:border-gray-700">
+      <div className="bg-theme-elevated rounded-xl border border-theme overflow-hidden">
+        <div className="p-4 border-b border-theme">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles size={18} className="text-violet-500" />
-              <h2 className="font-semibold text-gray-900 dark:text-white">Launch Discovery Agent</h2>
+              <h2 className="font-semibold text-cockpit">Launch Discovery Agent</h2>
             </div>
             <button
               onClick={() => setShowStrategyPicker(!showStrategyPicker)}
               disabled={isRunning}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
                 isRunning
-                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+                  ? 'bg-cockpit-track text-theme-faint cursor-not-allowed'
                   : 'bg-gradient-to-r from-violet-500 to-purple-600 text-white hover:from-violet-600 hover:to-purple-700 shadow-md hover:shadow-lg'
               }`}
             >
@@ -522,7 +522,7 @@ function PipelineTab({
               )}
             </button>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs text-theme-muted mt-1">
             Choose a discovery strategy to find ISACA-matching exam questions
           </p>
         </div>
@@ -533,25 +533,25 @@ function PipelineTab({
               <button
                 key={preset.name}
                 onClick={() => onRunStrategy(preset.strategy)}
-                className="text-left p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-violet-300 dark:hover:border-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition-all group"
+                className="text-left p-3 rounded-lg border border-theme hover:border-violet-300 dark:hover:border-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition-all group"
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white group-hover:text-violet-600 dark:group-hover:text-violet-400">
+                  <span className="text-sm font-semibold text-cockpit group-hover:text-violet-600 dark:group-hover:text-violet-400">
                     {preset.name}
                   </span>
                   <span className="text-[10px] bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 px-1.5 py-0.5 rounded">
                     {preset.strategy.questionCount} Qs
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{preset.description}</p>
+                <p className="text-xs text-theme-muted">{preset.description}</p>
                 <div className="flex items-center gap-2 mt-2">
-                  <span className="text-[10px] text-gray-400">{preset.strategy.type}</span>
+                  <span className="text-[10px] text-theme-faint">{preset.strategy.type}</span>
                   {preset.strategy.targetDomain && (
-                    <span className="text-[10px] bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] bg-cockpit-track px-1.5 py-0.5 rounded">
                       D{preset.strategy.targetDomain}
                     </span>
                   )}
-                  <span className="text-[10px] text-gray-400">
+                  <span className="text-[10px] text-theme-faint">
                     auto-approve &ge; {preset.strategy.autoApproveThreshold}%
                   </span>
                 </div>
@@ -562,8 +562,8 @@ function PipelineTab({
       </div>
 
       {/* Pipeline Flow */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+      <div className="bg-theme-elevated rounded-xl border border-theme p-4">
+        <h3 className="text-sm font-semibold text-cockpit mb-3 flex items-center gap-2">
           <Activity size={14} className="text-violet-500" />
           Pipeline Flow
         </h3>
@@ -580,18 +580,18 @@ function PipelineTab({
                 <div className={`w-10 h-10 rounded-full ${step.iconBgClass} flex items-center justify-center mx-auto mb-1`}>
                   <step.icon size={16} className={step.iconClass} />
                 </div>
-                <div className="text-lg font-bold text-gray-900 dark:text-white">{step.count}</div>
-                <div className="text-[10px] text-gray-500 dark:text-gray-400">{step.label}</div>
+                <div className="text-lg font-bold text-cockpit">{step.count}</div>
+                <div className="text-[10px] text-theme-muted">{step.label}</div>
               </div>
-              {i < 4 && <ArrowRight size={14} className="text-gray-300 dark:text-gray-600 mx-2" />}
+              {i < 4 && <ArrowRight size={14} className="text-theme-faint mx-2" />}
             </div>
           ))}
         </div>
       </div>
 
       {/* Domain Coverage */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+      <div className="bg-theme-elevated rounded-xl border border-theme p-4">
+        <h3 className="text-sm font-semibold text-cockpit mb-3 flex items-center gap-2">
           <Shield size={14} className="text-violet-500" />
           Agent-Discovered by Domain
         </h3>
@@ -601,14 +601,14 @@ function PipelineTab({
             const max = Math.max(...Object.values(stats.domainDistribution), 1);
             return (
               <div key={d} className="flex items-center gap-3">
-                <div className="w-32 text-xs text-gray-600 dark:text-gray-400 truncate">D{d}: {domainNames[d]}</div>
-                <div className="flex-1 h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="w-32 text-xs text-cockpit-muted truncate">D{d}: {domainNames[d]}</div>
+                <div className="flex-1 h-4 bg-cockpit-track rounded-full overflow-hidden">
                   <div
                     className="h-full bg-gradient-to-r from-violet-400 to-purple-500 rounded-full transition-all"
                     style={{ width: `${(count / max) * 100}%` }}
                   />
                 </div>
-                <div className="text-xs font-mono font-bold text-gray-900 dark:text-white w-8 text-right">{count}</div>
+                <div className="text-xs font-mono font-bold text-cockpit w-8 text-right">{count}</div>
               </div>
             );
           })}
@@ -652,17 +652,17 @@ function LeadsTab({
               className={`px-2 py-1 rounded text-xs font-medium transition-all ${
                 leadFilter === f
                   ? 'bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400'
-                  : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  : 'text-theme-muted hover:bg-cockpit-track'
               }`}
             >
               {f === 'all' ? 'All' : f.replace('_', ' ')}
             </button>
           ))}
         </div>
-        <p className="text-[10px] text-gray-400">Sorted by community score (local votes)</p>
+        <p className="text-[10px] text-theme-faint">Sorted by community score (local votes)</p>
         {selectedLeads.size > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">{selectedLeads.size} selected</span>
+            <span className="text-xs text-theme-muted">{selectedLeads.size} selected</span>
             <button onClick={onBulkApprove} className="flex items-center gap-1 px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded text-xs font-medium hover:bg-green-200">
               <Check size={12} /> Approve
             </button>
@@ -675,7 +675,7 @@ function LeadsTab({
 
       {/* Leads List */}
       {leads.length === 0 ? (
-        <div className="text-center py-12 text-gray-400 dark:text-gray-500">
+        <div className="text-center py-12 text-theme-faint">
           <Bot size={48} className="mx-auto mb-3 opacity-50" />
           <p className="text-sm">No leads yet. Run the agent to discover questions.</p>
         </div>
@@ -687,7 +687,7 @@ function LeadsTab({
             return (
             <div
               key={lead.id}
-              className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-all hover:border-violet-300 dark:hover:border-violet-700"
+              className="bg-theme-elevated rounded-lg border border-theme overflow-hidden transition-all hover:border-violet-300 dark:hover:border-violet-700"
             >
               <div className="p-3 flex items-start gap-3">
                 {/* Select */}
@@ -709,7 +709,7 @@ function LeadsTab({
                         RSS intel
                       </span>
                     )}
-                    <span className="text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-500 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] bg-cockpit-track text-theme-muted px-1.5 py-0.5 rounded">
                       D{lead.question.domain}: {domainNames[lead.question.domain]}
                     </span>
                     <span className={`text-[10px] px-1.5 py-0.5 rounded ${
@@ -726,18 +726,18 @@ function LeadsTab({
                     )}
                   </div>
 
-                  <p className="text-sm text-gray-900 dark:text-white leading-snug">{lead.question.question}</p>
+                  <p className="text-sm text-cockpit leading-snug">{lead.question.question}</p>
 
                   <div className="flex items-center gap-3 mt-2">
                     <div className="flex items-center gap-1">
                       <Target size={10} className="text-blue-500" />
-                      <span className="text-[10px] text-gray-500">Confidence: {lead.confidence}%</span>
+                      <span className="text-[10px] text-theme-muted">Confidence: {lead.confidence}%</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Filter size={10} className="text-purple-500" />
-                      <span className="text-[10px] text-gray-500">Similarity: {lead.similarityScore}%</span>
+                      <span className="text-[10px] text-theme-muted">Similarity: {lead.similarityScore}%</span>
                     </div>
-                    <div className="text-[10px] text-gray-400">{lead.question.topic}</div>
+                    <div className="text-[10px] text-theme-faint">{lead.question.topic}</div>
                   </div>
                 </div>
 
@@ -751,7 +751,7 @@ function LeadsTab({
                     >
                       <ThumbsUp size={12} />
                     </button>
-                    <span className="text-[9px] text-gray-400 tabular-nums">{votes.up - votes.down}</span>
+                    <span className="text-[9px] text-theme-faint tabular-nums">{votes.up - votes.down}</span>
                     <button
                       onClick={() => onVote(lead.id, 'down')}
                       className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500"
@@ -762,7 +762,7 @@ function LeadsTab({
                   </div>
                   <button
                     onClick={() => setExpandedLead(expandedLead === lead.id ? null : lead.id)}
-                    className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400"
+                    className="p-1.5 rounded hover:bg-cockpit-track text-theme-faint"
                   >
                     {expandedLead === lead.id ? <ChevronUp size={14} /> : <Eye size={14} />}
                   </button>
@@ -789,16 +789,16 @@ function LeadsTab({
 
               {/* Expanded Detail */}
               {expandedLead === lead.id && (
-                <div className="border-t border-gray-100 dark:border-gray-700 p-3 bg-gray-50 dark:bg-gray-800/50 space-y-3">
+                <div className="border-t border-theme p-3 bg-theme-muted/50 space-y-3">
                   <div>
-                    <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-1">Options</div>
+                    <div className="text-[10px] font-medium text-theme-muted uppercase tracking-wide mb-1">Options</div>
                     {lead.question.options.map((opt, i) => (
                       <div
                         key={i}
                         className={`text-xs py-1 px-2 rounded mb-0.5 ${
                           i === lead.question.correctAnswer
                             ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium'
-                            : 'text-gray-600 dark:text-gray-400'
+                            : 'text-cockpit-muted'
                         }`}
                       >
                         {opt} {i === lead.question.correctAnswer && '✓'}
@@ -806,12 +806,12 @@ function LeadsTab({
                     ))}
                   </div>
                   <div>
-                    <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-1">Explanation</div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{lead.question.explanation}</p>
+                    <div className="text-[10px] font-medium text-theme-muted uppercase tracking-wide mb-1">Explanation</div>
+                    <p className="text-xs text-cockpit-muted">{lead.question.explanation}</p>
                   </div>
                   <div>
-                    <div className="text-[10px] font-medium text-gray-500 uppercase tracking-wide mb-1">Agent Reasoning</div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 italic">{lead.reasoning}</p>
+                    <div className="text-[10px] font-medium text-theme-muted uppercase tracking-wide mb-1">Agent Reasoning</div>
+                    <p className="text-xs text-theme-muted italic">{lead.reasoning}</p>
                   </div>
                   <div className="flex gap-1 flex-wrap">
                     {lead.tags.map(tag => (
@@ -846,28 +846,28 @@ function AnalyticsTab({ domainNames }: { domainNames: Record<number, string> }) 
     <div className="space-y-4">
       {/* Overview */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-          <div className="text-[10px] text-gray-500 uppercase mb-1">Total Bank</div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{coverage.totalQuestions}</div>
+        <div className="bg-theme-elevated rounded-lg border border-theme p-3">
+          <div className="text-[10px] text-theme-muted uppercase mb-1">Total Bank</div>
+          <div className="text-2xl font-bold text-cockpit">{coverage.totalQuestions}</div>
           <div className="text-[10px] text-green-500">+{stats.approvedQuestions} from agent</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-          <div className="text-[10px] text-gray-500 uppercase mb-1">High-Priority Gaps</div>
+        <div className="bg-theme-elevated rounded-lg border border-theme p-3">
+          <div className="text-[10px] text-theme-muted uppercase mb-1">High-Priority Gaps</div>
           <div className="text-2xl font-bold text-orange-500">{stats.coverageGaps}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-          <div className="text-[10px] text-gray-500 uppercase mb-1">Agent Runs</div>
+        <div className="bg-theme-elevated rounded-lg border border-theme p-3">
+          <div className="text-[10px] text-theme-muted uppercase mb-1">Agent Runs</div>
           <div className="text-2xl font-bold text-violet-500">{stats.totalRuns}</div>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
-          <div className="text-[10px] text-gray-500 uppercase mb-1">Avg Confidence</div>
+        <div className="bg-theme-elevated rounded-lg border border-theme p-3">
+          <div className="text-[10px] text-theme-muted uppercase mb-1">Avg Confidence</div>
           <div className="text-2xl font-bold text-blue-500">{stats.avgConfidence}%</div>
         </div>
       </div>
 
       {/* Domain Breakdown */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Question Bank by Domain</h3>
+      <div className="bg-theme-elevated rounded-xl border border-theme p-4">
+        <h3 className="text-sm font-semibold text-cockpit mb-3">Question Bank by Domain</h3>
         <div className="space-y-3">
           {[1, 2, 3, 4].map(d => {
             const count = coverage.domainCounts[d] || 0;
@@ -876,10 +876,10 @@ function AnalyticsTab({ domainNames }: { domainNames: Record<number, string> }) 
             return (
               <div key={d}>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-600 dark:text-gray-400">D{d}: {domainNames[d]}</span>
-                  <span className="font-mono font-bold text-gray-900 dark:text-white">{count} ({pct}%)</span>
+                  <span className="text-cockpit-muted">D{d}: {domainNames[d]}</span>
+                  <span className="font-mono font-bold text-cockpit">{count} ({pct}%)</span>
                 </div>
-                <div className="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-cockpit-track rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full"
                     style={{
@@ -895,8 +895,8 @@ function AnalyticsTab({ domainNames }: { domainNames: Record<number, string> }) 
       </div>
 
       {/* Difficulty Distribution */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Difficulty Distribution</h3>
+      <div className="bg-theme-elevated rounded-xl border border-theme p-4">
+        <h3 className="text-sm font-semibold text-cockpit mb-3">Difficulty Distribution</h3>
         <div className="flex gap-4">
           {(['easy', 'medium', 'hard'] as const).map(diff => {
             const count = coverage.difficultyCounts[diff] || 0;
@@ -904,7 +904,7 @@ function AnalyticsTab({ domainNames }: { domainNames: Record<number, string> }) 
             return (
               <div key={diff} className="flex-1 text-center">
                 <div className={`text-2xl font-bold ${valueColor}`}>{count}</div>
-                <div className="text-xs text-gray-500 capitalize">{diff}</div>
+                <div className="text-xs text-theme-muted capitalize">{diff}</div>
               </div>
             );
           })}
@@ -913,8 +913,8 @@ function AnalyticsTab({ domainNames }: { domainNames: Record<number, string> }) 
 
       {/* Top Coverage Gaps */}
       {highGaps.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+        <div className="bg-theme-elevated rounded-xl border border-theme p-4">
+          <h3 className="text-sm font-semibold text-cockpit mb-3 flex items-center gap-2">
             <AlertTriangle size={14} className="text-orange-500" />
             Top Coverage Gaps (Zero Questions)
           </h3>
@@ -922,8 +922,8 @@ function AnalyticsTab({ domainNames }: { domainNames: Record<number, string> }) 
             {highGaps.map((gap, i) => (
               <div key={i} className="flex items-center justify-between py-1.5 border-b border-gray-50 dark:border-gray-700 last:border-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">D{gap.domain}</span>
-                  <span className="text-xs text-gray-700 dark:text-gray-300">{gap.topic}</span>
+                  <span className="text-[10px] bg-cockpit-track px-1.5 py-0.5 rounded">D{gap.domain}</span>
+                  <span className="text-xs text-theme-secondary">{gap.topic}</span>
                 </div>
                 <span className={`text-[10px] px-1.5 py-0.5 rounded ${
                   gap.difficulty === 'hard' ? 'bg-red-100 text-red-600' :
@@ -937,8 +937,8 @@ function AnalyticsTab({ domainNames }: { domainNames: Record<number, string> }) 
       )}
 
       {/* Top Topics */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+      <div className="bg-theme-elevated rounded-xl border border-theme p-4">
+        <h3 className="text-sm font-semibold text-cockpit mb-3 flex items-center gap-2">
           <TrendingUp size={14} className="text-green-500" />
           Top Topics by Question Count
         </h3>
@@ -947,14 +947,14 @@ function AnalyticsTab({ domainNames }: { domainNames: Record<number, string> }) 
             const maxCount = topTopics[0]?.[1] || 1;
             return (
               <div key={topic} className="flex items-center gap-2">
-                <div className="flex-1 text-xs text-gray-600 dark:text-gray-400 truncate">{topic}</div>
-                <div className="w-32 h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="flex-1 text-xs text-cockpit-muted truncate">{topic}</div>
+                <div className="w-32 h-3 bg-cockpit-track rounded-full overflow-hidden">
                   <div
                     className="h-full bg-violet-400 rounded-full"
                     style={{ width: `${(count / maxCount) * 100}%` }}
                   />
                 </div>
-                <div className="text-xs font-mono font-bold w-6 text-right text-gray-900 dark:text-white">{count}</div>
+                <div className="text-xs font-mono font-bold w-6 text-right text-cockpit">{count}</div>
               </div>
             );
           })}
@@ -1001,12 +1001,12 @@ function HistoryTab({ runs, onRefresh }: { runs: AgentRun[]; onRefresh: () => vo
     completed: { bg: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400', dot: 'bg-green-500', label: 'completed' },
     running: { bg: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400', dot: 'bg-yellow-500 animate-pulse', label: 'running' },
     failed: { bg: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400', dot: 'bg-red-500', label: 'failed' },
-    cancelled: { bg: 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400', dot: 'bg-gray-400', label: 'cancelled' },
+    cancelled: { bg: 'bg-cockpit-track text-theme-muted', dot: 'bg-gray-400', label: 'cancelled' },
   };
 
   if (runs.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400 dark:text-gray-500">
+      <div className="text-center py-12 text-theme-faint">
         <Activity size={48} className="mx-auto mb-3 opacity-50" />
         <p className="text-sm">No agent runs yet. Launch a discovery to get started.</p>
       </div>
@@ -1022,22 +1022,22 @@ function HistoryTab({ runs, onRefresh }: { runs: AgentRun[]; onRefresh: () => vo
         const lastPhase = lastLogEntry?.phase || 'init';
 
         return (
-          <div key={run.id} className={`bg-white dark:bg-gray-800 rounded-lg border overflow-hidden transition-all ${
+          <div key={run.id} className={`bg-theme-elevated rounded-lg border overflow-hidden transition-all ${
             isStuck
               ? 'border-yellow-400/50 dark:border-yellow-500/30'
-              : 'border-gray-200 dark:border-gray-700'
+              : 'border-theme'
           }`}>
             <button
               onClick={() => setExpandedRun(expandedRun === run.id ? null : run.id)}
-              className="w-full p-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-colors"
+              className="w-full p-3 flex items-center justify-between hover:bg-cockpit-track/70 transition-colors"
             >
               <div className="flex items-center gap-3">
                 <div className={`w-2 h-2 rounded-full ${cfg.dot}`} />
                 <div className="text-left">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                  <div className="text-sm font-medium text-cockpit">
                     {run.strategy.type.replace(/_/g, ' ')} — {run.strategy.questionCount} Qs
                   </div>
-                  <div className="text-[10px] text-gray-500 flex items-center gap-2">
+                  <div className="text-[10px] text-theme-muted flex items-center gap-2">
                     <span>{new Date(run.startedAt).toLocaleString()}</span>
                     <span>·</span>
                     <span>{run.leadsFound} leads found</span>
@@ -1073,10 +1073,10 @@ function HistoryTab({ runs, onRefresh }: { runs: AgentRun[]; onRefresh: () => vo
 
             {/* Expanded details */}
             {expandedRun === run.id && (
-              <div className="border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+              <div className="border-t border-theme bg-theme-muted/50">
                 {/* Run info summary */}
                 <div className="px-3 pt-3 pb-2 flex items-center justify-between gap-2 flex-wrap">
-                  <div className="flex items-center gap-3 text-[11px] text-gray-500">
+                  <div className="flex items-center gap-3 text-[11px] text-theme-muted">
                     <span className="flex items-center gap-1">
                       <Clock size={10} /> Started: {new Date(run.startedAt).toLocaleString()}
                     </span>
@@ -1104,7 +1104,7 @@ function HistoryTab({ runs, onRefresh }: { runs: AgentRun[]; onRefresh: () => vo
                     )}
                     <button
                       onClick={() => handleDelete(run.id)}
-                      className="flex items-center gap-1 px-2 py-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-[11px] transition-colors"
+                      className="flex items-center gap-1 px-2 py-1 rounded text-theme-faint hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 text-[11px] transition-colors"
                       title="Delete this run"
                     >
                       <Trash2 size={11} />
@@ -1119,16 +1119,16 @@ function HistoryTab({ runs, onRefresh }: { runs: AgentRun[]; onRefresh: () => vo
                       {run.strategy.type.replace(/_/g, ' ')}
                     </span>
                     {run.strategy.targetDomain && (
-                      <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
+                      <span className="bg-cockpit-track text-cockpit-muted px-1.5 py-0.5 rounded">
                         Domain {run.strategy.targetDomain}
                       </span>
                     )}
                     {run.strategy.targetDifficulty && (
-                      <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
+                      <span className="bg-cockpit-track text-cockpit-muted px-1.5 py-0.5 rounded">
                         {run.strategy.targetDifficulty}
                       </span>
                     )}
-                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
+                    <span className="bg-cockpit-track text-cockpit-muted px-1.5 py-0.5 rounded">
                       auto-approve ≥ {run.strategy.autoApproveThreshold}%
                     </span>
                   </div>
@@ -1137,11 +1137,11 @@ function HistoryTab({ runs, onRefresh }: { runs: AgentRun[]; onRefresh: () => vo
                 {/* Agent log */}
                 {run.log.length > 0 ? (
                   <div className="px-3 pb-3">
-                    <div className="text-[10px] font-medium text-gray-500 uppercase mb-2">Agent Log ({run.log.length} entries)</div>
+                    <div className="text-[10px] font-medium text-theme-muted uppercase mb-2">Agent Log ({run.log.length} entries)</div>
                     <div className="space-y-1 font-mono max-h-60 overflow-y-auto bg-gray-900 dark:bg-black rounded-lg p-2">
                       {run.log.map((entry, i) => (
                         <div key={i} className="flex items-start gap-2 text-[11px]">
-                          <span className="text-gray-600 shrink-0 w-16">{new Date(entry.timestamp).toLocaleTimeString()}</span>
+                          <span className="text-cockpit-muted shrink-0 w-16">{new Date(entry.timestamp).toLocaleTimeString()}</span>
                           <span className={`shrink-0 px-1 rounded text-[10px] ${
                             entry.phase === 'analyze' ? 'bg-cyan-900/50 text-cyan-400' :
                             entry.phase === 'discover' ? 'bg-violet-900/50 text-violet-400' :
@@ -1149,13 +1149,13 @@ function HistoryTab({ runs, onRefresh }: { runs: AgentRun[]; onRefresh: () => vo
                             entry.phase === 'score' ? 'bg-yellow-900/50 text-yellow-400' :
                             'bg-green-900/50 text-green-400'
                           }`}>{entry.phase}</span>
-                          <span className="text-gray-400">{entry.message}</span>
+                          <span className="text-theme-faint">{entry.message}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 ) : (
-                  <div className="px-3 pb-3 text-[11px] text-gray-500 italic">
+                  <div className="px-3 pb-3 text-[11px] text-theme-muted italic">
                     No log entries recorded for this run.
                   </div>
                 )}

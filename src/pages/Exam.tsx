@@ -200,27 +200,27 @@ export default function Exam() {
           iconClassName="text-red-500"
         />
 
-        <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700 text-center">
+        <div className="mt-6 bg-theme-elevated rounded-xl p-8 border border-theme text-center">
           <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <ClipboardList className="text-white" size={32} />
           </div>
 
           <div className="grid grid-cols-3 gap-4 mb-6 max-w-md mx-auto">
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{EXAM_QUESTION_COUNT}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Questions</div>
+            <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
+              <div className="text-2xl font-bold text-cockpit">{EXAM_QUESTION_COUNT}</div>
+              <div className="text-xs text-theme-muted">Questions</div>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">150</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Minutes</div>
+            <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
+              <div className="text-2xl font-bold text-cockpit">150</div>
+              <div className="text-xs text-theme-muted">Minutes</div>
             </div>
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{passThreshold}%</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Pass Score</div>
+            <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
+              <div className="text-2xl font-bold text-cockpit">{passThreshold}%</div>
+              <div className="text-xs text-theme-muted">Pass Score</div>
             </div>
           </div>
 
-          <ul className="text-left text-sm text-gray-600 dark:text-gray-400 space-y-2 mb-6 max-w-md mx-auto">
+          <ul className="text-left text-sm text-cockpit-muted space-y-2 mb-6 max-w-md mx-auto">
             <li className="flex items-center gap-2"><Flag className="w-4 h-4 text-amber-500" /> Flag questions for review</li>
             <li className="flex items-center gap-2"><Pause className="w-4 h-4 text-blue-500" /> 1 pause allowed ({EXAM_MAX_PAUSES} max)</li>
             <li className="flex items-center gap-2"><BarChart3 className="w-4 h-4 text-emerald-500" /> Domain breakdown on completion</li>
@@ -244,8 +244,8 @@ export default function Exam() {
     return (
       <div className="max-w-md mx-auto text-center py-16">
         <Pause className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Exam Paused</h2>
-        <p className="text-sm text-gray-500 mb-6">
+        <h2 className="text-xl font-bold text-cockpit mb-2">Exam Paused</h2>
+        <p className="text-sm text-theme-muted mb-6">
           {EXAM_MAX_PAUSES - pauseCount} pause{EXAM_MAX_PAUSES - pauseCount !== 1 ? 's' : ''} remaining · {formatTime(timeRemaining)} left
         </p>
         <button
@@ -265,10 +265,10 @@ export default function Exam() {
 
     return (
       <div className="max-w-3xl mx-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+        <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
           {/* Header */}
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
+            <span className="text-sm text-cockpit-muted">
               Q{currentQ + 1} / {questions.length} · {answered} answered
             </span>
             <div className="flex items-center gap-2">
@@ -277,7 +277,7 @@ export default function Exam() {
                 className={`p-1.5 rounded-lg transition-colors ${
                   flagged.has(currentQ)
                     ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                    : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    : 'text-theme-faint hover:bg-cockpit-track'
                 }`}
                 title="Flag for review"
               >
@@ -286,7 +286,7 @@ export default function Exam() {
               {pauseCount < EXAM_MAX_PAUSES && (
                 <button
                   onClick={handlePause}
-                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="p-1.5 rounded-lg text-theme-faint hover:bg-cockpit-track"
                   title="Pause (1 max)"
                 >
                   <Pause className="w-4 h-4" />
@@ -297,7 +297,7 @@ export default function Exam() {
                   ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 animate-pulse'
                   : timeRemaining < 1800
                     ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                    : 'bg-cockpit-track text-cockpit'
               }`}>
                 <Clock className="w-3.5 h-3.5 inline mr-1" />
                 {formatTime(timeRemaining)}
@@ -306,14 +306,14 @@ export default function Exam() {
           </div>
 
           {/* Progress */}
-          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full mb-6">
+          <div className="h-2 bg-cockpit-track rounded-full mb-6">
             <div
               className="h-full bg-primary-600 rounded-full transition-all"
               style={{ width: `${((currentQ + 1) / questions.length) * 100}%` }}
             />
           </div>
 
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">{q.question}</h3>
+          <h3 className="text-lg font-medium text-cockpit mb-4">{q.question}</h3>
 
           <div className="space-y-2 mb-6">
             {q.shuffledOptions.map((opt, i) => (
@@ -327,11 +327,11 @@ export default function Exam() {
                 className={`w-full p-4 text-left rounded-xl border-2 transition-all ${
                   answers[currentQ] === i
                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                    : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+                    : 'border-theme hover:border-theme'
                 }`}
               >
                 <span className="font-medium mr-2">{String.fromCharCode(65 + i)}.</span>
-                <span className="text-gray-700 dark:text-gray-300">{opt}</span>
+                <span className="text-theme-secondary">{opt}</span>
               </button>
             ))}
           </div>
@@ -349,7 +349,7 @@ export default function Exam() {
                       ? 'bg-amber-500 text-white'
                       : answers[i] !== null
                         ? 'bg-green-500 text-white'
-                        : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                        : 'bg-cockpit-track text-cockpit-muted'
                 }`}
               >
                 {i + 1}
@@ -361,7 +361,7 @@ export default function Exam() {
             <button
               onClick={() => setCurrentQ(Math.max(0, currentQ - 1))}
               disabled={currentQ === 0}
-              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50"
+              className="px-4 py-2 text-cockpit-muted hover:bg-cockpit-track rounded-lg disabled:opacity-50"
             >
               Previous
             </button>
@@ -389,7 +389,7 @@ export default function Exam() {
   // ── REVIEW ──
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-200 dark:border-gray-700 text-center">
+      <div className="bg-theme-elevated rounded-xl p-8 border border-theme text-center">
         <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
           passed ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'
         }`}>
@@ -406,18 +406,18 @@ export default function Exam() {
           {passed ? 'PASS' : 'FAIL'} — {score}% (pass = {passThreshold}%)
         </div>
 
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{score}%</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-1">
+        <h2 className="text-3xl font-bold text-cockpit mb-1">{score}%</h2>
+        <p className="text-cockpit-muted mb-1">
           {correctCount} of {questions.length} correct
         </p>
-        <p className="text-sm text-gray-500 dark:text-gray-500 mb-6 flex items-center justify-center gap-1">
+        <p className="text-sm text-theme-muted mb-6 flex items-center justify-center gap-1">
           <Clock className="w-4 h-4" />
           Time used: {formatTime(timeUsed)} / {formatTime(EXAM_DURATION_SECONDS)}
         </p>
 
         {/* Domain breakdown chart */}
         <div className="mb-6 text-left">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-cockpit mb-3 flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-emerald-500" />
             Domain Breakdown
           </h3>
@@ -425,7 +425,7 @@ export default function Exam() {
             {Object.entries(domainBreakdown).map(([domainId, data]) => (
               <div key={domainId}>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-600 dark:text-gray-400">
+                  <span className="text-cockpit-muted">
                     D{domainId}: {DOMAIN_NAMES[Number(domainId)] ?? `Domain ${domainId}`}
                   </span>
                   <span className={`font-mono font-bold ${
@@ -434,7 +434,7 @@ export default function Exam() {
                     {data.pct}% ({data.correct}/{data.total})
                   </span>
                 </div>
-                <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-2 bg-cockpit-track rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${
                       data.pct >= passThreshold ? 'bg-green-500' : 'bg-red-500'
@@ -456,7 +456,7 @@ export default function Exam() {
           </button>
           <button
             onClick={() => navigate('/study')}
-            className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="px-6 py-3 border border-theme text-theme-secondary rounded-xl font-medium hover:bg-theme-muted dark:hover:bg-gray-700"
           >
             Study Ops
           </button>

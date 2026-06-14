@@ -110,7 +110,7 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
           type="button"
           onClick={() => loadFeed(true)}
           disabled={refreshing}
-          className="w-full px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors text-left cursor-pointer"
+          className="w-full px-4 py-3 border-b border-theme flex-shrink-0 hover:bg-theme-muted dark:hover:bg-gray-700/30 transition-colors text-left cursor-pointer"
           title="Click to refresh feed"
         >
           <div className="flex items-center gap-2">
@@ -130,7 +130,7 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
                   tabIndex={0}
                   onClick={(e) => { e.stopPropagation(); onClose(); }}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onClose(); } }}
-                  className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 ml-1"
+                  className="p-1 rounded hover:bg-cockpit-track dark:hover:bg-gray-600 ml-1"
                   aria-label="Close live feed"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -185,8 +185,8 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
 
         {/* Footer */}
         {!loading && (
-          <div className="px-4 py-2.5 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 bg-gray-50/80 dark:bg-gray-900/50">
-            <p className="text-[10px] text-cockpit-muted dark:text-gray-400 mb-1.5">
+          <div className="px-4 py-2.5 border-t border-theme flex-shrink-0 bg-theme-muted/80 dark:bg-gray-900/50">
+            <p className="text-[10px] text-cockpit-muted dark:text-theme-faint mb-1.5">
               {fetchedAt
                 ? `Last updated ${formatTimeAgo(fetchedAt)} · ${activeSources.length || RSS_SOURCES.length} sources`
                 : `${RSS_SOURCES.length} sources configured`}
@@ -195,7 +195,7 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
               {(activeSources.length > 0 ? activeSources : RSS_SOURCES.map(s => s.name)).slice(0, compact ? 4 : 8).map(name => (
                 <span
                   key={name}
-                  className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                  className="text-[9px] px-1.5 py-0.5 rounded-full bg-cockpit-track text-cockpit-muted"
                 >
                   {name}
                 </span>
@@ -224,12 +224,12 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
                 </span>
               )}
               {selectedItem.relevanceScore != null && selectedItem.relevanceScore > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-cockpit-track text-cockpit-muted">
                   AAISM relevance {selectedItem.relevanceScore}
                 </span>
               )}
             </div>
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            <p className="text-sm text-theme-secondary leading-relaxed">
               {selectedItem.summary}
             </p>
             <div className="flex flex-wrap gap-2 pt-2">
@@ -278,7 +278,7 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
                 href={selectedItem.sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-theme text-sm hover:bg-theme-muted dark:hover:bg-gray-700 transition-colors"
               >
                 {selectedItem.source}
               </a>
@@ -303,12 +303,12 @@ function FeedItemRow({
     <button
       type="button"
       onClick={onClick}
-      className="w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group cursor-pointer relative z-10"
+      className="w-full text-left px-4 py-3 border-b border-theme/50 hover:bg-theme-muted dark:hover:bg-gray-700/30 transition-colors group cursor-pointer relative z-10"
     >
       <div className="flex items-start gap-2.5">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap mb-1">
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-cockpit-track text-cockpit-muted">
               {item.source}
             </span>
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getCategoryColor(item.category)}`}>
@@ -331,7 +331,7 @@ function FeedItemRow({
             {item.summary}
           </p>
         </div>
-        <div className="mt-1 flex-shrink-0 text-cockpit-subtle dark:text-gray-600 group-hover:text-emerald-500 transition-colors">
+        <div className="mt-1 flex-shrink-0 text-cockpit-subtle dark:text-cockpit-muted group-hover:text-emerald-500 transition-colors">
           {isExternal ? <ExternalLink className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </div>
       </div>
@@ -343,13 +343,13 @@ function FeedSkeleton({ count }: { count: number }) {
   return (
     <>
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/50 animate-pulse">
+        <div key={i} className="px-4 py-3 border-b border-theme/50 animate-pulse">
           <div className="flex gap-2 mb-2">
-            <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
-            <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-3 w-16 bg-cockpit-track rounded" />
+            <div className="h-3 w-12 bg-cockpit-track rounded" />
           </div>
-          <div className="h-3.5 w-full bg-gray-200 dark:bg-gray-700 rounded mb-1.5" />
-          <div className="h-3 w-4/5 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="h-3.5 w-full bg-cockpit-track rounded mb-1.5" />
+          <div className="h-3 w-4/5 bg-cockpit-track rounded" />
         </div>
       ))}
     </>
@@ -436,7 +436,7 @@ export function LiveRssFeedPanel() {
             className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
               filter === cat
                 ? 'bg-emerald-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                : 'bg-cockpit-track dark:bg-gray-800 text-cockpit-muted hover:bg-cockpit-track dark:hover:bg-gray-700'
             }`}
           >
             {cat === 'all' ? 'All' : cat}
@@ -449,7 +449,7 @@ export function LiveRssFeedPanel() {
           <button
             type="button"
             onClick={() => setSourceFilter('all')}
-            className={`text-[11px] px-2 py-1 rounded-full ${sourceFilter === 'all' ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+            className={`text-[11px] px-2 py-1 rounded-full ${sourceFilter === 'all' ? 'bg-gray-800 dark:bg-cockpit-track text-white dark:text-cockpit' : 'bg-cockpit-track dark:bg-gray-800 text-cockpit-muted'}`}
           >
             All sources
           </button>
@@ -458,7 +458,7 @@ export function LiveRssFeedPanel() {
               key={src}
               type="button"
               onClick={() => setSourceFilter(src)}
-              className={`text-[11px] px-2 py-1 rounded-full ${sourceFilter === src ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+              className={`text-[11px] px-2 py-1 rounded-full ${sourceFilter === src ? 'bg-gray-800 dark:bg-cockpit-track text-white dark:text-cockpit' : 'bg-cockpit-track dark:bg-gray-800 text-cockpit-muted'}`}
             >
               {src}
             </button>
@@ -466,11 +466,11 @@ export function LiveRssFeedPanel() {
         </div>
       )}
 
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800">
+      <div className="rounded-xl border border-theme overflow-hidden bg-theme-elevated">
         {loading ? (
           <FeedSkeleton count={8} />
         ) : filtered.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">No items match filters.</div>
+          <div className="p-8 text-center text-theme-muted">No items match filters.</div>
         ) : (
           filtered.map(item => (
             <FeedItemRow
