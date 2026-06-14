@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Radar, Theater, Eye, Bot, Zap,
-  Sun, Moon, Flame, ChevronRight, Settings, Menu, X,
+  Sun, Moon, Flame, ChevronRight, Settings, Menu,
   Activity, Shield, Map, Crosshair, Radio, Briefcase, PanelLeftClose,
   HelpCircle, LifeBuoy, Heart, Sparkles,
 } from 'lucide-react';
@@ -323,26 +323,23 @@ function LayoutContent() {
           {/* Live Intel Feed sidebar */}
           {intelOpen && (
             <>
-              <aside className="hidden 2xl:block w-80 flex-shrink-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 overflow-y-auto">
-                <LiveIntelFeed />
+              <aside className="hidden xl:block w-80 flex-shrink-0 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 overflow-hidden relative z-20 pointer-events-auto">
+                <LiveIntelFeed
+                  onClose={() => setIntelOpen(false)}
+                  showCloseButton
+                />
               </aside>
-              <div className="2xl:hidden fixed inset-0 z-[60]">
+              <div className="xl:hidden fixed inset-0 z-[60] pointer-events-auto">
                 <div
                   className="absolute inset-0 bg-black/40"
                   onClick={() => setIntelOpen(false)}
+                  aria-hidden
                 />
-                <aside className="absolute right-0 top-0 h-full w-full max-w-sm bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 overflow-y-auto animate-slide-in">
-                  <div className="flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-sm font-semibold">Live Feed</h2>
-                    <button
-                      onClick={() => setIntelOpen(false)}
-                      className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                      aria-label="Close live feed"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <LiveIntelFeed />
+                <aside className="absolute right-0 top-0 h-full w-full max-w-sm bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 overflow-hidden animate-slide-in pointer-events-auto">
+                  <LiveIntelFeed
+                    onClose={() => setIntelOpen(false)}
+                    showCloseButton
+                  />
                 </aside>
               </div>
             </>

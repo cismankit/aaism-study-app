@@ -1,170 +1,451 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Activity, Flame, AlertTriangle, TrendingUp, Radar, Bot,
-  ChevronRight, Zap, Shield, Target,
+  Activity, ExternalLink, RefreshCw, AlertCircle, Radio,
+  X, ChevronRight,
 } from 'lucide-react';
-import { TOPIC_HEAT_MAP, TRAP_PATTERNS, COMMUNITY_INSIGHTS } from '../data/communityIntelligence';
-import { getPipelineStats } from '../services/agentService';
-import { loadInsights, type IntelligenceInsight } from '../services/intelligenceAgent';
+import SlidePanel from './SlidePanel';
+import {
+  fetchLiveIntelFeed,
+  formatTimeAgo,
+  getCategoryColor,
+  type IntelFeedItem,
+} from '../services/rssFeedService';
+import { RSS_SOURCES } from '../data/rssSources';
 
-interface FeedItem {
-  id: string;
-  type: 'hot_topic' | 'trap_alert' | 'agent_update' | 'insight' | 'community';
-  icon: typeof Activity;
-  iconColor: string;
-  title: string;
-  description: string;
-  timestamp: string;
-  link?: string;
-  priority: 'high' | 'medium' | 'low';
+interface LiveIntelFeedProps {
+  onClose?: () => void;
+  showCloseButton?: boolean;
+  compact?: boolean;
 }
 
-export default function LiveIntelFeed() {
+export default function LiveIntelFeed({ onClose, showCloseButton, compact }: LiveIntelFeedProps) {
   const navigate = useNavigate();
-  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
+  const [items, setItems] = useState<IntelFeedItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [offline, setOffline] = useState(false);
+  const [fetchedAt, setFetchedAt] = useState<string | null>(null);
+  const [activeSources, setActiveSources] = useState<string[]>([]);
+  const [selectedItem, setSelectedItem] = useState<IntelFeedItem | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const items: FeedItem[] = [];
+  const loadFeed = useCallback(async (force = false) => {
+    if (force) setRefreshing(true);
+    else setLoading(true);
+    setError(null);
 
-    const risingTopics = TOPIC_HEAT_MAP.filter(t => t.trend === 'rising' && t.heat >= 85);
-    risingTopics.forEach(topic => {
-      items.push({
-        id: `hot-${topic.topic}`,
-        type: 'hot_topic',
-        icon: Flame,
-        iconColor: 'text-orange-500',
-        title: topic.topic,
-        description: `Heat ${topic.heat}/100 — ${topic.communityNotes.slice(0, 80)}...`,
-        timestamp: 'Trending',
-        link: '/intel',
-        priority: topic.heat >= 90 ? 'high' : 'medium',
-      });
-    });
-
-    const topTraps = TRAP_PATTERNS.filter(t => t.frequency === 'very_common').slice(0, 3);
-    topTraps.forEach(trap => {
-      items.push({
-        id: `trap-${trap.id}`,
-        type: 'trap_alert',
-        icon: AlertTriangle,
-        iconColor: 'text-red-500',
-        title: trap.name,
-        description: trap.description.slice(0, 80) + '...',
-        timestamp: 'Active',
-        link: '/intel',
-        priority: 'high',
-      });
-    });
-
-    const stats = getPipelineStats();
-    if (stats.totalLeads > 0) {
-      items.push({
-        id: 'agent-leads',
-        type: 'agent_update',
-        icon: Bot,
-        iconColor: 'text-cyan-500',
-        title: `${stats.pendingCount} leads pending review`,
-        description: `${stats.approvedCount} approved, ${stats.totalQuestions} total questions in bank`,
-        timestamp: stats.lastRunAt ? timeAgo(stats.lastRunAt) : 'Never',
-        link: '/agent',
-        priority: stats.pendingCount > 5 ? 'high' : 'medium',
-      });
+    try {
+      const result = await fetchLiveIntelFeed({ force });
+      setItems(result.items);
+      setFetchedAt(result.fetchedAt);
+      setActiveSources(result.activeSources);
+      setOffline(result.offline);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load feeds');
+      setOffline(true);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-
-    const savedInsights = loadInsights().slice(0, 3);
-    savedInsights.forEach((insight: IntelligenceInsight) => {
-      items.push({
-        id: insight.id,
-        type: 'insight',
-        icon: Radar,
-        iconColor: 'text-purple-500',
-        title: insight.title,
-        description: insight.content.slice(0, 80) + '...',
-        timestamp: timeAgo(insight.createdAt),
-        link: '/intel',
-        priority: 'low',
-      });
-    });
-
-    const topInsights = COMMUNITY_INSIGHTS.filter(i => i.upvotes >= 200).slice(0, 3);
-    topInsights.forEach(ci => {
-      items.push({
-        id: ci.id,
-        type: 'community',
-        icon: ci.category === 'trap_alert' ? Shield : ci.category === 'topic_trend' ? TrendingUp : Target,
-        iconColor: ci.category === 'trap_alert' ? 'text-red-400' : ci.category === 'topic_trend' ? 'text-green-400' : 'text-blue-400',
-        title: ci.title,
-        description: ci.content.slice(0, 80) + '...',
-        timestamp: `${ci.upvotes} upvotes`,
-        link: '/intel',
-        priority: ci.upvotes >= 300 ? 'high' : 'medium',
-      });
-    });
-
-    items.sort((a, b) => {
-      const prio = { high: 0, medium: 1, low: 2 };
-      return prio[a.priority] - prio[b.priority];
-    });
-
-    setFeedItems(items);
   }, []);
 
+  useEffect(() => {
+    loadFeed();
+  }, [loadFeed]);
+
+  function handleItemClick(item: IntelFeedItem, e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (item.isLive && item.link.startsWith('http')) {
+      setSelectedItem(item);
+    } else if (item.link.startsWith('/')) {
+      navigate(item.link);
+      onClose?.();
+    } else if (item.link.startsWith('http')) {
+      window.open(item.link, '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  function handleReadAtSource() {
+    if (!selectedItem?.link) return;
+    window.open(selectedItem.link, '_blank', 'noopener,noreferrer');
+  }
+
+  const liveCount = items.filter(i => i.isLive).length;
+
   return (
-    <div className="h-full flex flex-col">
-      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <Activity className="w-4 h-4 text-emerald-500" />
-          <span className="text-sm font-semibold">Live Intel Feed</span>
-          <div className="ml-auto flex items-center gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
-            <span className="text-[10px] text-emerald-500">LIVE</span>
+    <>
+      <div className="h-full flex flex-col relative z-10 pointer-events-auto">
+        {/* Header — click to refresh */}
+        <button
+          type="button"
+          onClick={() => loadFeed(true)}
+          disabled={refreshing}
+          className="w-full px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors text-left cursor-pointer"
+          title="Click to refresh feed"
+        >
+          <div className="flex items-center gap-2">
+            <Activity className={`w-4 h-4 text-emerald-500 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="text-sm font-semibold">Live Intel Feed</span>
+            <div className="ml-auto flex items-center gap-2">
+              {liveCount > 0 && (
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
+                  <span className="text-[10px] text-emerald-500 font-medium">LIVE</span>
+                </div>
+              )}
+              <RefreshCw className={`w-3.5 h-3.5 text-gray-400 ${refreshing ? 'animate-spin' : ''}`} />
+              {showCloseButton && onClose && (
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => { e.stopPropagation(); onClose(); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onClose(); } }}
+                  className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600 ml-1"
+                  aria-label="Close live feed"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </span>
+              )}
+            </div>
           </div>
+          {fetchedAt && (
+            <p className="text-[10px] text-gray-400 mt-1">
+              Updated {formatTimeAgo(fetchedAt)} · {liveCount} live · {items.length} total
+            </p>
+          )}
+        </button>
+
+        {/* Error / offline banner */}
+        {(offline || error) && !loading && (
+          <div className="px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 flex items-start gap-2">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                {error ?? 'Could not fetch feeds — showing cached/offline intel'}
+              </p>
+              <button
+                type="button"
+                onClick={() => loadFeed(true)}
+                className="text-[11px] text-amber-800 dark:text-amber-300 underline mt-0.5"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Feed list */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          {loading ? (
+            <FeedSkeleton count={compact ? 4 : 6} />
+          ) : items.length === 0 ? (
+            <div className="p-6 text-center text-sm text-gray-500">
+              No intel items available. Try refreshing.
+            </div>
+          ) : (
+            items.map(item => (
+              <FeedItemRow
+                key={item.id}
+                item={item}
+                onClick={(e) => handleItemClick(item, e)}
+              />
+            ))
+          )}
         </div>
+
+        {/* Footer */}
+        {!loading && (
+          <div className="px-4 py-2.5 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 bg-gray-50/80 dark:bg-gray-900/50">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-1.5">
+              {fetchedAt
+                ? `Last updated ${formatTimeAgo(fetchedAt)} · ${activeSources.length || RSS_SOURCES.length} sources`
+                : `${RSS_SOURCES.length} sources configured`}
+            </p>
+            <div className="flex flex-wrap gap-1">
+              {(activeSources.length > 0 ? activeSources : RSS_SOURCES.map(s => s.name)).slice(0, compact ? 4 : 8).map(name => (
+                <span
+                  key={name}
+                  className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {feedItems.map(item => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              onClick={() => item.link && navigate(item.link)}
-              className="w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group"
-            >
-              <div className="flex items-start gap-3">
-                <div className={`mt-0.5 ${item.iconColor}`}>
-                  <Icon className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold truncate">{item.title}</span>
-                    {item.priority === 'high' && (
-                      <Zap className="w-3 h-3 text-yellow-500 flex-shrink-0" />
-                    )}
-                  </div>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">
-                    {item.description}
-                  </p>
-                  <span className="text-[10px] text-gray-400 mt-1 block">{item.timestamp}</span>
-                </div>
-                <ChevronRight className="w-3 h-3 text-gray-300 dark:text-gray-600 group-hover:text-emerald-500 mt-1 flex-shrink-0" />
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
+      <SlidePanel
+        open={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+        title={selectedItem?.title ?? ''}
+        subtitle={selectedItem ? `${selectedItem.source} · ${formatTimeAgo(selectedItem.publishedAt)}` : undefined}
+        width="lg"
+      >
+        {selectedItem && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <span className={`text-xs px-2 py-0.5 rounded-full ${getCategoryColor(selectedItem.category)}`}>
+                {selectedItem.category}
+              </span>
+              {selectedItem.isLive && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-1">
+                  <Radio className="w-3 h-3" /> LIVE RSS
+                </span>
+              )}
+              {selectedItem.relevanceScore != null && selectedItem.relevanceScore > 0 && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                  AAISM relevance {selectedItem.relevanceScore}
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+              {selectedItem.summary}
+            </p>
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={handleReadAtSource}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Read at source
+              </button>
+              <a
+                href={selectedItem.sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                {selectedItem.source}
+              </a>
+            </div>
+          </div>
+        )}
+      </SlidePanel>
+    </>
   );
 }
 
-function timeAgo(isoDate: string): string {
-  const diff = Date.now() - new Date(isoDate).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  return `${days}d ago`;
+function FeedItemRow({
+  item,
+  onClick,
+}: {
+  item: IntelFeedItem;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  const isExternal = item.link.startsWith('http');
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors group cursor-pointer relative z-10"
+    >
+      <div className="flex items-start gap-2.5">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap mb-1">
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+              {item.source}
+            </span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${getCategoryColor(item.category)}`}>
+              {item.category}
+            </span>
+            {item.isLive && (
+              <span className="flex items-center gap-0.5 text-[10px] text-emerald-500 font-medium">
+                <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse-dot" />
+                LIVE
+              </span>
+            )}
+            <span className="text-[10px] text-gray-400 ml-auto flex-shrink-0">
+              {formatTimeAgo(item.publishedAt)}
+            </span>
+          </div>
+          <p className="text-xs font-semibold text-gray-800 dark:text-gray-200 line-clamp-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+            {item.title}
+          </p>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 line-clamp-1 mt-0.5">
+            {item.summary}
+          </p>
+        </div>
+        <div className="mt-1 flex-shrink-0 text-gray-300 dark:text-gray-600 group-hover:text-emerald-500 transition-colors">
+          {isExternal ? <ExternalLink className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function FeedSkeleton({ count }: { count: number }) {
+  return (
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="px-4 py-3 border-b border-gray-100 dark:border-gray-700/50 animate-pulse">
+          <div className="flex gap-2 mb-2">
+            <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+          <div className="h-3.5 w-full bg-gray-200 dark:bg-gray-700 rounded mb-1.5" />
+          <div className="h-3 w-4/5 bg-gray-200 dark:bg-gray-700 rounded" />
+        </div>
+      ))}
+    </>
+  );
+}
+
+/** Full-page feed panel for Intel Hub tab */
+export function LiveRssFeedPanel() {
+  const [items, setItems] = useState<IntelFeedItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState<string>('all');
+  const [sourceFilter, setSourceFilter] = useState<string>('all');
+  const [selectedItem, setSelectedItem] = useState<IntelFeedItem | null>(null);
+  const [fetchedAt, setFetchedAt] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
+
+  const load = useCallback(async (force = false) => {
+    if (force) setRefreshing(true);
+    else setLoading(true);
+    try {
+      const result = await fetchLiveIntelFeed({ force });
+      setItems(result.items);
+      setFetchedAt(result.fetchedAt);
+      setOffline(result.offline);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const liveItems = items.filter(i => i.isLive);
+  const sources = [...new Set(liveItems.map(i => i.source))];
+
+  const filtered = items.filter(item => {
+    if (filter !== 'all' && item.category !== filter) return false;
+    if (sourceFilter !== 'all' && item.source !== sourceFilter) return false;
+    return true;
+  });
+
+  const categories = ['all', 'threat', 'governance', 'exam', 'community', 'framework'] as const;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold flex items-center gap-2">
+            <Radio className="w-5 h-5 text-emerald-500" />
+            Live RSS Intelligence
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            Real-time security &amp; AI governance news from {RSS_SOURCES.length} curated sources
+            {fetchedAt && ` · Updated ${formatTimeAgo(fetchedAt)}`}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => load(true)}
+          disabled={refreshing}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium disabled:opacity-60"
+        >
+          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
+
+      {offline && (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 text-sm">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          Could not fetch feeds — showing cached/offline intel
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {categories.map(cat => (
+          <button
+            key={cat}
+            type="button"
+            onClick={() => setFilter(cat)}
+            className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${
+              filter === cat
+                ? 'bg-emerald-600 text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+            }`}
+          >
+            {cat === 'all' ? 'All' : cat}
+          </button>
+        ))}
+      </div>
+
+      {sources.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          <button
+            type="button"
+            onClick={() => setSourceFilter('all')}
+            className={`text-[11px] px-2 py-1 rounded-full ${sourceFilter === 'all' ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+          >
+            All sources
+          </button>
+          {sources.map(src => (
+            <button
+              key={src}
+              type="button"
+              onClick={() => setSourceFilter(src)}
+              className={`text-[11px] px-2 py-1 rounded-full ${sourceFilter === src ? 'bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+            >
+              {src}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-800">
+        {loading ? (
+          <FeedSkeleton count={8} />
+        ) : filtered.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">No items match filters.</div>
+        ) : (
+          filtered.map(item => (
+            <FeedItemRow
+              key={item.id}
+              item={item}
+              onClick={(e) => {
+                e.preventDefault();
+                if (item.isLive && item.link.startsWith('http')) {
+                  setSelectedItem(item);
+                } else if (item.link.startsWith('http')) {
+                  window.open(item.link, '_blank', 'noopener,noreferrer');
+                }
+              }}
+            />
+          ))
+        )}
+      </div>
+
+      <SlidePanel
+        open={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+        title={selectedItem?.title ?? ''}
+        subtitle={selectedItem ? `${selectedItem.source} · ${formatTimeAgo(selectedItem.publishedAt)}` : undefined}
+      >
+        {selectedItem && (
+          <div className="space-y-4">
+            <p className="text-sm leading-relaxed">{selectedItem.summary}</p>
+            <button
+              type="button"
+              onClick={() => window.open(selectedItem.link, '_blank', 'noopener,noreferrer')}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium"
+            >
+              <ExternalLink className="w-4 h-4" /> Read at source
+            </button>
+          </div>
+        )}
+      </SlidePanel>
+    </div>
+  );
 }

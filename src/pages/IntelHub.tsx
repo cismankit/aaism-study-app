@@ -3,8 +3,9 @@ import {
   Radar, Flame, AlertTriangle, Search, Lightbulb,
   TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp,
   Play, BookOpen, ExternalLink, Star, Shield, Target,
-  Zap, BarChart3, RefreshCw, Trash2,
+  Zap, BarChart3, RefreshCw, Trash2, Radio,
 } from 'lucide-react';
+import { LiveRssFeedPanel } from '../components/LiveIntelFeed';
 import {
   QUESTION_PATTERNS,
   TRAP_PATTERNS,
@@ -24,7 +25,7 @@ import {
 import { loadAIConfig } from '../services/aiService';
 import { useNavigate } from 'react-router-dom';
 
-type IntelTab = 'patterns' | 'hot_topics' | 'traps' | 'research' | 'insights';
+type IntelTab = 'patterns' | 'hot_topics' | 'traps' | 'research' | 'insights' | 'live_rss';
 
 export default function IntelHub() {
   const [activeTab, setActiveTab] = useState<IntelTab>('patterns');
@@ -54,6 +55,7 @@ export default function IntelHub() {
     { id: 'traps', label: 'Trap Alerts', icon: AlertTriangle },
     { id: 'research', label: 'Research', icon: Search },
     { id: 'insights', label: 'Insights', icon: Lightbulb },
+    { id: 'live_rss', label: 'Live RSS', icon: Radio },
   ];
 
   const callbacks: ResearchCallbacks = {
@@ -183,6 +185,8 @@ export default function IntelHub() {
           analysis={analysis}
         />
       )}
+
+      {activeTab === 'live_rss' && <LiveRssFeedPanel />}
     </div>
   );
 }
