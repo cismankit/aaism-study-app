@@ -3,6 +3,7 @@
 
 import { ADDITIONAL_QUESTIONS } from './additionalQuestions';
 import { SCENARIO_QUESTIONS } from './expandedQuestions';
+import { BULK_QUESTIONS } from './bulkQuestions';
 
 export interface ExamTopic {
   id: string;
@@ -1708,6 +1709,7 @@ export function getAllQuestions(): ExamQuestion[] {
   // Add the expanded question banks
   questions.push(...ADDITIONAL_QUESTIONS);
   questions.push(...SCENARIO_QUESTIONS);
+  questions.push(...BULK_QUESTIONS);
   // Add agent-discovered approved questions
   questions.push(...getAgentApprovedQuestions());
   return questions;
@@ -1730,6 +1732,9 @@ export function getQuestionsByDomain(domainId: number): ExamQuestion[] {
   // Add scenario questions for this domain
   const scenarioForDomain = SCENARIO_QUESTIONS.filter(q => q.domain === domainId);
   questions.push(...scenarioForDomain);
+
+  const bulkForDomain = BULK_QUESTIONS.filter(q => q.domain === domainId);
+  questions.push(...bulkForDomain);
   
   return questions;
 }

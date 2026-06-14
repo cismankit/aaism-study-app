@@ -84,6 +84,36 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
     summary: 'React.lazy for Exam, Content Studio, and Agent Discovery to reduce initial bundle size.',
     status: 'shipped',
   },
+  {
+    id: 'theme-tokens',
+    title: 'App-wide theme tokens',
+    summary: 'Semantic light/dark tokens (text-cockpit, bg-theme-elevated, border-theme) replacing hardcoded gray classes.',
+    status: 'shipped',
+  },
+  {
+    id: 'micro-quiz-modal',
+    title: 'Domain micro-quiz modal',
+    summary: 'In-app 3-question drill modal on Command Center for weak domains (<60%) with remediation on completion.',
+    status: 'shipped',
+  },
+  {
+    id: 'auth-cloud-sync',
+    title: 'Auth & cloud sync',
+    summary: 'Local-first sign-in scaffold with email session, cloud blob push/pull, and latest-wins merge for progress.',
+    status: 'partial',
+  },
+  {
+    id: 'payments-mvp',
+    title: 'Payments MVP',
+    summary: 'Hosted checkout URLs with success/cancel return pages for Stripe, Razorpay, and regional donation methods.',
+    status: 'partial',
+  },
+  {
+    id: 'question-bank-300',
+    title: '300+ question bank',
+    summary: 'Expanded exam-realistic questions across D1–D4 with varied difficulty in bulk question bank.',
+    status: 'shipped',
+  },
 ];
 
 export const ROADMAP_STATUS_LABEL: Record<RoadmapItem['status'], string> = {
@@ -96,5 +126,5 @@ export const ROADMAP_STATUS_LABEL: Record<RoadmapItem['status'], string> = {
 
 /** Remaining backlog — ready for next implementation agent */
 export const PHASE_2_ITEMS: RoadmapItem[] = PLATFORM_ROADMAP.filter(
-  item => item.status === 'planned' || item.status === 'exploring',
+  item => item.status === 'planned' || item.status === 'exploring' || item.status === 'partial',
 );
