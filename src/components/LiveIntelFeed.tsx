@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Activity, ExternalLink, RefreshCw, AlertCircle, Radio,
-  X, ChevronRight, PenLine,
+  X, ChevronRight, PenLine, Sparkles, Loader2, CheckCircle,
 } from 'lucide-react';
 import SlidePanel from './SlidePanel';
 import {
@@ -12,6 +12,7 @@ import {
   type IntelFeedItem,
 } from '../services/rssFeedService';
 import { RSS_SOURCES } from '../data/rssSources';
+import { generateQuestionsFromIntel } from '../services/intelToQuestionsService';
 
 interface LiveIntelFeedProps {
   onClose?: () => void;
@@ -29,6 +30,8 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
   const [activeSources, setActiveSources] = useState<string[]>([]);
   const [selectedItem, setSelectedItem] = useState<IntelFeedItem | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [generatingQs, setGeneratingQs] = useState(false);
+  const [genResult, setGenResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const loadFeed = useCallback(async (force = false) => {
     if (force) setRefreshing(true);
@@ -71,6 +74,30 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
   function handleReadAtSource() {
     if (!selectedItem?.link) return;
     window.open(selectedItem.link, '_blank', 'noopener,noreferrer');
+  }
+
+  async function handleGenerateQuestions() {
+    if (!selectedItem || generatingQs) return;
+    setGeneratingQs(true);
+    setGenResult(null);
+    try {
+      const result = await generateQuestionsFromIntel(selectedItem);
+      if (result.success) {
+        setGenResult({
+          success: true,
+          message: `${result.leads.length} exam questions added to Agent Leads — review in Agent Discovery.`,
+        });
+      } else {
+        setGenResult({ success: false, message: result.error ?? 'Generation failed' });
+      }
+    } catch (e) {
+      setGenResult({
+        success: false,
+        message: e instanceof Error ? e.message : 'Generation failed',
+      });
+    } finally {
+      setGeneratingQs(false);
+    }
   }
 
   const liveCount = items.filter(i => i.isLive).length;
@@ -208,6 +235,18 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
             <div className="flex flex-wrap gap-2 pt-2">
               <button
                 type="button"
+                onClick={handleGenerateQuestions}
+                disabled={generatingQs}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 disabled:opacity-60 text-white text-sm font-medium transition-colors"
+              >
+                {generatingQs ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                ) : (
+                  <><Sparkles className="w-4 h-4" /> Generate 3 exam Qs</>
+                )}
+              </button>
+              <button
+                type="button"
                 onClick={handleReadAtSource}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
               >
@@ -222,6 +261,19 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
                 <PenLine className="w-4 h-4" />
                 Create post from this
               </Link>
+              {genResult && (
+                <div className={`w-full flex items-start gap-2 text-xs p-2 rounded-lg ${
+                  genResult.success
+                    ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                    : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                }`}>
+                  {genResult.success ? <CheckCircle className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+                  <span>{genResult.message}</span>
+                  {genResult.success && (
+                    <Link to="/agent" onClick={() => onClose?.()} className="underline ml-auto shrink-0">View leads →</Link>
+                  )}
+                </div>
+              )}
               <a
                 href={selectedItem.sourceUrl}
                 target="_blank"
@@ -314,6 +366,8 @@ export function LiveRssFeedPanel() {
   const [selectedItem, setSelectedItem] = useState<IntelFeedItem | null>(null);
   const [fetchedAt, setFetchedAt] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
+  const [generatingQs, setGeneratingQs] = useState(false);
+  const [genResult, setGenResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const load = useCallback(async (force = false) => {
     if (force) setRefreshing(true);
@@ -447,6 +501,29 @@ export function LiveRssFeedPanel() {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
+                disabled={generatingQs}
+                onClick={async () => {
+                  setGeneratingQs(true);
+                  setGenResult(null);
+                  try {
+                    const result = await generateQuestionsFromIntel(selectedItem);
+                    setGenResult({
+                      success: result.success,
+                      message: result.success
+                        ? `${result.leads.length} exam Qs added to Agent Leads`
+                        : (result.error ?? 'Generation failed'),
+                    });
+                  } finally {
+                    setGeneratingQs(false);
+                  }
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium disabled:opacity-60"
+              >
+                {generatingQs ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                Generate 3 exam Qs
+              </button>
+              <button
+                type="button"
                 onClick={() => window.open(selectedItem.link, '_blank', 'noopener,noreferrer')}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium"
               >
@@ -458,6 +535,12 @@ export function LiveRssFeedPanel() {
               >
                 <PenLine className="w-4 h-4" /> Create post from this
               </Link>
+              {genResult && (
+                <p className={`w-full text-xs ${genResult.success ? 'text-green-600' : 'text-red-600'}`}>
+                  {genResult.message}
+                  {genResult.success && <Link to="/agent" className="underline ml-2">View leads →</Link>}
+                </p>
+              )}
             </div>
           </div>
         )}

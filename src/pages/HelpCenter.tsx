@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   HelpCircle, ChevronDown, ChevronUp, Rocket, Settings, ClipboardCheck,
   Crosshair, Theater, Bot, Briefcase, Radar, BookOpen, Lightbulb, Globe,
+  Shield,
 } from 'lucide-react';
 import { GEMMA4_BLOG_URL, AI_CONFIG_STORAGE_KEY } from '../services/aiService';
 import PageHeader from '../components/PageHeader';
@@ -52,6 +53,11 @@ const faqs: FAQItem[] = [
     question: 'Is this affiliated with ISACA or the official AAISM exam?',
     answer:
       'No. AAISM Study App is an independent community project. Always verify against official ISACA materials and exam policies.',
+  },
+  {
+    question: 'What data does AAISM store? (Privacy policy)',
+    answer:
+      'Study progress, AI keys, agent leads, community votes, and RSS cache live in browser localStorage only — nothing is sent to AAISM servers. LLM prompts go directly to Groq/Ollama from your browser. RSS feeds use public read-only proxies. See the full Data & Privacy page at /privacy.',
   },
 ];
 
@@ -130,6 +136,12 @@ function ContactSection() {
         >
           Support &amp; bug reports
           <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
+        </Link>
+        <Link
+          to="/privacy"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        >
+          <Shield className="w-4 h-4" /> Data &amp; privacy
         </Link>
         <Link
           to="/feature-request"

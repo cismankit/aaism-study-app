@@ -10,7 +10,8 @@ import {
 } from '../services/aiService';
 import { checkLLMHealth, subscribeLLMHealth, type LLMHealthReport } from '../services/llmHealthService';
 import GroqApiKeySection from '../components/GroqApiKeySection';
-import { Settings, Check, X, Loader2, Server, Cloud, Zap, Sparkles, Activity, RefreshCw } from 'lucide-react';
+import { Settings, Check, X, Loader2, Server, Cloud, Zap, Sparkles, Activity, RefreshCw, Layers } from 'lucide-react';
+import { loadEnsembleConfig, saveEnsembleConfig, type EnsembleConfig } from '../services/ensembleConfig';
 
 export default function AISettings() {
   const [config, setConfig] = useState<AIConfig>(loadAIConfig);
@@ -20,6 +21,7 @@ export default function AISettings() {
   const [saved, setSaved] = useState(false);
   const [health, setHealth] = useState<LLMHealthReport | null>(null);
   const [healthLoading, setHealthLoading] = useState(false);
+  const [ensemble, setEnsemble] = useState<EnsembleConfig>(loadEnsembleConfig);
 
   useEffect(() => {
     return subscribeLLMHealth(setHealth);
@@ -71,6 +73,7 @@ export default function AISettings() {
 
   const handleSave = () => {
     saveAIConfig(config);
+    saveEnsembleConfig(ensemble);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -310,6 +313,46 @@ export default function AISettings() {
         <h2 className="text-xl font-semibold mb-4">Advanced</h2>
         
         <div className="space-y-4">
+          <div className="p-4 rounded-lg border border-violet-200 dark:border-violet-800 bg-violet-50 dark:bg-violet-900/20">
+            <div className="flex items-start gap-3">
+              <Layers className="w-5 h-5 text-violet-600 shrink-0 mt-0.5" />
+              <div className="flex-1 space-y-3">
+                <div>
+                  <h3 className="font-medium text-violet-900 dark:text-violet-200">Multi-model agent ensemble</h3>
+                  <p className="text-sm text-violet-800/80 dark:text-violet-300/80 mt-1">
+                    Discover questions on Groq (fast JSON), validate with Ollama critic — or same provider if only one is configured.
+                  </p>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={ensemble.enabled}
+                    onChange={e => setEnsemble({ ...ensemble, enabled: e.target.checked })}
+                    className="rounded border-violet-300 text-violet-600 focus:ring-violet-500"
+                  />
+                  <span className="text-sm font-medium">Enable dual-model ensemble for Agent Discovery</span>
+                </label>
+                {ensemble.enabled && (
+                  <div className="space-y-2 pt-1">
+                    <div>
+                      <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Groq API key (discover pass)</label>
+                      <input
+                        type="password"
+                        value={ensemble.groqApiKey ?? (config.provider === 'groq' ? config.apiKey ?? '' : '')}
+                        onChange={e => setEnsemble({ ...ensemble, groqApiKey: e.target.value })}
+                        placeholder={config.provider === 'groq' ? 'Using primary Groq key' : 'gsk_… for ensemble discover'}
+                        className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800"
+                      />
+                    </div>
+                    <p className="text-[11px] text-gray-500">
+                      Critic uses Ollama ({config.provider === 'ollama' ? config.model : 'qwen2.5:7b'}) when running locally.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Custom Base URL (Optional)</label>
             <input

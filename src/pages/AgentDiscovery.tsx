@@ -6,6 +6,7 @@ import {
   Shield, Search, Sparkles, AlertTriangle, Check, X, Eye,
   Activity, Database, Layers, ArrowRight, Settings, Terminal,
   StopCircle,
+  ThumbsUp, ThumbsDown,
 } from 'lucide-react';
 import {
   runDiscoveryAgent,
@@ -29,6 +30,12 @@ import {
   type DiscoveryStrategy,
 } from '../services/agentStore';
 import { loadAIConfig, getModelCapability, isSmallModel, getRecommendedFallbackModel } from '../services/aiService';
+import {
+  voteLead,
+  getLeadCommunityScore,
+  getLeadVoteRecord,
+  sortLeadsByCommunityScore,
+} from '../services/leadVotesService';
 import PageHeader from '../components/PageHeader';
 
 type ViewTab = 'pipeline' | 'leads' | 'analytics' | 'history';
@@ -48,6 +55,7 @@ export default function AgentDiscovery() {
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [showStrategyPicker, setShowStrategyPicker] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [voteTick, setVoteTick] = useState(0);
   const logEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -174,9 +182,13 @@ export default function AgentDiscovery() {
     });
   };
 
-  const filteredLeads = pipelineState.leads.filter(l =>
-    leadFilter === 'all' ? true : l.status === leadFilter
-  ).sort((a, b) => new Date(b.discoveredAt).getTime() - new Date(a.discoveredAt).getTime());
+  const filteredLeads = sortLeadsByCommunityScore(
+    pipelineState.leads.filter(l =>
+      leadFilter === 'all' ? true : l.status === leadFilter
+    )
+  );
+  // voteTick triggers re-render after votes
+  void voteTick;
 
   const domainNames: Record<number, string> = {
     1: 'AI Governance',
@@ -457,6 +469,7 @@ export default function AgentDiscovery() {
           onBulkReject={handleBulkReject}
           statusColors={statusColors}
           domainNames={domainNames}
+          onVote={(leadId, dir) => { voteLead(leadId, dir); setVoteTick(t => t + 1); }}
         />
       )}
 
@@ -610,7 +623,7 @@ function PipelineTab({
 function LeadsTab({
   leads, leadFilter, setLeadFilter, expandedLead, setExpandedLead,
   selectedLeads, toggleLeadSelection, onApprove, onReject, onBulkApprove, onBulkReject,
-  statusColors, domainNames,
+  statusColors, domainNames, onVote,
 }: {
   leads: QuestionLead[];
   leadFilter: LeadFilter;
@@ -625,11 +638,12 @@ function LeadsTab({
   onBulkReject: () => void;
   statusColors: Record<string, string>;
   domainNames: Record<number, string>;
+  onVote: (leadId: string, direction: 'up' | 'down') => void;
 }) {
   return (
     <div className="space-y-3">
       {/* Filter + Bulk Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex gap-1">
           {(['all', 'pending_review', 'approved', 'auto_approved', 'rejected'] as LeadFilter[]).map(f => (
             <button
@@ -645,6 +659,7 @@ function LeadsTab({
             </button>
           ))}
         </div>
+        <p className="text-[10px] text-gray-400">Sorted by community score (local votes)</p>
         {selectedLeads.size > 0 && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-gray-500">{selectedLeads.size} selected</span>
@@ -666,7 +681,10 @@ function LeadsTab({
         </div>
       ) : (
         <div className="space-y-2">
-          {leads.map(lead => (
+          {leads.map(lead => {
+            const votes = getLeadVoteRecord(lead.id);
+            const score = getLeadCommunityScore(lead.id);
+            return (
             <div
               key={lead.id}
               className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden transition-all hover:border-violet-300 dark:hover:border-violet-700"
@@ -686,6 +704,11 @@ function LeadsTab({
                     <span className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${statusColors[lead.status]}`}>
                       {lead.status.replace('_', ' ')}
                     </span>
+                    {lead.tags.includes('rss-intel') && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                        RSS intel
+                      </span>
+                    )}
                     <span className="text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-500 px-1.5 py-0.5 rounded">
                       D{lead.question.domain}: {domainNames[lead.question.domain]}
                     </span>
@@ -696,6 +719,11 @@ function LeadsTab({
                     }`}>
                       {lead.question.difficulty}
                     </span>
+                    {score !== 0 && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 ml-auto">
+                        ★ {score > 0 ? '+' : ''}{score}
+                      </span>
+                    )}
                   </div>
 
                   <p className="text-sm text-gray-900 dark:text-white leading-snug">{lead.question.question}</p>
@@ -715,6 +743,23 @@ function LeadsTab({
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex flex-col items-center gap-0.5 mr-1">
+                    <button
+                      onClick={() => onVote(lead.id, 'up')}
+                      className="p-1 rounded hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600"
+                      title="Upvote"
+                    >
+                      <ThumbsUp size={12} />
+                    </button>
+                    <span className="text-[9px] text-gray-400 tabular-nums">{votes.up - votes.down}</span>
+                    <button
+                      onClick={() => onVote(lead.id, 'down')}
+                      className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500"
+                      title="Downvote"
+                    >
+                      <ThumbsDown size={12} />
+                    </button>
+                  </div>
                   <button
                     onClick={() => setExpandedLead(expandedLead === lead.id ? null : lead.id)}
                     className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400"
@@ -778,7 +823,8 @@ function LeadsTab({
                 </div>
               )}
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
     </div>

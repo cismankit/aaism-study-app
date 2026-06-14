@@ -108,7 +108,7 @@ export function resolveSourceFromParams(params: URLSearchParams): ContentSource 
     return { type: 'intel-headline', headline, intelSource, domain };
   }
   if (prompt) {
-    return { type: 'custom', customPrompt: prompt, domain };
+    return { type: 'custom', customPrompt: prompt, domain, topic: params.get('topic') ?? 'Weekly AAISM Intel Digest' };
   }
   if (topic && topics.some(t => t.id === topic || t.title === topic)) {
     const kb = topics.find(t => t.id === topic || t.title === topic);

@@ -26,6 +26,12 @@ import {
 import { loadAIConfig } from '../services/aiService';
 import { useNavigate, Link } from 'react-router-dom';
 import OSINTArsenal from './OSINTArsenal';
+import {
+  buildWeeklyIntelDigest,
+  cacheDigest,
+  getDigestStudioUrl,
+  loadCachedDigest,
+} from '../services/intelDigestService';
 
 type IntelTab = 'patterns' | 'hot_topics' | 'traps' | 'research' | 'insights' | 'arsenal';
 
@@ -40,11 +46,16 @@ export default function IntelHub() {
   const [researchFocus, setResearchFocus] = useState('');
   const [researchDomain, setResearchDomain] = useState<number | undefined>(undefined);
   const [researchType, setResearchType] = useState<'patterns' | 'traps'>('patterns');
+  const [digestUrl, setDigestUrl] = useState(() => getDigestStudioUrl(loadCachedDigest() ?? undefined));
   const logEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     setAnalysis(analyzeQuestionPatterns());
+    void buildWeeklyIntelDigest().then(d => {
+      cacheDigest(d);
+      setDigestUrl(getDigestStudioUrl(d));
+    });
   }, []);
 
   useEffect(() => {
@@ -135,6 +146,21 @@ export default function IntelHub() {
       {activeTabMeta && (
         <p className="text-sm text-gray-400 -mt-2">{activeTabMeta.description}</p>
       )}
+
+      <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-900/10">
+        <div>
+          <p className="text-sm font-semibold text-violet-800 dark:text-violet-300">Weekly AAISM Intel Digest</p>
+          <p className="text-xs text-violet-700/80 dark:text-violet-400/80 mt-0.5">
+            Top RSS headlines + community heat topics — pre-fill Content Studio
+          </p>
+        </div>
+        <Link
+          to={digestUrl}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium"
+        >
+          <PenLine className="w-4 h-4" /> Open in Content Studio
+        </Link>
+      </div>
 
       {/* Tab Content */}
       {activeTab === 'patterns' && (

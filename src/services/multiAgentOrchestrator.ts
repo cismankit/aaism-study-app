@@ -7,12 +7,15 @@ import {
   chatJson,
   loadAIConfig,
   resolveAgentConfig,
+  resolveOllamaModel,
+  defaultConfigs,
   AAISM_CONTEXT,
   getModelCapability,
   getRecommendedFallbackModel,
   type AIConfig,
   type Message,
 } from './aiService';
+import { loadEnsembleConfig } from './ensembleConfig';
 import {
   analyzeCoverage,
   type AgentCallbacks,
@@ -313,6 +316,100 @@ export function runCriticAgent(
   return scored;
 }
 
+function buildEnsembleDiscoverConfig(base: AIConfig): AIConfig {
+  const ensemble = loadEnsembleConfig();
+  if (ensemble.discoverProvider === 'groq') {
+    const groqKey = ensemble.groqApiKey?.trim() || (base.provider === 'groq' ? base.apiKey : undefined);
+    if (groqKey) {
+      return {
+        provider: 'groq',
+        apiKey: groqKey,
+        baseUrl: defaultConfigs.groq.baseUrl,
+        model: base.provider === 'groq' ? base.model : defaultConfigs.groq.model!,
+        groqModels: base.groqModels,
+      };
+    }
+  }
+  return base.provider === 'ollama' ? base : {
+    ...base,
+    provider: 'ollama',
+    baseUrl: base.baseUrl ?? defaultConfigs.ollama.baseUrl,
+    model: defaultConfigs.ollama.model!,
+  };
+}
+
+async function buildEnsembleCriticConfig(base: AIConfig): Promise<AIConfig> {
+  const ensemble = loadEnsembleConfig();
+  if (ensemble.criticProvider === 'groq') {
+    const groqKey = ensemble.groqApiKey?.trim() || (base.provider === 'groq' ? base.apiKey : undefined);
+    if (groqKey) {
+      return {
+        provider: 'groq',
+        apiKey: groqKey,
+        baseUrl: defaultConfigs.groq.baseUrl,
+        model: base.provider === 'groq' ? base.model : defaultConfigs.groq.model!,
+      };
+    }
+  }
+  const ollamaBase: AIConfig = base.provider === 'ollama' ? base : {
+    provider: 'ollama',
+    baseUrl: defaultConfigs.ollama.baseUrl,
+    model: defaultConfigs.ollama.model!,
+  };
+  const resolved = await resolveOllamaModel(ollamaBase);
+  return { ...ollamaBase, model: resolved.model };
+}
+
+async function runCriticAgentLLM(
+  ctx: OrchestratorContext,
+  questions: ParsedQuestion[],
+  criticConfig: AIConfig,
+): Promise<ParsedQuestion[]> {
+  checkAbort(ctx);
+  agentLog('CriticAgent', ctx.callbacks, 'score',
+    `LLM critic on ${criticConfig.provider}/${criticConfig.model} (${questions.length} questions)`, 'thinking');
+  ctx.callbacks.onPhaseChange('score', 'CriticAgent LLM validation...');
+
+  const rulePassed = runCriticAgent(ctx, questions);
+  if (rulePassed.length === 0) return rulePassed;
+
+  const reviewPayload = rulePassed.map((q, i) => ({
+    id: i,
+    domain: q.domain,
+    question: q.question,
+    options: q.options,
+    correctAnswer: q.correctAnswer,
+    explanation: q.explanation,
+  }));
+
+  const messages: Message[] = [
+    { role: 'system', content: `${AAISM_CONTEXT}\n\nYou validate ISACA AAISM exam questions. Return ONLY JSON.` },
+    { role: 'user', content: `Review these ${reviewPayload.length} questions. Return JSON: {"approved":[0,1,...],"rejected":[2],"notes":"..."}
+Reject questions that are off-topic, have ambiguous answers, or poor distractors.
+
+Questions:
+${JSON.stringify(reviewPayload, null, 2)}` },
+  ];
+
+  try {
+    const resp = await chatJson(criticConfig, messages);
+    if (resp.error) throw new Error(resp.error);
+    const parsed = JSON.parse(sanitizeJsonString(resp.content)) as { approved?: number[] };
+    const approvedIdx = new Set(parsed.approved ?? rulePassed.map((_, i) => i));
+    const approved = rulePassed.filter((_, i) => approvedIdx.has(i));
+    agentLog('CriticAgent', ctx.callbacks, 'score',
+      `LLM critic: ${approved.length}/${rulePassed.length} approved`, 'success');
+    return approved.map(q => ({
+      ...q,
+      confidence: Math.min(100, q.confidence + 8),
+    }));
+  } catch (e) {
+    agentLog('CriticAgent', ctx.callbacks, 'score',
+      `LLM critic fallback to rule-based: ${e instanceof Error ? e.message : e}`, 'warning');
+    return rulePassed;
+  }
+}
+
 function normalizeText(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim();
 }
@@ -364,8 +461,15 @@ export async function runMultiAgentDiscovery(
   discovered: Array<ParsedQuestion & { similarityScore: number }>;
   coverage: ReturnType<typeof analyzeCoverage>;
 }> {
-  const aiConfig = config || await resolveAgentConfig(loadAIConfig());
-  const ctx: OrchestratorContext = { strategy, config: aiConfig, callbacks, signal };
+  const baseConfig = config || await resolveAgentConfig(loadAIConfig());
+  const ensemble = loadEnsembleConfig();
+  const discoverConfig = ensemble.enabled ? buildEnsembleDiscoverConfig(baseConfig) : baseConfig;
+  const ctx: OrchestratorContext = { strategy, config: discoverConfig, callbacks, signal };
+
+  if (ensemble.enabled) {
+    agentLog('DiscoverAgent', callbacks, 'discover',
+      `Ensemble mode: discover via ${discoverConfig.provider}/${discoverConfig.model}`, 'info');
+  }
 
   const { coverage, topGaps } = runAnalystAgent(ctx);
 
@@ -373,19 +477,25 @@ export async function runMultiAgentDiscovery(
 
   if (discovered.length === 0) {
     const fallback = getRecommendedFallbackModel();
-    if (aiConfig.provider === 'ollama' && aiConfig.model !== fallback) {
+    if (discoverConfig.provider === 'ollama' && discoverConfig.model !== fallback) {
       agentLog('DiscoverAgent', callbacks, 'discover',
         `All attempts failed. Try: ollama pull ${fallback}`, 'warning');
     }
     throw new Error(
       `Could not parse valid questions after 3 attempts. ` +
-      (aiConfig.provider === 'ollama'
-        ? `Your model (${aiConfig.model}) may be too small for structured JSON. Try ${fallback} or Groq (free).`
+      (discoverConfig.provider === 'ollama'
+        ? `Your model (${discoverConfig.model}) may be too small for structured JSON. Try ${fallback} or Groq (free).`
         : 'Try running again or switching models.')
     );
   }
 
-  discovered = runCriticAgent(ctx, discovered);
+  if (ensemble.enabled) {
+    const criticConfig = await buildEnsembleCriticConfig(baseConfig);
+    discovered = await runCriticAgentLLM(ctx, discovered, criticConfig);
+  } else {
+    discovered = runCriticAgent(ctx, discovered);
+  }
+
   const deduped = runDedupAgent(ctx, discovered);
 
   return { discovered: deduped, coverage };

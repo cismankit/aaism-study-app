@@ -45,8 +45,8 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
   {
     id: 'multi-model-ensemble',
     title: 'Multi-model agent ensemble',
-    summary: 'Run Qwen + Gemma in parallel for discovery, then merge and dedupe the best questions.',
-    status: 'exploring',
+    summary: 'Discover on Groq, validate with Ollama critic — dual-model Agent Discovery in Settings Advanced.',
+    status: 'shipped',
   },
   {
     id: 'mobile-pwa',
@@ -58,7 +58,7 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
     id: 'community-voting',
     title: 'Community question voting',
     summary: 'Upvote agent-discovered leads and flag weak questions for review.',
-    status: 'planned',
+    status: 'shipped',
   },
 ];
 
