@@ -19,8 +19,12 @@ import {
   loadAIConfig, 
   saveAIConfig,
   defaultConfigs,
-  AIProvider
+  AIProvider,
+  getModelCapability,
+  getModelWarning,
+  AAISM_OFFLINE_MODELS,
 } from '../services/aiService';
+import OllamaModelManager from '../components/OllamaModelManager';
 import { 
   Play,
   Target, 
@@ -39,7 +43,8 @@ import {
   Zap,
   AlertTriangle,
   Lightbulb,
-  CheckCircle
+  CheckCircle,
+  Star,
 } from 'lucide-react';
 
 type Tab = 'home' | 'analytics' | 'achievements' | 'settings';
@@ -596,6 +601,8 @@ function AchievementsTab() {
 function SettingsTab() {
   const [config, setConfig] = useState<AIConfig>(loadAIConfig);
   const [saved, setSaved] = useState(false);
+  const modelCap = getModelCapability(config.model);
+  const modelWarning = config.provider === 'ollama' ? getModelWarning(config.model) : null;
 
   const handleSave = () => {
     saveAIConfig(config);
@@ -623,8 +630,8 @@ function SettingsTab() {
               }}
               className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
-              <option value="groq">Groq (Free) ⭐</option>
-              <option value="ollama">Ollama (Local)</option>
+              <option value="groq">Groq (Free) — Best for Agent Discovery</option>
+              <option value="ollama">Ollama (Local / Offline)</option>
               <option value="claude">Claude</option>
               <option value="openai">OpenAI</option>
             </select>
@@ -645,13 +652,52 @@ function SettingsTab() {
 
           <div>
             <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">Model</label>
-            <input
-              type="text"
-              value={config.model}
-              onChange={e => setConfig({ ...config, model: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
-            />
+            {config.provider === 'ollama' ? (
+              <select
+                value={config.model}
+                onChange={e => setConfig({ ...config, model: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                {AAISM_OFFLINE_MODELS.map(m => (
+                  <option key={m.name} value={m.name}>
+                    {m.name}{m.recommended ? ' ★ Recommended' : ''}{m.fallbackOnly ? ' (fallback)' : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={config.model}
+                onChange={e => setConfig({ ...config, model: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            )}
+            {config.provider === 'ollama' && (
+              <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                  modelCap.tier === 'small'
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                    : modelCap.tier === 'large'
+                      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                      : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                }`}>
+                  {modelCap.tier} tier · JSON {modelCap.jsonReliability}%
+                </span>
+                {modelCap.recommended && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-0.5">
+                    <Star className="w-2.5 h-2.5 fill-current" /> Recommended
+                  </span>
+                )}
+              </div>
+            )}
           </div>
+
+          {modelWarning && (
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-800 dark:text-amber-300">{modelWarning}</p>
+            </div>
+          )}
 
           <button
             onClick={handleSave}
@@ -665,6 +711,17 @@ function SettingsTab() {
           </button>
         </div>
       </div>
+
+      {config.provider === 'ollama' && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Offline Model Manager</h3>
+          <OllamaModelManager
+            baseUrl={config.baseUrl}
+            selectedModel={config.model}
+            onSelectModel={model => setConfig({ ...config, model })}
+          />
+        </div>
+      )}
 
       {/* App Info */}
       <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">

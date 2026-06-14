@@ -27,7 +27,7 @@ import {
   type AgentPipelineState,
   type DiscoveryStrategy,
 } from '../services/agentStore';
-import { loadAIConfig } from '../services/aiService';
+import { loadAIConfig, getModelCapability, isSmallModel, getRecommendedFallbackModel } from '../services/aiService';
 import PageHeader from '../components/PageHeader';
 
 type ViewTab = 'pipeline' | 'leads' | 'analytics' | 'history';
@@ -52,6 +52,11 @@ export default function AgentDiscovery() {
 
   const aiConfig = loadAIConfig();
   const stats = getPipelineStats();
+  const modelCap = getModelCapability(aiConfig.model);
+  const showSmallModelBanner = aiConfig.provider === 'ollama' && isSmallModel(aiConfig.model);
+  const activeAgent = liveLogs.length > 0
+    ? liveLogs[liveLogs.length - 1].agent || liveLogs.filter(l => l.agent).slice(-1)[0]?.agent
+    : null;
 
   const refreshState = useCallback(() => {
     setPipelineState(loadPipelineState());
@@ -193,7 +198,7 @@ export default function AgentDiscovery() {
         icon={Bot}
         iconClassName="text-violet-500"
         title="Agent Discovery"
-        subtitle="AI auto-discovers ISACA-matching questions — review leads in the Leads tab."
+        subtitle="Multi-agent pipeline discovers ISACA-matching questions — review leads in the Leads tab."
         action={
           <div className="flex items-center gap-2 text-xs text-gray-400">
             <Settings size={12} />
@@ -209,6 +214,20 @@ export default function AgentDiscovery() {
         }
       />
 
+      {showSmallModelBanner && (
+        <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-amber-900 dark:text-amber-200">
+              Small model detected ({aiConfig.model})
+            </p>
+            <p className="text-amber-800 dark:text-amber-300/90 mt-1">
+              Switch to <strong>{getRecommendedFallbackModel()}</strong> in Settings for reliable Agent Discovery results.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Live Agent Console — pipeline tab only */}
       {activeTab === 'pipeline' && (isRunning || liveLogs.length > 0) && (
         <div className="bg-gray-900 dark:bg-black rounded-xl border border-gray-700 overflow-hidden shadow-xl">
@@ -223,8 +242,13 @@ export default function AgentDiscovery() {
               <div className="flex items-center gap-2">
                 <Terminal size={14} className="text-gray-400" />
                 <span className="text-xs font-mono text-gray-300">
-                  agent-discovery {isRunning ? `— ${currentPhase || 'init'}` : '— done'}
+                  agent-discovery {isRunning ? `— ${activeAgent || currentPhase || 'init'}` : '— done'}
                 </span>
+                {isRunning && modelCap && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 font-mono">
+                    {modelCap.tier} · JSON {modelCap.jsonReliability}%
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -300,9 +324,15 @@ export default function AgentDiscovery() {
                 warning: 'text-yellow-400',
                 thinking: 'text-violet-400 animate-pulse',
               };
+              const agentTag = entry.agent || (entry.message.match(/^\[(\w+Agent)\]/)?.[1]);
               return (
                 <div key={i} className="flex items-start gap-2 leading-relaxed">
                   <span className="text-gray-600 shrink-0">{time}</span>
+                  {agentTag && (
+                    <span className="shrink-0 text-[10px] px-1 py-0.5 rounded bg-gray-800 text-cyan-400 font-mono">
+                      {agentTag}
+                    </span>
+                  )}
                   <span className={`shrink-0 ${phaseColor[entry.phase] || 'text-gray-400'}`}>
                     [{entry.phase}]
                   </span>

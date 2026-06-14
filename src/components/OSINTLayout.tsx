@@ -2,9 +2,10 @@ import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Radar, Theater, Eye, Bot, Zap,
   Sun, Moon, Flame, ChevronRight, Settings, Menu,
-  Activity, Shield, Map, Crosshair, Radio, Briefcase, PanelLeftClose,
+  Activity, Map, Crosshair, Radio, Briefcase, PanelLeftClose,
   HelpCircle, LifeBuoy, Heart, Sparkles, ChevronDown, Globe,
 } from 'lucide-react';
+import Logo from './Logo';
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { AppProvider } from '../context/AppContext';
 import { GamificationProvider, useGamification } from '../context/GamificationContext';
@@ -112,8 +113,8 @@ function Sidebar({
     >
       {/* Logo + toggle */}
       <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} px-3 py-3 border-b border-gray-800 relative`}>
-        <div className={`${collapsed ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/20 transition-all`}>
-          <Shield className={`${collapsed ? 'w-4 h-4' : 'w-5 h-5'} text-white`} />
+        <div className={`${collapsed ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg overflow-hidden flex-shrink-0 shadow-lg shadow-emerald-500/20 transition-all`}>
+          <Logo size={collapsed ? 32 : 40} />
         </div>
         {!collapsed && (
           <>
