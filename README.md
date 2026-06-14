@@ -80,4 +80,18 @@ Check your [Dashboard](progress/00-dashboard.md) for:
 
 ---
 
-*Last Updated: December 23, 2024*
+## 🖥️ AAISM Intelligence Platform (Web & Desktop)
+
+The interactive study app (Vite + React) lives in this repo root. Deployed at:
+
+**https://cismankit.github.io/aaism-study-app/**
+
+| Platform | How to run |
+|----------|------------|
+| **Browser / GitHub Pages** | Open the live URL above |
+| **Mac desktop app** | `npm run tauri:dev` or `npm run tauri:build` — see [TAURI.md](TAURI.md) |
+| **iPhone / iPad** | Safari → Share → **Add to Home Screen** (PWA) |
+
+---
+
+*Last Updated: June 14, 2026*

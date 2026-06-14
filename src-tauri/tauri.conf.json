@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "AAISM Intelligence",
+  "version": "1.0.0",
+  "identifier": "com.aaism.intelligence",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "TAURI=true npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "AAISM Intelligence",
+        "width": 1400,
+        "height": 900,
+        "resizable": true,
+        "decorations": true,
+        "titleBarStyle": "Visible"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Education",
+    "shortDescription": "AI Security Manager exam prep",
+    "longDescription": "AAISM Intelligence Platform — study ops, scenario labs, intel feeds, and timed exam simulation for ISACA AAISM certification prep."
+  }
+}

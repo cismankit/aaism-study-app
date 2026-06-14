@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import {
   HelpCircle, ChevronDown, ChevronUp, Rocket, Settings, ClipboardCheck,
   Crosshair, Theater, Bot, Briefcase, Radar, BookOpen, Lightbulb, Globe,
-  Shield,
+  Shield, Smartphone,
 } from 'lucide-react';
 import { GEMMA4_BLOG_URL, AI_CONFIG_STORAGE_KEY } from '../services/aiService';
 import PageHeader from '../components/PageHeader';
+import { isIosDevice } from '../utils/pwa';
 
 interface FAQItem {
   question: string;
@@ -53,6 +54,16 @@ const faqs: FAQItem[] = [
     question: 'Is this affiliated with ISACA or the official AAISM exam?',
     answer:
       'No. AAISM Study App is an independent community project. Always verify against official ISACA materials and exam policies.',
+  },
+  {
+    question: 'Can I use AAISM on iPhone?',
+    answer:
+      'Yes — install as a Progressive Web App (PWA). Open the site in Safari, tap Share → Add to Home Screen. The app runs full-screen from your home screen with offline access to cached study content. AI features (Groq, Ollama remote) still need a network connection.',
+  },
+  {
+    question: 'Can I run AAISM as a Mac desktop app?',
+    answer:
+      'Yes — clone the repo and run npm run tauri:dev (development) or npm run tauri:build (release .app). Requires Rust, Xcode Command Line Tools, and Node.js on macOS. See TAURI.md in the repo for setup steps.',
   },
   {
     question: 'What data does AAISM store? (Privacy policy)',
@@ -154,6 +165,37 @@ function ContactSection() {
   );
 }
 
+function IphoneInstallSection() {
+  return (
+    <section className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Smartphone className="w-5 h-5 text-emerald-500" />
+        <h2 className="text-lg font-semibold">Install on iPhone</h2>
+      </div>
+      <div className="bg-theme-elevated rounded-xl border border-emerald-500/25 p-5 osint-widget space-y-4">
+        <p className="text-sm text-cockpit-muted">
+          AAISM works as a home-screen app on iPhone and iPad — no App Store required. Use <strong>Safari</strong> for the best install experience.
+        </p>
+        <ol className="text-sm text-cockpit-muted space-y-2 list-decimal list-inside">
+          <li>Open <a href="https://cismankit.github.io/aaism-study-app/" className="text-emerald-600 dark:text-emerald-400 hover:underline" target="_blank" rel="noopener noreferrer">cismankit.github.io/aaism-study-app</a> in Safari</li>
+          <li>Tap the <strong>Share</strong> button (square with arrow) at the bottom toolbar</li>
+          <li>Scroll the share sheet and tap <strong>Add to Home Screen</strong></li>
+          <li>Confirm the name <strong>AAISM</strong> and tap <strong>Add</strong></li>
+          <li>Launch from your home screen — runs full-screen like a native app</li>
+        </ol>
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-800 dark:text-amber-200">
+          <strong>Offline vs online:</strong> Quizzes, flashcards, and cached content work offline after first load. AI tutoring, RSS intel, and API-backed features need Wi‑Fi or cellular data.
+        </div>
+        {isIosDevice() && (
+          <p className="text-xs text-emerald-600 dark:text-emerald-400">
+            You appear to be on iOS — look for the install banner at the top of the app, or follow the steps above in Safari.
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export default function HelpCenter() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -212,6 +254,8 @@ export default function HelpCenter() {
           })}
         </div>
       </section>
+
+      <IphoneInstallSection />
 
       {/* AI Settings */}
       <section className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-xl border border-emerald-500/20 p-5">

@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:pages": "GITHUB_PAGES=true tsc && GITHUB_PAGES=true vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "lucide-react": "^0.294.0",
@@ -16,6 +19,9 @@
     "react-router-dom": "^6.20.0"
   },
   "devDependencies": {
+    "@resvg/resvg-js": "^2.6.2",
+    "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/cli": "^2.11.2",
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
     "@vitejs/plugin-react": "^4.2.0",
@@ -25,5 +31,6 @@
     "typescript": "^5.2.2",
     "vite": "^5.0.0",
     "vite-plugin-pwa": "^1.3.0"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
