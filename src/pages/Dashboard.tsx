@@ -25,6 +25,7 @@ import {
   AAISM_OFFLINE_MODELS,
 } from '../services/aiService';
 import OllamaModelManager from '../components/OllamaModelManager';
+import GroqApiKeySection from '../components/GroqApiKeySection';
 import { 
   Play,
   Target, 
@@ -601,11 +602,13 @@ function AchievementsTab() {
 function SettingsTab() {
   const [config, setConfig] = useState<AIConfig>(loadAIConfig);
   const [saved, setSaved] = useState(false);
+  const [savedApiKey, setSavedApiKey] = useState(() => loadAIConfig().apiKey);
   const modelCap = getModelCapability(config.model);
   const modelWarning = config.provider === 'ollama' ? getModelWarning(config.model) : null;
 
   const handleSave = () => {
     saveAIConfig(config);
+    setSavedApiKey(config.apiKey);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -637,7 +640,15 @@ function SettingsTab() {
             </select>
           </div>
 
-          {config.provider !== 'ollama' && (
+          {config.provider === 'groq' && (
+            <GroqApiKeySection
+              config={config}
+              onChange={setConfig}
+              savedKey={savedApiKey}
+            />
+          )}
+
+          {config.provider !== 'ollama' && config.provider !== 'groq' && (
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">API Key</label>
               <input
@@ -645,6 +656,7 @@ function SettingsTab() {
                 value={config.apiKey || ''}
                 onChange={e => setConfig({ ...config, apiKey: e.target.value })}
                 placeholder={`Enter your ${config.provider} API key`}
+                autoComplete="off"
                 className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
@@ -664,7 +676,7 @@ function SettingsTab() {
                   </option>
                 ))}
               </select>
-            ) : (
+            ) : config.provider === 'groq' ? null : (
               <input
                 type="text"
                 value={config.model}
@@ -714,6 +726,14 @@ function SettingsTab() {
 
       {config.provider === 'ollama' && (
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+          <div className="mb-4 p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800">
+            <p className="text-xs text-violet-800 dark:text-violet-300">
+              <strong>Gemma 4 vs Gemma 3:</strong> Gemma 4 (Apr 2026) adds native JSON output, function calling, and agentic workflows on Ollama.
+              Prefer <code className="bg-violet-100 dark:bg-violet-900/40 px-1 rounded">gemma4:e4b</code> or{' '}
+              <code className="bg-violet-100 dark:bg-violet-900/40 px-1 rounded">gemma4:31b</code> over Gemma 3 for Agent Discovery.
+              Gemma 3 remains a lighter fallback if VRAM is limited.
+            </p>
+          </div>
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Offline Model Manager</h3>
           <OllamaModelManager
             baseUrl={config.baseUrl}

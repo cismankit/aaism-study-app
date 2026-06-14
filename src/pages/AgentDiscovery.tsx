@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Bot, Play, CheckCircle, Clock, Zap, Target, TrendingUp,
   ChevronDown, ChevronUp, RefreshCw, Trash2, Filter, BarChart3,
@@ -397,8 +398,8 @@ export default function AgentDiscovery() {
               </div>
               <ol className="text-xs text-blue-600 dark:text-blue-400 space-y-1 ml-5 list-decimal">
                 <li>Get a free API key at <a href="https://console.groq.com" target="_blank" rel="noreferrer" className="underline font-medium">console.groq.com</a></li>
-                <li>Go to Dashboard → Settings tab</li>
-                <li>Select Groq as provider, paste your key</li>
+                <li><Link to="/settings" className="underline font-medium">Add Groq key in Settings →</Link> (Settings tab)</li>
+                <li>Select Groq as provider, pick Llama 3.3 70B or Mixtral</li>
                 <li>Run the agent again — works instantly</li>
               </ol>
             </div>

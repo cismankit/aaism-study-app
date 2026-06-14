@@ -3,6 +3,9 @@ import {
   AAISM_OFFLINE_MODELS,
   AGENT_MODEL_PREFERENCE,
   GEMMA4_STATUS_NOTE,
+  GEMMA4_BLOG_URL,
+  GEMMA4_OLLAMA_URL,
+  GEMMA4_PULL_COMMANDS,
   pullOllamaModel,
   checkOllamaStatus,
   pickBestInstalledModel,
@@ -82,6 +85,11 @@ function ModelRow({
           {model.fallbackOnly && (
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
               avoid
+            </span>
+          )}
+          {!installed && model.name.startsWith('gemma4:') && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
+              available — run ollama pull {model.name}
             </span>
           )}
         </div>
@@ -224,21 +232,34 @@ export default function OllamaModelManager({
         </div>
       </div>
 
-      {/* Gemma 4 note */}
+      {/* Gemma 4 callout */}
       <div className="flex items-start gap-2 p-3 rounded-lg bg-violet-50 dark:bg-violet-900/20 border border-violet-200 dark:border-violet-800">
         <Info className="w-4 h-4 text-violet-600 dark:text-violet-400 shrink-0 mt-0.5" />
-        <div className="text-xs text-violet-800 dark:text-violet-300 space-y-1">
+        <div className="text-xs text-violet-800 dark:text-violet-300 space-y-2">
           <p>
-            <strong>Gemma 4 — not yet available in Ollama.</strong> {GEMMA4_STATUS_NOTE}
+            <strong>Gemma 4 now on Ollama.</strong> {GEMMA4_STATUS_NOTE}
           </p>
-          <a
-            href="https://ollama.com/library"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-violet-600 dark:text-violet-400 hover:underline"
-          >
-            Check Ollama library for new tags <ExternalLink className="w-3 h-3" />
-          </a>
+          <p>
+            Tier S for agent JSON: <strong>gemma4:31b</strong> → <strong>gemma4:26b</strong> → <strong>gemma4:e4b</strong>
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <a
+              href={GEMMA4_BLOG_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-violet-600 dark:text-violet-400 hover:underline"
+            >
+              Google Gemma 4 blog <ExternalLink className="w-3 h-3" />
+            </a>
+            <a
+              href={GEMMA4_OLLAMA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-violet-600 dark:text-violet-400 hover:underline"
+            >
+              ollama.com/library/gemma4 <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
         </div>
       </div>
 
@@ -404,8 +425,21 @@ export default function OllamaModelManager({
 
       {/* Quick setup commands */}
       <div className="p-3 rounded-lg bg-gray-900 text-gray-300 font-mono text-xs space-y-2">
-        <p className="text-gray-500"># Recommended setup for Agent Discovery</p>
-        {['ollama pull qwen2.5:7b', 'ollama pull llama3.1:8b', 'ollama pull gemma2:9b'].map(cmd => (
+        <p className="text-gray-500"># Gemma 4 — native JSON &amp; agentic workflows (Apr 2026)</p>
+        {GEMMA4_PULL_COMMANDS.map(cmd => (
+          <div key={cmd} className="flex items-center justify-between gap-2">
+            <code>{cmd}</code>
+            <button
+              onClick={() => copyCommand(cmd, cmd)}
+              className="p-1 hover:bg-gray-800 rounded shrink-0"
+              title="Copy command"
+            >
+              {copied === cmd ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+            </button>
+          </div>
+        ))}
+        <p className="text-gray-500 pt-1"># Other recommended models</p>
+        {['ollama pull qwen2.5:7b', 'ollama pull llama3.1:8b'].map(cmd => (
           <div key={cmd} className="flex items-center justify-between gap-2">
             <code>{cmd}</code>
             <button

@@ -552,7 +552,11 @@ export default function ContentStudio() {
               <Server className="w-5 h-5 text-emerald-500 shrink-0" />
               <div>
                 <p className="font-medium text-gray-800 dark:text-gray-200">Ollama (local, unlimited)</p>
-                <p className="text-xs mt-1">Run models like qwen2.5:7b or gemma3:12b on your machine. No API key. Best for privacy and batch generation.</p>
+                <p className="text-xs mt-1">
+                  Run Gemma 4 (<code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">gemma4:e4b</code>,{' '}
+                  <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">gemma4:31b</code>) or qwen2.5:7b on your machine.
+                  Gemma 4 beats Gemma 3 for JSON/agent workflows. No API key — best for privacy.
+                </p>
               </div>
             </div>
             <div className="flex gap-3">
@@ -563,8 +567,11 @@ export default function ContentStudio() {
                   Fast cloud inference with a generous free tier. Get a key at{' '}
                   <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-emerald-500 hover:underline">
                     console.groq.com
-                  </a>{' '}
-                  and add it in <Link to="/settings" className="text-emerald-500 hover:underline">Settings</Link>.
+                  </a>
+                  {' '}—{' '}
+                  <Link to="/settings" className="text-emerald-500 hover:underline font-medium">
+                    Add Groq key in Settings →
+                  </Link>
                 </p>
               </div>
             </div>

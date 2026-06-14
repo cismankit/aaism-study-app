@@ -5,13 +5,16 @@ import {
   defaultConfigs, 
   loadAIConfig, 
   saveAIConfig,
-  testConnection 
+  testConnection,
+  GEMMA4_BLOG_URL,
 } from '../services/aiService';
 import { checkLLMHealth, subscribeLLMHealth, type LLMHealthReport } from '../services/llmHealthService';
+import GroqApiKeySection from '../components/GroqApiKeySection';
 import { Settings, Check, X, Loader2, Server, Cloud, Zap, Sparkles, Activity, RefreshCw } from 'lucide-react';
 
 export default function AISettings() {
   const [config, setConfig] = useState<AIConfig>(loadAIConfig);
+  const [savedApiKey] = useState(() => loadAIConfig().apiKey);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [saved, setSaved] = useState(false);
@@ -166,54 +169,27 @@ export default function AISettings() {
                 <option value="mixtral">Mixtral</option>
                 <option value="phi3">Phi-3</option>
                 <option value="gemma2">Gemma 2</option>
+                <option value="gemma4:e4b">Gemma 4 E4B (Recommended)</option>
+                <option value="gemma4:31b">Gemma 4 31B (Best quality)</option>
                 <option value="qwen2.5">Qwen 2.5</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">
-                Make sure you've pulled this model: <code>ollama pull {config.model}</code>
+                Gemma 4 adds native JSON &amp; agentic workflows — see{' '}
+                <a href={GEMMA4_BLOG_URL} target="_blank" rel="noopener noreferrer" className="text-primary-600 underline">
+                  Google blog
+                </a>
+                . Make sure you&apos;ve pulled: <code>ollama pull {config.model}</code>
               </p>
             </div>
           </div>
         )}
 
         {config.provider === 'groq' && (
-          <div className="space-y-4">
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-              <h3 className="font-medium text-green-800 mb-2">🎉 Groq - Free & Lightning Fast!</h3>
-              <ol className="text-sm text-green-700 space-y-1 list-decimal list-inside">
-                <li>Create a free account at <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">console.groq.com</a></li>
-                <li>Go to API Keys and create a new key</li>
-                <li>Paste your API key below</li>
-              </ol>
-              <p className="text-xs text-green-600 mt-2">
-                ✓ Free tier: ~14,400 requests/day · No credit card required
-              </p>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">API Key</label>
-              <input
-                type="password"
-                value={config.apiKey || ''}
-                onChange={e => setConfig({ ...config, apiKey: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="gsk_..."
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-              <select
-                value={config.model}
-                onChange={e => setConfig({ ...config, model: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
-              >
-                <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Recommended)</option>
-                <option value="llama-3.1-8b-instant">Llama 3.1 8B (Faster)</option>
-                <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
-                <option value="gemma2-9b-it">Gemma 2 9B</option>
-              </select>
-            </div>
-          </div>
+          <GroqApiKeySection
+            config={config}
+            onChange={setConfig}
+            savedKey={savedApiKey}
+          />
         )}
 
         {config.provider === 'claude' && (

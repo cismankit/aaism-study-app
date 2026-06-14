@@ -69,11 +69,23 @@ export const defaultConfigs: Record<AIProvider, Partial<AIConfig>> = {
   },
 };
 
+/** localStorage key for AI provider config (API keys stored here — browser only, never sent to AAISM servers) */
+export const AI_CONFIG_STORAGE_KEY = 'aaism-ai-config';
+
+/** Groq cloud models available on the free tier */
+export const GROQ_MODELS = [
+  { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (Recommended)' },
+  { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (Faster)' },
+  { id: 'mixtral-8x7b-32768', label: 'Mixtral 8x7B' },
+  { id: 'gemma2-9b-it', label: 'Gemma 2 9B' },
+] as const;
+
 /** Agent auto-selection order — first installed match wins */
 export const AGENT_MODEL_PREFERENCE: readonly string[] = [
-  'gemma4:12b',
-  'gemma4:4b',
-  'gemma4:latest',
+  'gemma4:31b',
+  'gemma4:26b',
+  'gemma4:e4b',
+  'gemma4:e2b',
   'qwen3.5:latest',
   'qwen3.5:7b',
   'qwen2.5:7b',
@@ -93,8 +105,20 @@ export const AGENT_MODEL_PREFERENCE: readonly string[] = [
   'llama3.3:70b',
 ];
 
+export const GEMMA4_BLOG_URL =
+  'https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/';
+
+export const GEMMA4_OLLAMA_URL = 'https://ollama.com/library/gemma4';
+
 export const GEMMA4_STATUS_NOTE =
-  'Gemma 4 is not yet available in Ollama. We ship Gemma 3 (gemma3:4b/12b) and Gemma 2. When Google/Ollama publish gemma4 tags, we auto-detect them via /api/tags and surface them in the Tier S list.';
+  'Gemma 4 is now on Ollama (Apr 2026). Native JSON output, function calling, and agentic workflows — ideal for AAISM agents. Pull gemma4:e4b for edge/agent JSON work or gemma4:31b for best quality. Gemma 3 remains supported as a lighter fallback.';
+
+export const GEMMA4_PULL_COMMANDS = [
+  'ollama pull gemma4:31b',
+  'ollama pull gemma4:26b',
+  'ollama pull gemma4:e4b',
+  'ollama pull gemma4:e2b',
+] as const;
 
 /** Model name prefixes to watch for newly published Ollama tags */
 export const WATCHED_MODEL_PREFIXES = ['gemma4', 'qwen3.5'] as const;
@@ -135,10 +159,14 @@ export function getDetectedWatchedModels(installed: OllamaModel[]): ModelCapabil
       if (!matchesWatchedPrefix(model.name, pattern) || seen.has(model.name)) continue;
       seen.add(model.name);
       const label = pattern === 'gemma4' ? 'Google Gemma 4 (auto-detected)' : 'Qwen 3.5 (auto-detected)';
+      const jsonScore = /gemma4:31b/i.test(model.name) ? 98
+        : /gemma4:26b/i.test(model.name) ? 96
+        : /gemma4:e4b/i.test(model.name) ? 94
+        : pattern === 'gemma4' ? 90 : 93;
       detected.push({
         name: model.name,
-        tier: 'medium',
-        jsonReliability: pattern === 'gemma4' ? 94 : 93,
+        tier: /gemma4:31b|gemma4:26b/i.test(model.name) ? 'large' : 'medium',
+        jsonReliability: jsonScore,
         sizeGb: 'See Ollama',
         gpuRam: '8GB+',
         description: `${label} — surfaced from your Ollama install`,
@@ -153,13 +181,17 @@ export function getDetectedWatchedModels(installed: OllamaModel[]): ModelCapabil
 
 /** Top offline models for AAISM Agent Discovery — Tier S first */
 export const AAISM_OFFLINE_MODELS: ModelCapability[] = [
+  { name: 'gemma4:31b', tier: 'large', jsonReliability: 98, sizeGb: '~19GB', gpuRam: '24GB+', description: 'Gemma 4 Dense — #1 for agent JSON & reasoning (Apache 2.0)', recommended: true, tierS: true },
+  { name: 'gemma4:26b', tier: 'large', jsonReliability: 96, sizeGb: '~16GB', gpuRam: '20GB+', description: 'Gemma 4 MoE — fast tokens/sec, strong structured output', recommended: true, tierS: true },
+  { name: 'gemma4:e4b', tier: 'medium', jsonReliability: 94, sizeGb: '~3GB', gpuRam: '8GB+', description: 'Gemma 4 Effective 4B — edge JSON & agentic workflows', recommended: true, tierS: true },
+  { name: 'gemma4:e2b', tier: 'medium', jsonReliability: 88, sizeGb: '~2GB', gpuRam: '6GB+', description: 'Gemma 4 Effective 2B — mobile/IoT, native JSON & audio', tierS: true },
   { name: 'qwen2.5:7b', tier: 'medium', jsonReliability: 94, sizeGb: '~4.4GB', gpuRam: '8GB+', description: 'Top pick — excellent JSON and reasoning', recommended: true, tierS: true },
   { name: 'qwen2.5:14b', tier: 'medium', jsonReliability: 96, sizeGb: '~8.9GB', gpuRam: '12GB+', description: 'Stronger Qwen variant, very reliable structured output', recommended: true, tierS: true },
   { name: 'qwen3:8b', tier: 'medium', jsonReliability: 93, sizeGb: '~5.0GB', gpuRam: '8GB+', description: 'Latest Qwen generation — great for agents (text; not qwen3-vl)', tierS: true },
   { name: 'llama3.1:8b', tier: 'medium', jsonReliability: 92, sizeGb: '~4.7GB', gpuRam: '8GB+', description: 'Proven balance of quality and JSON reliability', recommended: true, tierS: true },
   { name: 'gemma2:9b', tier: 'medium', jsonReliability: 88, sizeGb: '~5.4GB', gpuRam: '10GB+', description: 'Google Gemma 2 — solid agent responses', tierS: true },
   { name: 'gemma2:27b', tier: 'large', jsonReliability: 95, sizeGb: '~16GB', gpuRam: '24GB+', description: 'Large Gemma 2 — premium local quality', tierS: true },
-  { name: 'gemma3:4b', tier: 'medium', jsonReliability: 90, sizeGb: '~3.3GB', gpuRam: '8GB+', description: 'Latest Gemma 3 (Gemma 4 not in Ollama yet)', tierS: true },
+  { name: 'gemma3:4b', tier: 'medium', jsonReliability: 90, sizeGb: '~3.3GB', gpuRam: '8GB+', description: 'Gemma 3 — lighter fallback; upgrade to gemma4:e4b when ready', tierS: true },
   { name: 'gemma3:12b', tier: 'medium', jsonReliability: 93, sizeGb: '~8.1GB', gpuRam: '12GB+', description: 'Gemma 3 mid-size — strong instruction following', tierS: true },
   { name: 'mistral-small', tier: 'medium', jsonReliability: 90, sizeGb: '~14GB', gpuRam: '16GB+', description: 'Mistral Small — enterprise-grade JSON', tierS: true },
   { name: 'mistral:7b', tier: 'medium', jsonReliability: 85, sizeGb: '~4.1GB', gpuRam: '8GB+', description: 'Fast Mistral 7B, good JSON', tierS: true },
@@ -178,6 +210,8 @@ export const RECOMMENDED_OLLAMA_MODELS = AAISM_OFFLINE_MODELS.map(m => ({
 const MODEL_TIER_PATTERNS: Array<{ pattern: RegExp; tier: ModelTier; jsonReliability: number }> = [
   { pattern: /llama3\.2:1b|1b|tiny|mini|embed|nomic|vl|vision/i, tier: 'small', jsonReliability: 20 },
   { pattern: /llama3\.2:3b|llama3\.2$|phi3:mini|gemma2:2b/i, tier: 'small', jsonReliability: 35 },
+  { pattern: /gemma4:31b|gemma4:26b/i, tier: 'large', jsonReliability: 97 },
+  { pattern: /gemma4:e4b|gemma4:e2b|gemma4/i, tier: 'medium', jsonReliability: 92 },
   { pattern: /llama3\.1|llama3\.3|mistral|qwen2\.5|qwen3|phi3:medium|phi4|gemma2|gemma3|deepseek-r1|7b|8b|9b|12b|14b/i, tier: 'medium', jsonReliability: 85 },
   { pattern: /70b|27b|13b|mixtral|large|405b|mistral-small/i, tier: 'large', jsonReliability: 95 },
 ];
@@ -597,7 +631,8 @@ async function callGroq(config: AIConfig, messages: Message[], options?: ChatOpt
     const data = await response.json();
     return { content: data.choices?.[0]?.message?.content || '' };
   } catch (error) {
-    return { content: '', error: `Groq API error: ${error}` };
+    const raw = error instanceof Error ? error.message : String(error);
+    return { content: '', error: sanitizeErrorMessage(`Groq API error: ${raw}`) };
   }
 }
 
@@ -768,7 +803,14 @@ Format with clear headers and organized sections.`;
   ]);
 }
 
-const AI_CONFIG_KEY = 'aaism-ai-config';
+const AI_CONFIG_KEY = AI_CONFIG_STORAGE_KEY;
+
+/** Mask an API key for display — e.g. gsk_•••••••• */
+export function maskApiKey(key: string): string {
+  if (!key) return '';
+  const visible = key.startsWith('gsk_') ? 'gsk_' : key.slice(0, 4);
+  return `${visible}${'•'.repeat(8)}`;
+}
 
 export function loadAIConfig(): AIConfig {
   try {
@@ -794,17 +836,60 @@ export function saveAIConfig(config: AIConfig): void {
   try {
     localStorage.setItem(AI_CONFIG_KEY, JSON.stringify(config));
   } catch {
-    // Storage quota or private mode — avoid logging config contents (may include API keys)
+    // Storage quota or private mode — never log config (may contain API keys)
+  }
+}
+
+/** Remove stored API key without clearing other settings */
+export function clearAIConfigApiKey(): void {
+  const config = loadAIConfig();
+  saveAIConfig({ ...config, apiKey: undefined });
+}
+
+function sanitizeErrorMessage(message: string): string {
+  return message.replace(/gsk_[a-zA-Z0-9_-]+/g, 'gsk_***').replace(/sk-[a-zA-Z0-9_-]+/g, 'sk-***');
+}
+
+/** Test Groq via /models — avoids chat round-trip and never exposes the key in errors */
+export async function testGroqConnection(config: AIConfig): Promise<{ success: boolean; message: string }> {
+  if (!config.apiKey?.trim()) {
+    return { success: false, message: 'Groq API key not configured. Get a free key at console.groq.com' };
+  }
+
+  try {
+    const baseUrl = config.baseUrl ?? defaultConfigs.groq.baseUrl!;
+    const response = await fetch(`${baseUrl}/v1/models`, {
+      headers: { Authorization: `Bearer ${config.apiKey}` },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        return { success: false, message: 'Invalid Groq API key — verify at console.groq.com' };
+      }
+      return { success: false, message: `Groq API error (${response.status}) — check console.groq.com status` };
+    }
+
+    const data = await response.json();
+    const count = Array.isArray(data.data) ? data.data.length : 0;
+    return { success: true, message: `Connected! ${count} model${count === 1 ? '' : 's'} available on your Groq account.` };
+  } catch (error) {
+    const raw = error instanceof Error ? error.message : String(error);
+    return { success: false, message: sanitizeErrorMessage(`Groq unreachable: ${raw}`) };
   }
 }
 
 export async function testConnection(config: AIConfig): Promise<{ success: boolean; message: string }> {
+  if (config.provider === 'groq') {
+    return testGroqConnection(config);
+  }
+
   const response = await chat(config, [
     { role: 'user', content: 'Say "Connection successful!" in exactly those words.' },
   ]);
 
   if (response.error) {
-    return { success: false, message: response.error };
+    return { success: false, message: sanitizeErrorMessage(response.error) };
   }
 
   return { success: true, message: 'Connected successfully!' };

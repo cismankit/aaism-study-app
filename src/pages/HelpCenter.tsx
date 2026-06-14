@@ -4,6 +4,7 @@ import {
   HelpCircle, ChevronDown, ChevronUp, Rocket, Settings, ClipboardCheck,
   Crosshair, Theater, Bot, Briefcase, Radar, BookOpen, Lightbulb, Globe,
 } from 'lucide-react';
+import { GEMMA4_BLOG_URL, AI_CONFIG_STORAGE_KEY } from '../services/aiService';
 import PageHeader from '../components/PageHeader';
 
 interface FAQItem {
@@ -12,6 +13,16 @@ interface FAQItem {
 }
 
 const faqs: FAQItem[] = [
+  {
+    question: 'How do I add a Groq API key?',
+    answer:
+      'Open Settings (/settings) → Settings tab → select Groq as provider. Get a free key at console.groq.com, paste it in the Groq API Key field, and click Save. Keys are stored in browser localStorage (aaism-ai-config) only — never sent to AAISM servers. Use Test Connection to verify.',
+  },
+  {
+    question: 'Gemma 4 for offline agents — what should I pull?',
+    answer:
+      'Gemma 4 (Apr 2026, Apache 2.0) is on Ollama with native JSON output and function calling — ideal for Agent Discovery. Pull gemma4:e4b for edge/agent JSON work or gemma4:31b for best quality. See the Google Gemma 4 blog and Settings → Offline Model Manager for pull commands.',
+  },
   {
     question: 'What is AAISM?',
     answer:
@@ -194,19 +205,42 @@ export default function HelpCenter() {
       <section className="bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 rounded-xl border border-emerald-500/20 p-5">
         <div className="flex items-start gap-3">
           <Settings className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <h2 className="text-lg font-semibold mb-1">Configure AI in Settings</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              AI features are opt-in. Navigate to Settings → Settings tab, choose your provider, and paste your API key.
-              Keys stay in your browser only — never sent to our servers.
-            </p>
-            <Link
-              to="/settings"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
-            >
-              Open Settings
-              <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
-            </Link>
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold mb-1">Configure AI in Settings</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                AI features are opt-in. Navigate to <strong>Settings → Settings tab</strong>, choose your provider, and paste your API key.
+                Keys stay in your browser only (<code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">{AI_CONFIG_STORAGE_KEY}</code> in localStorage) — never sent to our servers.
+              </p>
+              <Link
+                to="/settings"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline"
+              >
+                Open Settings
+                <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
+              </Link>
+            </div>
+
+            <div className="p-4 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-emerald-500/10">
+              <h3 className="font-medium text-sm mb-2">How to add Groq API key</h3>
+              <ol className="text-sm text-gray-600 dark:text-gray-400 space-y-1 list-decimal list-inside">
+                <li>Get a free key at <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline">console.groq.com</a></li>
+                <li>Open <Link to="/settings" className="text-emerald-600 hover:underline">Settings</Link> → Settings tab → select Groq</li>
+                <li>Paste your key, pick a model, Save, then Test Connection</li>
+              </ol>
+            </div>
+
+            <div className="p-4 rounded-lg bg-white/60 dark:bg-gray-800/60 border border-violet-500/10">
+              <h3 className="font-medium text-sm mb-2">Gemma 4 for offline agents</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Gemma 4 (Apr 2026) runs locally via Ollama with native JSON and agentic workflows.
+                Pull <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">gemma4:e4b</code> or{' '}
+                <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">gemma4:31b</code> in Settings → Offline Model Manager.{' '}
+                <a href={GEMMA4_BLOG_URL} target="_blank" rel="noopener noreferrer" className="text-violet-600 dark:text-violet-400 hover:underline">
+                  Read the Google Gemma 4 blog →
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </section>
