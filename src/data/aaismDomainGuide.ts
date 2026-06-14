@@ -166,6 +166,7 @@ export const AAISM_DOMAIN_GUIDES: DomainGuide[] = [
       { label: 'Playbooks', route: '/playbooks', description: 'Org-level AI governance implementation guides' },
       { label: 'Scenario Lab', route: '/scenarios', description: 'Governance decision scenarios (FIRST/BEST)' },
       { label: 'Intel Hub', route: '/intel', description: 'Trap patterns for governance vs. technical answers' },
+      { label: 'OSINT Arsenal', route: '/osint', description: 'NIST AI RMF, ISO 42001, EU AI Act, governance frameworks' },
     ],
   },
   {
@@ -284,6 +285,7 @@ export const AAISM_DOMAIN_GUIDES: DomainGuide[] = [
     },
     relatedFeatures: [
       { label: 'Intel Hub', route: '/intel', description: 'OWASP LLM risks, trap patterns, rising threats' },
+      { label: 'OSINT Arsenal', route: '/osint', description: 'MITRE ATLAS, OWASP LLM Top 10, AI incident databases' },
       { label: 'Scenario Lab', route: '/scenarios', description: 'Attack identification and response drills' },
       { label: 'Study Ops', route: '/study', description: 'Domain 2 risk and threat questions' },
       { label: 'Agent Discovery', route: '/agent', description: 'Curated threat intelligence and question leads' },
@@ -407,6 +409,7 @@ export const AAISM_DOMAIN_GUIDES: DomainGuide[] = [
       { label: 'Study Ops', route: '/study', description: 'Domain 3 technical and lifecycle questions' },
       { label: 'Playbooks', route: '/playbooks', description: 'Secure ML pipeline implementation guides' },
       { label: 'Knowledge Visuals', route: '/knowledge/visual', description: 'Diagrams for SDLC, PETs, deployment' },
+      { label: 'OSINT Arsenal', route: '/osint', description: 'Practitioner tools, research papers, adversarial ML resources' },
       { label: 'Cram Mode', route: '/cram', description: 'Last-minute D3 technical review' },
     ],
   },
@@ -522,6 +525,7 @@ export const AAISM_DOMAIN_GUIDES: DomainGuide[] = [
       { label: 'Scenario Lab', route: '/scenarios', description: 'Operational decision scenarios' },
       { label: 'Study Ops', route: '/study', description: 'Operations and monitoring questions' },
       { label: 'Intel Hub', route: '/intel', description: 'Production risk trends and trap alerts' },
+      { label: 'OSINT Arsenal', route: '/osint', description: 'Threat feeds, CISA KEV, cloud AI security crosswalks' },
     ],
   },
 ];

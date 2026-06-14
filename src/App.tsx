@@ -8,6 +8,7 @@ import KnowledgeHub from './pages/KnowledgeHub'
 import KnowledgeBase from './pages/KnowledgeBase'
 import AgentDiscovery from './pages/AgentDiscovery'
 import IntelHub from './pages/IntelHub'
+import OSINTArsenal from './pages/OSINTArsenal'
 import ScenarioLab from './pages/ScenarioLab'
 import Playbooks from './pages/Playbooks'
 import Dashboard from './pages/Dashboard'
@@ -24,6 +25,7 @@ function App() {
         <Route index element={<CommandCenter />} />
         <Route path="study" element={<Study />} />
         <Route path="intel" element={<IntelHub />} />
+        <Route path="osint" element={<OSINTArsenal />} />
         <Route path="scenarios" element={<ScenarioLab />} />
         <Route path="agent" element={<AgentDiscovery />} />
         <Route path="playbooks" element={<Playbooks />} />

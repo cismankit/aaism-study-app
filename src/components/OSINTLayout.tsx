@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Radar, Theater, Eye, Bot, Zap,
   Sun, Moon, Flame, ChevronRight, Settings, Menu,
   Activity, Shield, Map, Crosshair, Radio, Briefcase, PanelLeftClose,
-  HelpCircle, LifeBuoy, Heart, Sparkles, ChevronDown,
+  HelpCircle, LifeBuoy, Heart, Sparkles, ChevronDown, Globe,
 } from 'lucide-react';
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { AppProvider } from '../context/AppContext';
@@ -55,6 +55,7 @@ const navSections: NavSection[] = [
     label: 'INTELLIGENCE',
     items: [
       { to: '/intel', icon: Radar, label: 'Intel Hub' },
+      { to: '/osint', icon: Globe, label: 'OSINT Arsenal' },
       { to: '/scenarios', icon: Theater, label: 'Scenario Lab' },
       { to: '/agent', icon: Bot, label: 'Agent Discovery' },
       { to: '/playbooks', icon: Briefcase, label: 'Playbooks' },

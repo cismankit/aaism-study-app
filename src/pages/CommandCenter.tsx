@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Theater, Bot, Briefcase, Crosshair,
   Flame, TrendingUp, Target, ChevronRight, ChevronDown,
-  Shield, BarChart3, Play, Lightbulb, Sparkles, X, Radar,
+  Shield, BarChart3, Play, Lightbulb, Sparkles, X, Radar, Globe,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
@@ -21,6 +21,7 @@ import {
 } from '../data/releaseFeed';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
+import { OSINT_SOURCES } from '../data/osintSources';
 
 export default function CommandCenter() {
   const navigate = useNavigate();
@@ -231,6 +232,30 @@ export default function CommandCenter() {
                 </button>
               );
             })}
+          </SectionCard>
+
+          <SectionCard
+            title="OSINT Arsenal"
+            icon={Globe}
+            iconClassName="text-cyan-500"
+            action={
+              <button
+                onClick={() => navigate('/osint')}
+                className="text-xs text-emerald-500 hover:text-emerald-400 flex items-center gap-1"
+              >
+                Browse <ChevronRight className="w-3 h-3" />
+              </button>
+            }
+          >
+            <p className="text-xs text-gray-400 mb-2">
+              {OSINT_SOURCES.length} curated practitioner sources — MITRE ATLAS, OWASP LLM, NIST AI RMF, and more.
+            </p>
+            <button
+              onClick={() => navigate('/osint')}
+              className="w-full text-left p-2 rounded-lg hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors text-xs text-emerald-500"
+            >
+              Open OSINT Arsenal →
+            </button>
           </SectionCard>
         </div>
       </div>

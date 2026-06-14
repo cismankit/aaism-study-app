@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   HelpCircle, ChevronDown, ChevronUp, Rocket, Settings, ClipboardCheck,
-  Crosshair, Theater, Bot, Briefcase, Radar, BookOpen, Lightbulb,
+  Crosshair, Theater, Bot, Briefcase, Radar, BookOpen, Lightbulb, Globe,
 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 
@@ -50,6 +50,7 @@ const appAreas = [
   { to: '/agent', icon: Bot, label: 'Agent Discovery', desc: 'Review AI-generated question leads' },
   { to: '/playbooks', icon: Briefcase, label: 'Playbooks', desc: 'Org-level AI security implementation guides' },
   { to: '/intel', icon: Radar, label: 'Intel Hub', desc: 'Community intelligence and topic heat maps' },
+  { to: '/osint', icon: Globe, label: 'OSINT Arsenal', desc: 'Curated practitioner-grade intelligence source directory' },
 ];
 
 const gettingStartedSteps = [

@@ -3,7 +3,7 @@ import {
   Radar, Flame, AlertTriangle, Search, Lightbulb,
   TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp,
   Play, BookOpen, ExternalLink, Star, Shield, Target,
-  Zap, BarChart3, RefreshCw, Trash2,
+  Zap, BarChart3, RefreshCw, Trash2, Globe, ChevronRight,
 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SlidePanel from '../components/SlidePanel';
@@ -24,9 +24,10 @@ import {
   type ResearchCallbacks,
 } from '../services/intelligenceAgent';
 import { loadAIConfig } from '../services/aiService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import OSINTArsenal from './OSINTArsenal';
 
-type IntelTab = 'patterns' | 'hot_topics' | 'traps' | 'research' | 'insights';
+type IntelTab = 'patterns' | 'hot_topics' | 'traps' | 'research' | 'insights' | 'arsenal';
 
 export default function IntelHub() {
   const [activeTab, setActiveTab] = useState<IntelTab>('patterns');
@@ -56,6 +57,7 @@ export default function IntelHub() {
     { id: 'traps', label: 'Trap Alerts', icon: AlertTriangle, description: 'Common wrong-answer bait — click any trap for full detail.' },
     { id: 'research', label: 'Research', icon: Search, description: 'Run the AI agent to discover new patterns and traps.' },
     { id: 'insights', label: 'Insights', icon: Lightbulb, description: 'Saved research output and automated recommendations.' },
+    { id: 'arsenal', label: 'Arsenal', icon: Globe, description: 'Curated OSINT-style source directory for AAISM exam and org intel.' },
   ];
 
   const activeTabMeta = tabs.find(t => t.id === activeTab);
@@ -177,6 +179,23 @@ export default function IntelHub() {
           setInsights={setInsights}
           analysis={analysis}
         />
+      )}
+
+      {activeTab === 'arsenal' && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-gray-400">
+              Practitioner-grade intelligence sources — full tree browser on the dedicated page.
+            </p>
+            <Link
+              to="/osint"
+              className="text-xs text-emerald-500 hover:text-emerald-400 flex items-center gap-1 flex-shrink-0"
+            >
+              Full OSINT Arsenal <ChevronRight className="w-3 h-3" />
+            </Link>
+          </div>
+          <OSINTArsenal compact />
+        </div>
       )}
 
       <SlidePanel
