@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Radar, Theater, Bot, Briefcase, Crosshair,
   Flame, TrendingUp, Target, ChevronRight,
   AlertTriangle, Shield, BarChart3, Play, Activity,
-  Lightbulb, Radio, Layers,
+  Lightbulb, Radio, Layers, Sparkles, X,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
@@ -15,6 +15,11 @@ import { loadInsights, analyzeQuestionPatterns } from '../services/intelligenceA
 import { PLAYBOOKS } from '../data/playbooks';
 import { LEARNING_PATH_WIDGET } from '../data/platformMeta';
 import { AAISM_DOMAIN_GUIDES } from '../data/aaismDomainGuide';
+import {
+  getLatestRelease,
+  getNewReleasesSince,
+  LAST_SEEN_RELEASE_KEY,
+} from '../data/releaseFeed';
 import SlidePanel from '../components/SlidePanel';
 
 export default function CommandCenter() {
@@ -40,8 +45,57 @@ export default function CommandCenter() {
     setPanelContent({ title, subtitle, content });
   }
 
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [newReleases, setNewReleases] = useState<ReturnType<typeof getNewReleasesSince>>([]);
+
+  useEffect(() => {
+    const lastSeen = localStorage.getItem(LAST_SEEN_RELEASE_KEY);
+    const unseen = getNewReleasesSince(lastSeen);
+    if (unseen.length > 0) {
+      setNewReleases(unseen);
+      setShowWhatsNew(true);
+    }
+  }, []);
+
+  function dismissWhatsNew() {
+    const latest = getLatestRelease();
+    if (latest) localStorage.setItem(LAST_SEEN_RELEASE_KEY, latest.id);
+    setShowWhatsNew(false);
+  }
+
   return (
     <div className="max-w-7xl mx-auto space-y-5">
+      {showWhatsNew && newReleases.length > 0 && (
+        <div className="relative rounded-xl bg-gradient-to-r from-amber-500/15 to-cyan-500/10 border border-amber-500/25 p-4 animate-fade-in">
+          <button
+            onClick={dismissWhatsNew}
+            className="absolute top-3 right-3 p-1 rounded-md text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            aria-label="Dismiss"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <div className="flex items-start gap-3 pr-8">
+            <Sparkles className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="font-semibold text-sm">What&apos;s New</p>
+              <ul className="mt-2 space-y-1">
+                {newReleases.map(rel => (
+                  <li key={rel.id} className="text-xs text-gray-600 dark:text-gray-400">
+                    <strong className="text-amber-600 dark:text-amber-400">v{rel.version}</strong> — {rel.title}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                to="/my-updates"
+                onClick={dismissWhatsNew}
+                className="inline-flex items-center gap-1 mt-2 text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline"
+              >
+                See all updates
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Mission Status Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
         <StatusCard icon={Shield} label="Level" value={currentLevel.title} color="text-emerald-500" sub={`${gameState.xp} XP`} />

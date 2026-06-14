@@ -159,8 +159,17 @@ html.dark body {
   animation: bounce-in 0.5s ease-out forwards;
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+@keyframes pulse-glow-amber {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(245, 158, 11, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.7);
+  }
+}
+
+.animate-pulse-glow-amber {
+  animation: pulse-glow-amber 2s ease-in-out infinite;
 }
 
 .animate-confetti {

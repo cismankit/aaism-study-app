@@ -14,6 +14,8 @@ import Dashboard from './pages/Dashboard'
 import HelpCenter from './pages/HelpCenter'
 import Support from './pages/Support'
 import Donate from './pages/Donate'
+import FeatureRequest from './pages/FeatureRequest'
+import MyUpdates from './pages/MyUpdates'
 
 function App() {
   return (
@@ -33,6 +35,8 @@ function App() {
         <Route path="help" element={<HelpCenter />} />
         <Route path="support" element={<Support />} />
         <Route path="donate" element={<Donate />} />
+        <Route path="feature-request" element={<FeatureRequest />} />
+        <Route path="my-updates" element={<MyUpdates />} />
       </Route>
     </Routes>
   )

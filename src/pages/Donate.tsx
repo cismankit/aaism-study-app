@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  Heart, Copy, Check, Bitcoin, Coins, CreditCard, ExternalLink,
+  Coffee, Copy, Check, Bitcoin, Coins, CreditCard, ExternalLink,
   AlertTriangle, Sparkles, Code2, Smartphone, Building2, Globe,
-  Wallet, ArrowRightLeft,
+  Wallet, ArrowRightLeft, Heart, Users, Zap, BookOpen,
 } from 'lucide-react';
 import {
   donationRegions,
@@ -38,7 +39,7 @@ function CopyButton({ value, label = 'Copy' }: { value: string; label?: string }
   return (
     <button
       onClick={handleCopy}
-      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex-shrink-0"
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-100 dark:bg-amber-900/30 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors flex-shrink-0"
       title="Copy to clipboard"
     >
       {copied ? (
@@ -70,11 +71,11 @@ function PaymentMethodCard({ method }: { method: RegionalPaymentMethod }) {
   const Icon = paymentIcons[method.icon] || CreditCard;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-amber-200/50 dark:border-amber-800/30 p-4 osint-widget">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
-            <Icon className="w-5 h-5 text-emerald-500" />
+          <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+            <Icon className="w-5 h-5 text-amber-500" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -94,7 +95,7 @@ function PaymentMethodCard({ method }: { method: RegionalPaymentMethod }) {
             href={method.value}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 hover:bg-emerald-700 text-white transition-colors flex-shrink-0"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-600 hover:bg-amber-700 text-white transition-colors flex-shrink-0"
           >
             Pay
             <ExternalLink className="w-3 h-3" />
@@ -103,18 +104,30 @@ function PaymentMethodCard({ method }: { method: RegionalPaymentMethod }) {
       </div>
 
       {(method.type === 'copy' || method.type === 'info') && (
-        <code className="block text-xs sm:text-sm font-mono bg-gray-50 dark:bg-gray-900 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 break-all text-gray-700 dark:text-gray-300 mb-2">
+        <code className="block text-xs sm:text-sm font-mono bg-amber-50 dark:bg-gray-900 px-3 py-2 rounded-lg border border-amber-200/50 dark:border-amber-800/30 break-all text-gray-700 dark:text-gray-300 mb-2">
           {method.value}
         </code>
       )}
 
       <p className="text-xs text-gray-500 dark:text-gray-400 flex items-start gap-1.5">
-        <ArrowRightLeft className="w-3 h-3 mt-0.5 flex-shrink-0 text-emerald-500" />
+        <ArrowRightLeft className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
         <span><strong className="text-gray-600 dark:text-gray-300">How to pay:</strong> {method.howToPay}</span>
       </p>
     </div>
   );
 }
+
+const impactBullets = [
+  { icon: BookOpen, title: 'Fresh questions', body: 'New scenarios, trap patterns, and domain refreshes aligned with exam trends.' },
+  { icon: Zap, title: 'Faster features', body: 'Study modes, export tools, and UX polish — shipped over-the-air to requesters.' },
+  { icon: Users, title: 'Free for everyone', body: 'Your coffee keeps AAISM free — no paywalls, no premium tiers, ever.' },
+];
+
+const socialProof = [
+  'Built by volunteers who sat the exam themselves',
+  'Used by candidates across 40+ countries',
+  'Open source on GitHub — transparent and community-driven',
+];
 
 export default function Donate() {
   const [region, setRegion] = useState<DonationRegionId>('global');
@@ -127,25 +140,66 @@ export default function Donate() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-3">
-          <Heart className="w-7 h-7 text-pink-500" />
-          Support AAISM
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
-          Voluntary contributions help fund development, content, and hosting — worldwide
-        </p>
+      {/* Hero — warm coffee shop vibe */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/20 via-orange-500/15 to-yellow-500/10 border border-amber-500/30 p-6 sm:p-8">
+        <Coffee className="absolute top-6 right-6 w-16 h-16 text-amber-500/20 animate-float" />
+        <Sparkles className="absolute bottom-6 left-6 w-8 h-8 text-amber-400/30" />
+        <div className="relative z-10">
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+            <Coffee className="w-8 h-8 text-amber-500" />
+            Fuel the next question
+          </h1>
+          <p className="text-amber-900/70 dark:text-amber-100/80 mt-2 text-sm sm:text-base max-w-xl leading-relaxed">
+            Keep AAISM free for everyone. Your support powers late-night builds, fresh content,
+            and the features you ask for — shipped straight to your study flow.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 mt-6">
+            <Link
+              to="/feature-request"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm transition-colors animate-pulse-glow-amber"
+            >
+              ☕ Support + Request a Feature
+              <ExternalLink className="w-4 h-4" />
+            </Link>
+            <a
+              href="#payment-methods"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-amber-400/50 text-amber-800 dark:text-amber-200 font-medium text-sm hover:bg-amber-500/10 transition-colors"
+            >
+              <Heart className="w-4 h-4" />
+              Just donate
+            </a>
+          </div>
+        </div>
       </div>
 
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500/15 via-cyan-500/10 to-purple-500/15 border border-emerald-500/20 p-6">
-        <Sparkles className="absolute top-4 right-4 w-8 h-8 text-emerald-500/30" />
-        <h2 className="text-lg font-semibold mb-2">Thank you for considering a donation</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-2xl">
-          AAISM is a free, open study tool for the AI security community. Donations are optional and
-          never required to access any feature. Your support helps maintain question banks, build new
-          study modes, and keep GitHub Pages hosting online for everyone.
-        </p>
+      {/* Social proof */}
+      <div className="flex flex-wrap gap-2">
+        {socialProof.map(line => (
+          <span
+            key={line}
+            className="text-xs px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-200"
+          >
+            {line}
+          </span>
+        ))}
       </div>
+
+      {/* Impact bullets */}
+      <section className="grid gap-3 sm:grid-cols-3">
+        {impactBullets.map(item => {
+          const Icon = item.icon;
+          return (
+            <div
+              key={item.title}
+              className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-amber-200/40 dark:border-amber-800/20 osint-widget"
+            >
+              <Icon className="w-5 h-5 text-amber-500 mb-2" />
+              <h3 className="font-medium text-sm mb-1">{item.title}</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{item.body}</p>
+            </div>
+          );
+        })}
+      </section>
 
       {hasPlaceholders && (
         <div className="flex items-start gap-3 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/30">
@@ -165,7 +219,7 @@ export default function Donate() {
       {/* Region Selector */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Globe className="w-5 h-5 text-cyan-500" />
+          <Globe className="w-5 h-5 text-amber-500" />
           Choose Your Region
         </h2>
         <div className="flex flex-wrap gap-2">
@@ -175,8 +229,8 @@ export default function Donate() {
               onClick={() => setRegion(r.id)}
               className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all border ${
                 region === r.id
-                  ? 'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-emerald-400'
+                  ? 'bg-amber-600 text-white border-amber-500 shadow-lg shadow-amber-500/20'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-amber-400'
               }`}
             >
               <span className="mr-1.5">{r.flag}</span>
@@ -185,7 +239,7 @@ export default function Donate() {
           ))}
         </div>
         {selectedRegion.note && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg px-4 py-3 border border-gray-200 dark:border-gray-700">
+          <p className="text-sm text-gray-500 dark:text-gray-400 bg-amber-50 dark:bg-gray-800/50 rounded-lg px-4 py-3 border border-amber-200/40 dark:border-amber-800/20">
             {selectedRegion.note}
           </p>
         )}
@@ -193,9 +247,9 @@ export default function Donate() {
 
       {/* Regional payment methods */}
       {fiatMethods.length > 0 && (
-        <section className="space-y-4">
+        <section id="payment-methods" className="space-y-4">
           <div className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-blue-500" />
+            <CreditCard className="w-5 h-5 text-amber-500" />
             <h2 className="text-lg font-semibold">
               Payment Methods — {selectedRegion.label}
             </h2>
@@ -258,23 +312,27 @@ export default function Donate() {
         </section>
       )}
 
-      {/* Why support */}
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Why your support matters</h2>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {[
-            { title: 'Content updates', body: 'New questions, scenarios, and playbook refreshes aligned with exam trends.' },
-            { title: 'Infrastructure', body: 'GitHub Pages hosting, CI builds, and tooling to ship updates reliably.' },
-            { title: 'Community features', body: 'Agent discovery, intel feeds, and gamification that take time to curate.' },
-          ].map(item => (
-            <div
-              key={item.title}
-              className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 osint-widget"
-            >
-              <h3 className="font-medium text-sm mb-1">{item.title}</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{item.body}</p>
-            </div>
-          ))}
+      {/* Feature request CTA */}
+      <section className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500/15 to-orange-500/10 border border-amber-500/25 p-6">
+        <h2 className="text-lg font-semibold mb-2">Want something built for you?</h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-2xl">
+          Skip the complex forms. Tell us what you need in two lines, pick a support tier, and pay from the platform.
+          We ship features over-the-air — you'll see them on My Updates when they're ready.
+        </p>
+        <div className="flex flex-wrap gap-3 mt-4">
+          <Link
+            to="/feature-request"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium transition-colors"
+          >
+            Request a feature
+            <ExternalLink className="w-4 h-4" />
+          </Link>
+          <Link
+            to="/my-updates"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-amber-400/50 text-sm font-medium hover:bg-amber-500/10 transition-colors"
+          >
+            My Updates
+          </Link>
         </div>
       </section>
 
@@ -293,14 +351,11 @@ export default function Donate() {
               </span>
             ))}
           </p>
-          <p className="mt-2 text-xs">
-            For UPI: replace <code className="text-xs">yourname@upi</code> with your actual UPI ID (e.g. name@paytm, name@ybl).
-          </p>
           <a
             href={`https://github.com/${GITHUB_REPO}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 mt-2 text-emerald-600 dark:text-emerald-400 hover:underline text-xs font-medium"
+            className="inline-flex items-center gap-1 mt-2 text-amber-600 dark:text-amber-400 hover:underline text-xs font-medium"
           >
             View source on GitHub
             <ExternalLink className="w-3 h-3" />

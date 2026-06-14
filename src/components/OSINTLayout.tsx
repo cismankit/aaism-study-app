@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Radar, Theater, Eye, Bot, Zap,
   Sun, Moon, Flame, ChevronRight, Settings, Menu, X,
   Activity, Shield, Map, Crosshair, Radio, Briefcase, PanelLeftClose,
-  HelpCircle, LifeBuoy, Heart,
+  HelpCircle, LifeBuoy, Heart, Sparkles,
 } from 'lucide-react';
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { AppProvider } from '../context/AppContext';
@@ -73,6 +73,8 @@ const navSections: NavSection[] = [
     items: [
       { to: '/help', icon: HelpCircle, label: 'Help Center' },
       { to: '/support', icon: LifeBuoy, label: 'Support' },
+      { to: '/feature-request', icon: Sparkles, label: 'Feature Request' },
+      { to: '/my-updates', icon: Radio, label: 'My Updates' },
       { to: '/donate', icon: Heart, label: 'Donate' },
     ],
   },

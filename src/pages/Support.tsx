@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
-  LifeBuoy, Bug, MessageSquarePlus, Github, Users, BookOpen,
-  ExternalLink, ChevronRight, AlertCircle, Heart, Lightbulb,
+  LifeBuoy, Bug, Github, Users, BookOpen,
+  ExternalLink, ChevronRight, AlertCircle, Sparkles, Lightbulb,
 } from 'lucide-react';
 import { GITHUB_ISSUES_URL, GITHUB_NEW_ISSUE_URL, GITHUB_REPO } from '../data/donations';
 
@@ -24,12 +24,12 @@ const channels: SupportChannel[] = [
     external: true,
   },
   {
-    icon: MessageSquarePlus,
+    icon: Sparkles,
     title: 'Feature Requests',
-    description: 'Suggest new study modes, content, integrations, or UX improvements.',
+    description: 'Two-line form, pick a tier, pay from the platform. Shipped over-the-air to My Updates.',
     action: 'Request a feature',
-    href: `${GITHUB_NEW_ISSUE_URL}?labels=enhancement&title=${encodeURIComponent('[Feature] ')}`,
-    external: true,
+    href: '/feature-request',
+    external: false,
   },
   {
     icon: Github,
@@ -182,26 +182,32 @@ export default function Support() {
         </ul>
       </section>
 
-      {/* Donate CTA */}
-      <section className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20">
+      {/* Feature request + donate CTA */}
+      <section className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-xl bg-gradient-to-r from-amber-500/15 to-orange-500/10 border border-amber-500/25">
         <div className="flex items-start gap-3">
-          <Heart className="w-5 h-5 text-pink-500 flex-shrink-0 mt-0.5" />
+          <Sparkles className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
           <div>
-            <h3 className="font-semibold">Support development</h3>
+            <h3 className="font-semibold">☕ Support + Request a Feature</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Enjoying AAISM? Voluntary donations help keep the app free and updated.
-              Payment options are available by region — UPI for India, PayPal/Stripe for US,
-              SEPA/Wise for Europe, and crypto worldwide.
+              Fuel the next question. Request what you need in-app, pay by tier, and track when it ships on My Updates.
             </p>
           </div>
         </div>
-        <Link
-          to="/donate"
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-purple-400/50 text-sm font-medium hover:bg-purple-500/10 transition-colors flex-shrink-0"
-        >
-          Regional payment options
-          <ChevronRight className="w-4 h-4" />
-        </Link>
+        <div className="flex flex-wrap gap-2 flex-shrink-0">
+          <Link
+            to="/feature-request"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium transition-colors"
+          >
+            Request a feature
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+          <Link
+            to="/donate"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-amber-400/50 text-sm font-medium hover:bg-amber-500/10 transition-colors"
+          >
+            Donate
+          </Link>
+        </div>
       </section>
     </div>
   );
