@@ -23,6 +23,7 @@ import {
   releaseFeed,
 } from '../data/releaseFeed';
 import { consumeOnboardingHint, type OnboardingHint } from '../components/OnboardingWizard';
+import DomainMicroQuizModal, { WEAK_THRESHOLD } from '../components/DomainMicroQuizModal';
 import { PLATFORM_ROADMAP, ROADMAP_STATUS_LABEL } from '../data/platformRoadmap';
 import { OSINT_SOURCES } from '../data/osintSources';
 import { getReadinessScore, getDomainProgress } from '../services/progressService';
@@ -129,6 +130,7 @@ export default function CommandCenter() {
   const [newReleases, setNewReleases] = useState<ReturnType<typeof getNewReleasesSince>>([]);
   const [showMore, setShowMore] = useState(false);
   const [showRoadmap, setShowRoadmap] = useState(false);
+  const [microQuizDomain, setMicroQuizDomain] = useState<{ id: number; name: string } | null>(null);
   const [onboardingHint] = useState<OnboardingHint | null>(() => consumeOnboardingHint());
 
   useEffect(() => {
@@ -418,15 +420,15 @@ export default function CommandCenter() {
               return (
                 <button
                   key={domain.id}
-                  onClick={() => navigate('/study', {
-                    state: {
-                      startQuiz: true,
-                      domainId: domain.id,
-                      questionCount: avg > 0 && avg < 60 ? 3 : undefined,
-                    },
-                  })}
+                  onClick={() => {
+                    if (avg > 0 && avg < WEAK_THRESHOLD) {
+                      setMicroQuizDomain({ id: domain.id, name: domain.name });
+                    } else {
+                      navigate('/study', { state: { startQuiz: true, domainId: domain.id } });
+                    }
+                  }}
                   className="w-full mb-2 group last:mb-0"
-                  title={avg > 0 && avg < 60 ? '3-question micro-drill for weak domain' : undefined}
+                  title={avg > 0 && avg < WEAK_THRESHOLD ? '3-question micro-drill for weak domain' : undefined}
                 >
                   <div className="flex items-center justify-between text-[10px] mb-1">
                     <span className="truncate text-cockpit-muted">D{domain.id}: {domain.name}</span>
@@ -628,6 +630,13 @@ export default function CommandCenter() {
           </div>
         )}
       </div>
+
+      <DomainMicroQuizModal
+        open={microQuizDomain !== null}
+        domainId={microQuizDomain?.id ?? null}
+        domainName={microQuizDomain?.name ?? ''}
+        onClose={() => setMicroQuizDomain(null)}
+      />
     </div>
   );
 }
