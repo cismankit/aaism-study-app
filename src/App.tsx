@@ -17,6 +17,8 @@ import HelpCenter from './pages/HelpCenter'
 import Privacy from './pages/Privacy'
 import Support from './pages/Support'
 import Donate from './pages/Donate'
+import DonateSuccess from './pages/DonateSuccess'
+import DonateCancel from './pages/DonateCancel'
 import FeatureRequest from './pages/FeatureRequest'
 import MyUpdates from './pages/MyUpdates'
 
@@ -53,6 +55,8 @@ function App() {
         <Route path="privacy" element={<Privacy />} />
         <Route path="support" element={<Support />} />
         <Route path="donate" element={<Donate />} />
+        <Route path="donate/success" element={<DonateSuccess />} />
+        <Route path="donate/cancel" element={<DonateCancel />} />
         <Route path="feature-request" element={<FeatureRequest />} />
         <Route path="my-updates" element={<MyUpdates />} />
         <Route path="studio" element={<Suspense fallback={<RouteFallback />}><ContentStudio /></Suspense>} />

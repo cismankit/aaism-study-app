@@ -52,6 +52,29 @@ function isPlaceholderValue(value: string): boolean {
   );
 }
 
+/** Append success/cancel return URLs for hosted checkout (GitHub Pages base-aware) */
+export function withCheckoutReturnUrls(checkoutUrl: string): string {
+  if (isPlaceholderValue(checkoutUrl) || checkoutUrl.includes('placeholder')) {
+    return checkoutUrl;
+  }
+  try {
+    const base = import.meta.env.BASE_URL ?? '/';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const success = `${origin}${base}donate/success`.replace(/([^:]\/)\/+/g, '$1');
+    const cancel = `${origin}${base}donate/cancel`.replace(/([^:]\/)\/+/g, '$1');
+    const url = new URL(checkoutUrl);
+    if (!url.searchParams.has('success_url') && !url.searchParams.has('redirect_url')) {
+      url.searchParams.set('success_url', success);
+    }
+    if (!url.searchParams.has('cancel_url')) {
+      url.searchParams.set('cancel_url', cancel);
+    }
+    return url.toString();
+  } catch {
+    return checkoutUrl;
+  }
+}
+
 const BTC_ADDRESS = envOrDefault('VITE_DONATE_BTC', 'bc1qPLACEHOLDER_AAISM_DEV_FUND');
 const ETH_ADDRESS = envOrDefault('VITE_DONATE_ETH', '0xPLACEHOLDER000000000000000000000000AAISM');
 const USDC_ADDRESS = envOrDefault('VITE_DONATE_USDC', '0xPLACEHOLDER000000000000000000000000AAISM');
