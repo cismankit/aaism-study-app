@@ -93,7 +93,7 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
               {liveCount > 0 && (
                 <div className="flex items-center gap-1">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
-                  <span className="text-[10px] text-emerald-500 font-medium">LIVE</span>
+                  <span className="text-[10px] text-emerald-500 font-medium">RSS</span>
                 </div>
               )}
               <RefreshCw className={`w-3.5 h-3.5 text-gray-400 ${refreshing ? 'animate-spin' : ''}`} />
@@ -113,7 +113,7 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
           </div>
           {fetchedAt && (
             <p className="text-[10px] text-gray-400 mt-1">
-              Updated {formatTimeAgo(fetchedAt)} · {liveCount} live · {items.length} total
+              RSS stream · Updated {formatTimeAgo(fetchedAt)} · {liveCount} live articles
             </p>
           )}
         </button>

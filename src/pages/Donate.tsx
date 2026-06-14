@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Coffee, Copy, Check, Bitcoin, Coins, CreditCard, ExternalLink,
-  AlertTriangle, Sparkles, Code2, Smartphone, Building2, Globe,
+  AlertTriangle, Code2, Smartphone, Building2, Globe,
   Wallet, ArrowRightLeft, Heart, Users, Zap, BookOpen,
 } from 'lucide-react';
 import {
@@ -15,6 +15,7 @@ import {
   type DonationRegionId,
   type RegionalPaymentMethod,
 } from '../data/donations';
+import PageHeader from '../components/PageHeader';
 
 function CopyButton({ value, label = 'Copy' }: { value: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -139,36 +140,32 @@ export default function Donate() {
   const fiatMethods = methods.filter(m => m.icon !== 'crypto');
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      {/* Hero — warm coffee shop vibe */}
+    <div className="max-w-4xl mx-auto space-y-6">
+      <PageHeader
+        icon={Coffee}
+        iconClassName="text-amber-500"
+        title="Donate"
+        subtitle="Keep AAISM free for everyone — your support funds content and features."
+      />
+
+      {/* Hero */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/20 via-orange-500/15 to-yellow-500/10 border border-amber-500/30 p-6 sm:p-8">
         <Coffee className="absolute top-6 right-6 w-16 h-16 text-amber-500/20 animate-float" />
-        <Sparkles className="absolute bottom-6 left-6 w-8 h-8 text-amber-400/30" />
         <div className="relative z-10">
-          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-            <Coffee className="w-8 h-8 text-amber-500" />
-            Fuel the next question
-          </h1>
-          <p className="text-amber-900/70 dark:text-amber-100/80 mt-2 text-sm sm:text-base max-w-xl leading-relaxed">
-            Keep AAISM free for everyone. Your support powers late-night builds, fresh content,
-            and the features you ask for — shipped straight to your study flow.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 mt-6">
-            <Link
-              to="/feature-request"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm transition-colors animate-pulse-glow-amber"
-            >
-              ☕ Support + Request a Feature
-              <ExternalLink className="w-4 h-4" />
+          <p className="text-amber-900/70 dark:text-amber-100/80 text-sm sm:text-base max-w-xl leading-relaxed">
+            Choose a payment method below, or{' '}
+            <Link to="/feature-request" className="text-amber-700 dark:text-amber-300 font-medium hover:underline">
+              request a feature with tiered support
             </Link>
-            <a
-              href="#payment-methods"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl border border-amber-400/50 text-amber-800 dark:text-amber-200 font-medium text-sm hover:bg-amber-500/10 transition-colors"
-            >
-              <Heart className="w-4 h-4" />
-              Just donate
-            </a>
-          </div>
+            .
+          </p>
+          <a
+            href="#payment-methods"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm transition-colors mt-4"
+          >
+            <Heart className="w-4 h-4" />
+            Choose payment method
+          </a>
         </div>
       </div>
 
@@ -312,31 +309,8 @@ export default function Donate() {
         </section>
       )}
 
-      {/* Feature request CTA */}
-      <section className="relative overflow-hidden rounded-xl bg-gradient-to-r from-amber-500/15 to-orange-500/10 border border-amber-500/25 p-6">
-        <h2 className="text-lg font-semibold mb-2">Want something built for you?</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-2xl">
-          Skip the complex forms. Tell us what you need in two lines, pick a support tier, and pay from the platform.
-          We ship features over-the-air — you'll see them on My Updates when they're ready.
-        </p>
-        <div className="flex flex-wrap gap-3 mt-4">
-          <Link
-            to="/feature-request"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium transition-colors"
-          >
-            Request a feature
-            <ExternalLink className="w-4 h-4" />
-          </Link>
-          <Link
-            to="/my-updates"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-amber-400/50 text-sm font-medium hover:bg-amber-500/10 transition-colors"
-          >
-            My Updates
-          </Link>
-        </div>
-      </section>
 
-      {/* Config hint */}
+      {/* Config hint for maintainers */}
       <section className="flex items-start gap-3 p-4 rounded-xl bg-gray-100 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
         <Code2 className="w-5 h-5 text-gray-500 flex-shrink-0 mt-0.5" />
         <div className="text-sm text-gray-600 dark:text-gray-400">

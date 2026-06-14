@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Radar, Theater, Eye, Bot, Zap,
   Sun, Moon, Flame, ChevronRight, Settings, Menu,
   Activity, Shield, Map, Crosshair, Radio, Briefcase, PanelLeftClose,
-  HelpCircle, LifeBuoy, Heart, Sparkles,
+  HelpCircle, LifeBuoy, Heart, Sparkles, ChevronDown,
 } from 'lucide-react';
 import { createContext, useContext, useState, ReactNode } from 'react';
 import { AppProvider } from '../context/AppContext';
@@ -41,6 +41,7 @@ function PerformanceProvider({ children }: { children: ReactNode }) {
 interface NavSection {
   label: string;
   items: Array<{ to: string; icon: typeof LayoutDashboard; label: string; badge?: string }>;
+  moreItems?: Array<{ to: string; icon: typeof LayoutDashboard; label: string }>;
 }
 
 const navSections: NavSection[] = [
@@ -71,11 +72,13 @@ const navSections: NavSection[] = [
   {
     label: 'SUPPORT',
     items: [
-      { to: '/help', icon: HelpCircle, label: 'Help Center' },
-      { to: '/support', icon: LifeBuoy, label: 'Support' },
+      { to: '/help', icon: HelpCircle, label: 'Help & Support' },
       { to: '/feature-request', icon: Sparkles, label: 'Feature Request' },
-      { to: '/my-updates', icon: Radio, label: 'My Updates' },
       { to: '/donate', icon: Heart, label: 'Donate' },
+    ],
+    moreItems: [
+      { to: '/support', icon: LifeBuoy, label: 'Bug Reports' },
+      { to: '/my-updates', icon: Radio, label: 'My Updates' },
     ],
   },
 ];
@@ -96,6 +99,11 @@ function Sidebar({
   const { state } = useGamification();
   const currentLevel = getLevelFromXP(state.xp);
   const location = useLocation();
+  const [supportExpanded, setSupportExpanded] = useState(false);
+
+  const isSupportMoreActive = navSections
+    .find(s => s.label === 'SUPPORT')
+    ?.moreItems?.some(item => location.pathname.startsWith(item.to)) ?? false;
 
   return (
     <aside
@@ -175,6 +183,38 @@ function Sidebar({
                   </NavLink>
                 );
               })}
+              {section.moreItems && !collapsed && (
+                <>
+                  <button
+                    onClick={() => setSupportExpanded(!supportExpanded)}
+                    className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                      isSupportMoreActive ? 'text-emerald-400' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
+                    }`}
+                  >
+                    <ChevronDown className={`w-[18px] h-[18px] transition-transform ${supportExpanded || isSupportMoreActive ? 'rotate-180' : ''}`} />
+                    <span className="truncate text-xs">More</span>
+                  </button>
+                  {(supportExpanded || isSupportMoreActive) && section.moreItems.map(item => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname.startsWith(item.to);
+                    return (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        onClick={onCloseMobile}
+                        className={`flex items-center gap-3 pl-8 pr-2.5 py-1.5 rounded-lg text-xs font-medium transition-all group ${
+                          isActive
+                            ? 'bg-emerald-500/15 text-emerald-400'
+                            : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-emerald-400' : 'text-gray-600 group-hover:text-gray-300'}`} />
+                        <span className="truncate">{item.label}</span>
+                      </NavLink>
+                    );
+                  })}
+                </>
+              )}
             </div>
           </div>
         ))}
@@ -221,7 +261,7 @@ function TopBar({
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
 
-  const currentPage = navSections.flatMap(s => s.items).find(item =>
+  const currentPage = navSections.flatMap(s => [...s.items, ...(s.moreItems ?? [])]).find(item =>
     item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
   );
 
@@ -241,9 +281,6 @@ function TopBar({
             {currentPage?.label || 'AAISM'}
           </span>
         </div>
-        <span className="text-xs text-gray-400 hidden sm:inline">
-          AI Security Intelligence Platform
-        </span>
       </div>
 
       <div className="flex items-center gap-2">

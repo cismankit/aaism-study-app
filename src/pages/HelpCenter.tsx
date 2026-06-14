@@ -2,10 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   HelpCircle, ChevronDown, ChevronUp, Rocket, Settings, ClipboardCheck,
-  Crosshair, Theater, Bot, Briefcase, Radar, ExternalLink, MessageSquarePlus,
-  BookOpen, Lightbulb, Mail,
+  Crosshair, Theater, Bot, Briefcase, Radar, BookOpen, Lightbulb,
 } from 'lucide-react';
-import { GITHUB_NEW_ISSUE_URL } from '../data/donations';
+import PageHeader from '../components/PageHeader';
 
 interface FAQItem {
   question: string;
@@ -36,7 +35,7 @@ const faqs: FAQItem[] = [
   {
     question: 'Can I request a custom feature?',
     answer:
-      'Yes. Use the feature request form below or open a GitHub issue. Include what you want, why it helps your exam prep, and any examples from other tools you like.',
+      'Yes — use the in-app Feature Request form for tiered support and My Updates tracking, or open a GitHub issue for general suggestions.',
   },
   {
     question: 'Is this affiliated with ISACA or the official AAISM exam?',
@@ -105,95 +104,27 @@ function FAQAccordion() {
   );
 }
 
-function FeatureRequestForm() {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('feature');
-
-  function buildIssueUrl() {
-    const labels = category === 'bug' ? 'bug' : 'enhancement';
-    const body = [
-      '## Description',
-      description || '(Describe your request here)',
-      '',
-      '## Why this helps exam prep',
-      '',
-      '## Additional context',
-      `- Category: ${category}`,
-      '- Submitted from: AAISM Help Center',
-    ].join('\n');
-    const params = new URLSearchParams({
-      title: title || 'Feature request from Help Center',
-      body,
-      labels,
-    });
-    return `${GITHUB_NEW_ISSUE_URL}?${params.toString()}`;
-  }
-
+function ContactSection() {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 osint-widget space-y-4">
-      <div className="flex items-center gap-2">
-        <MessageSquarePlus className="w-5 h-5 text-emerald-500" />
-        <h3 className="font-semibold">Request a Feature or Report an Issue</h3>
-      </div>
-      <p className="text-sm text-gray-500 dark:text-gray-400">
-        Fill in the details below — you&apos;ll be taken to GitHub to submit. No account needed to browse; signing in is required to post.
+      <h3 className="font-semibold text-sm">Need more help?</h3>
+      <p className="text-sm text-gray-400">
+        Bug reports and GitHub community links are on the Support page. Paid feature requests use the dedicated form.
       </p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <label htmlFor="fr-title" className="block text-xs font-medium text-gray-500 mb-1">Title</label>
-          <input
-            id="fr-title"
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            placeholder="e.g. Add export for flashcard decks"
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-          />
-        </div>
-        <div>
-          <label htmlFor="fr-category" className="block text-xs font-medium text-gray-500 mb-1">Category</label>
-          <select
-            id="fr-category"
-            value={category}
-            onChange={e => setCategory(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
-          >
-            <option value="feature">Feature request</option>
-            <option value="bug">Bug report</option>
-            <option value="content">Content / question fix</option>
-            <option value="docs">Documentation</option>
-          </select>
-        </div>
-        <div className="sm:col-span-2">
-          <label htmlFor="fr-desc" className="block text-xs font-medium text-gray-500 mb-1">Description</label>
-          <textarea
-            id="fr-desc"
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            rows={4}
-            placeholder="What would you like to see? How would you use it?"
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 resize-y"
-          />
-        </div>
-      </div>
       <div className="flex flex-wrap gap-2">
-        <a
-          href={buildIssueUrl()}
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          to="/support"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
         >
-          Open GitHub Issue
-          <ExternalLink className="w-3.5 h-3.5" />
-        </a>
-        <a
-          href={`mailto:?subject=${encodeURIComponent(title || 'AAISM feedback')}&body=${encodeURIComponent(description)}`}
+          Support &amp; bug reports
+          <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
+        </Link>
+        <Link
+          to="/feature-request"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
-          <Mail className="w-3.5 h-3.5" />
-          Email draft
-        </a>
+          Feature request form
+        </Link>
       </div>
     </div>
   );
@@ -201,16 +132,12 @@ function FeatureRequestForm() {
 
 export default function HelpCenter() {
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-3">
-          <HelpCircle className="w-7 h-7 text-emerald-500" />
-          Help Center
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
-          Getting started, FAQs, exam prep tips, and how to reach the team
-        </p>
-      </div>
+    <div className="max-w-4xl mx-auto space-y-6">
+      <PageHeader
+        icon={HelpCircle}
+        title="Help Center"
+        subtitle="Getting started, FAQs, and exam prep — bugs and features go to Support or Feature Request."
+      />
 
       {/* Getting Started */}
       <section className="space-y-4">
@@ -308,17 +235,10 @@ export default function HelpCenter() {
         <FAQAccordion />
       </section>
 
-      {/* Contact / Feature Request */}
+      {/* Contact */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold">Contact &amp; Support</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          Need more help? Visit the{' '}
-          <Link to="/support" className="text-emerald-600 dark:text-emerald-400 hover:underline">
-            Support page
-          </Link>{' '}
-          for bug reports, community links, and exam prep resources.
-        </p>
-        <FeatureRequestForm />
+        <h2 className="text-lg font-semibold">Contact</h2>
+        <ContactSection />
       </section>
     </div>
   );

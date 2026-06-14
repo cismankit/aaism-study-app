@@ -1,5 +1,5 @@
 import { RSS_SOURCES, type RssSource, type RssSourceCategory } from '../data/rssSources';
-import { TOPIC_HEAT_MAP, TRAP_PATTERNS, COMMUNITY_INSIGHTS } from '../data/communityIntelligence';
+import { COMMUNITY_INSIGHTS } from '../data/communityIntelligence';
 import { getPipelineStats } from './agentService';
 import { loadInsights } from './intelligenceAgent';
 
@@ -266,39 +266,10 @@ async function fetchSourceFeed(source: RssSource): Promise<IntelFeedItem[]> {
   }
 }
 
+/** Actionable platform pointers only — heat/traps live on Intel Hub & Command Center summaries. */
 export function buildStaticIntelItems(): IntelFeedItem[] {
   const items: IntelFeedItem[] = [];
   const now = new Date().toISOString();
-
-  TOPIC_HEAT_MAP.filter(t => t.trend === 'rising' && t.heat >= 85).forEach(topic => {
-    items.push({
-      id: `hot-${topic.topic}`,
-      title: topic.topic,
-      summary: `Heat ${topic.heat}/100 — ${topic.communityNotes.slice(0, 120)}`,
-      source: 'Community Intel',
-      sourceUrl: '/intel',
-      link: '/intel',
-      publishedAt: now,
-      category: 'exam',
-      relevanceScore: topic.heat,
-      isLive: false,
-    });
-  });
-
-  TRAP_PATTERNS.filter(t => t.frequency === 'very_common').slice(0, 3).forEach(trap => {
-    items.push({
-      id: `trap-${trap.id}`,
-      title: trap.name,
-      summary: trap.description.slice(0, 160),
-      source: 'Trap Patterns',
-      sourceUrl: '/intel',
-      link: '/intel',
-      publishedAt: now,
-      category: 'exam',
-      relevanceScore: 90,
-      isLive: false,
-    });
-  });
 
   const stats = getPipelineStats();
   if (stats.totalLeads > 0) {

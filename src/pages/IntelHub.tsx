@@ -3,9 +3,10 @@ import {
   Radar, Flame, AlertTriangle, Search, Lightbulb,
   TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp,
   Play, BookOpen, ExternalLink, Star, Shield, Target,
-  Zap, BarChart3, RefreshCw, Trash2, Radio,
+  Zap, BarChart3, RefreshCw, Trash2,
 } from 'lucide-react';
-import { LiveRssFeedPanel } from '../components/LiveIntelFeed';
+import PageHeader from '../components/PageHeader';
+import SlidePanel from '../components/SlidePanel';
 import {
   QUESTION_PATTERNS,
   TRAP_PATTERNS,
@@ -25,12 +26,12 @@ import {
 import { loadAIConfig } from '../services/aiService';
 import { useNavigate } from 'react-router-dom';
 
-type IntelTab = 'patterns' | 'hot_topics' | 'traps' | 'research' | 'insights' | 'live_rss';
+type IntelTab = 'patterns' | 'hot_topics' | 'traps' | 'research' | 'insights';
 
 export default function IntelHub() {
   const [activeTab, setActiveTab] = useState<IntelTab>('patterns');
   const [expandedPattern, setExpandedPattern] = useState<string | null>(null);
-  const [expandedTrap, setExpandedTrap] = useState<string | null>(null);
+  const [selectedTrap, setSelectedTrap] = useState<typeof TRAP_PATTERNS[0] | null>(null);
   const [analysis, setAnalysis] = useState<PatternAnalysis | null>(null);
   const [insights, setInsights] = useState<IntelligenceInsight[]>(loadInsights());
   const [isResearching, setIsResearching] = useState(false);
@@ -49,14 +50,15 @@ export default function IntelHub() {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [researchLogs]);
 
-  const tabs: Array<{ id: IntelTab; label: string; icon: typeof Radar }> = [
-    { id: 'patterns', label: 'Patterns', icon: Target },
-    { id: 'hot_topics', label: 'Hot Topics', icon: Flame },
-    { id: 'traps', label: 'Trap Alerts', icon: AlertTriangle },
-    { id: 'research', label: 'Research', icon: Search },
-    { id: 'insights', label: 'Insights', icon: Lightbulb },
-    { id: 'live_rss', label: 'Live RSS', icon: Radio },
+  const tabs: Array<{ id: IntelTab; label: string; icon: typeof Radar; description: string }> = [
+    { id: 'patterns', label: 'Patterns', icon: Target, description: 'Exam question keywords, strategies, and drill links.' },
+    { id: 'hot_topics', label: 'Hot Topics', icon: Flame, description: 'Community-reported topic frequency and heat rankings.' },
+    { id: 'traps', label: 'Trap Alerts', icon: AlertTriangle, description: 'Common wrong-answer bait — click any trap for full detail.' },
+    { id: 'research', label: 'Research', icon: Search, description: 'Run the AI agent to discover new patterns and traps.' },
+    { id: 'insights', label: 'Insights', icon: Lightbulb, description: 'Saved research output and automated recommendations.' },
   ];
+
+  const activeTabMeta = tabs.find(t => t.id === activeTab);
 
   const callbacks: ResearchCallbacks = {
     onLog: (message, type) => {
@@ -100,24 +102,12 @@ export default function IntelHub() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Radar className="w-8 h-8 text-purple-500" />
-            Community Intelligence Hub
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">
-            Exam patterns, trap alerts, and hot topics curated from public ISACA community knowledge
-          </p>
-        </div>
-        {analysis && (
-          <div className="text-right text-sm text-gray-500 dark:text-gray-400">
-            <div>{analysis.totalQuestions} questions analyzed</div>
-            <div>{insights.length} research insights saved</div>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        icon={Radar}
+        iconClassName="text-purple-500"
+        title="Intel Hub"
+        subtitle="Deep dive into exam patterns, traps, and community intelligence — use Live Feed in the top bar for RSS stream."
+      />
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 overflow-x-auto">
@@ -140,6 +130,10 @@ export default function IntelHub() {
         })}
       </div>
 
+      {activeTabMeta && (
+        <p className="text-sm text-gray-400 -mt-2">{activeTabMeta.description}</p>
+      )}
+
       {/* Tab Content */}
       {activeTab === 'patterns' && (
         <PatternsTab
@@ -157,8 +151,7 @@ export default function IntelHub() {
 
       {activeTab === 'traps' && (
         <TrapsTab
-          expandedTrap={expandedTrap}
-          setExpandedTrap={setExpandedTrap}
+          onSelectTrap={setSelectedTrap}
           frequencyColors={frequencyColors}
         />
       )}
@@ -186,7 +179,39 @@ export default function IntelHub() {
         />
       )}
 
-      {activeTab === 'live_rss' && <LiveRssFeedPanel />}
+      <SlidePanel
+        open={!!selectedTrap}
+        onClose={() => setSelectedTrap(null)}
+        title={selectedTrap?.name ?? ''}
+        subtitle={selectedTrap ? selectedTrap.frequency.replace('_', ' ') : undefined}
+      >
+        {selectedTrap && <TrapDetail trap={selectedTrap} />}
+      </SlidePanel>
+    </div>
+  );
+}
+
+function TrapDetail({ trap }: { trap: typeof TRAP_PATTERNS[0] }) {
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-gray-600 dark:text-gray-400">{trap.description}</p>
+      <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
+        <h4 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-1">Example</h4>
+        <p className="text-sm">{trap.example}</p>
+      </div>
+      <div>
+        <h4 className="text-sm font-semibold text-orange-600 dark:text-orange-400 mb-1">Why Students Fall For It</h4>
+        <p className="text-sm text-gray-600 dark:text-gray-400">{trap.whyStudentsFail}</p>
+      </div>
+      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+        <h4 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-1">How to Avoid</h4>
+        <p className="text-sm">{trap.howToAvoid}</p>
+      </div>
+      <div className="flex gap-1 flex-wrap">
+        {trap.domains.map(d => (
+          <span key={d} className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">D{d}</span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -425,12 +450,10 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
 // ============ TRAPS TAB ============
 
 function TrapsTab({
-  expandedTrap,
-  setExpandedTrap,
+  onSelectTrap,
   frequencyColors,
 }: {
-  expandedTrap: string | null;
-  setExpandedTrap: (id: string | null) => void;
+  onSelectTrap: (trap: typeof TRAP_PATTERNS[0]) => void;
   frequencyColors: Record<string, string>;
 }) {
   const freqMap: Record<string, string> = {
@@ -444,69 +467,40 @@ function TrapsTab({
       <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-200 dark:border-red-800">
         <h3 className="font-semibold text-red-700 dark:text-red-400 flex items-center gap-2">
           <AlertTriangle className="w-4 h-4" />
-          Known Exam Traps — Don't Fall For These
+          Known Exam Traps
         </h3>
         <p className="text-sm text-red-600 dark:text-red-300 mt-1">
-          These trap patterns are the most commonly reported reasons for wrong answers on the AAISM exam.
+          Click a trap for examples and avoidance strategies.
         </p>
       </div>
 
-      {TRAP_PATTERNS.map(trap => {
-        const isExpanded = expandedTrap === trap.id;
-        return (
-          <div
+      <div className="grid gap-3 sm:grid-cols-2">
+        {TRAP_PATTERNS.map(trap => (
+          <button
             key={trap.id}
-            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+            onClick={() => onSelectTrap(trap)}
+            className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 text-left hover:border-red-400 dark:hover:border-red-600 transition-colors"
           >
-            <button
-              onClick={() => setExpandedTrap(isExpanded ? null : trap.id)}
-              className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                  <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold">{trap.name}</h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">{trap.description}</p>
-                </div>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
               </div>
-              <div className="flex items-center gap-3">
-                <div className="flex gap-1">
+              <div className="min-w-0 flex-1">
+                <h3 className="font-semibold text-sm">{trap.name}</h3>
+                <p className="text-xs text-gray-400 mt-1 line-clamp-2">{trap.description}</p>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
                   {trap.domains.map(d => (
-                    <span key={d} className="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">
-                      D{d}
-                    </span>
+                    <span key={d} className="text-[10px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">D{d}</span>
                   ))}
-                </div>
-                <span className={`text-xs px-2 py-1 rounded-full ${frequencyColors[freqMap[trap.frequency]]}`}>
-                  {trap.frequency.replace('_', ' ')}
-                </span>
-                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </div>
-            </button>
-
-            {isExpanded && (
-              <div className="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-gray-700 pt-4">
-                <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
-                  <h4 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-1">Example</h4>
-                  <p className="text-sm">{trap.example}</p>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-semibold text-orange-600 dark:text-orange-400 mb-1">Why Students Fall For It</h4>
-                  <p className="text-sm">{trap.whyStudentsFail}</p>
-                </div>
-
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
-                  <h4 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-1">How to Avoid</h4>
-                  <p className="text-sm">{trap.howToAvoid}</p>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${frequencyColors[freqMap[trap.frequency]]}`}>
+                    {trap.frequency.replace('_', ' ')}
+                  </span>
                 </div>
               </div>
-            )}
-          </div>
-        );
-      })}
+            </div>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

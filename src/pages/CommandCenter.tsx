@@ -1,17 +1,16 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  Radar, Theater, Bot, Briefcase, Crosshair,
-  Flame, TrendingUp, Target, ChevronRight,
-  AlertTriangle, Shield, BarChart3, Play, Activity,
-  Lightbulb, Radio, Layers, Sparkles, X,
+  LayoutDashboard, Theater, Bot, Briefcase, Crosshair,
+  Flame, TrendingUp, Target, ChevronRight, ChevronDown,
+  Shield, BarChart3, Play, Lightbulb, Sparkles, X, Radar,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
 import { getLevelFromXP, getXPProgress } from '../data/gamificationData';
-import { TOPIC_HEAT_MAP, TRAP_PATTERNS, QUESTION_PATTERNS } from '../data/communityIntelligence';
+import { TOPIC_HEAT_MAP, QUESTION_PATTERNS } from '../data/communityIntelligence';
 import { getPipelineStats } from '../services/agentService';
-import { loadInsights, analyzeQuestionPatterns } from '../services/intelligenceAgent';
+import { analyzeQuestionPatterns } from '../services/intelligenceAgent';
 import { PLAYBOOKS } from '../data/playbooks';
 import { LEARNING_PATH_WIDGET } from '../data/platformMeta';
 import { AAISM_DOMAIN_GUIDES } from '../data/aaismDomainGuide';
@@ -20,7 +19,8 @@ import {
   getNewReleasesSince,
   LAST_SEEN_RELEASE_KEY,
 } from '../data/releaseFeed';
-import SlidePanel from '../components/SlidePanel';
+import PageHeader from '../components/PageHeader';
+import SectionCard from '../components/SectionCard';
 
 export default function CommandCenter() {
   const navigate = useNavigate();
@@ -29,10 +29,7 @@ export default function CommandCenter() {
   const currentLevel = getLevelFromXP(gameState.xp);
   const xpProgress = getXPProgress(gameState.xp);
 
-  const [panelContent, setPanelContent] = useState<{ title: string; subtitle?: string; content: React.ReactNode } | null>(null);
-
   const stats = getPipelineStats();
-  const insights = loadInsights();
   const patternAnalysis = analyzeQuestionPatterns();
   const risingTopics = TOPIC_HEAT_MAP.filter(t => t.trend === 'rising' && t.heat >= 85);
 
@@ -41,12 +38,9 @@ export default function CommandCenter() {
     ? Math.round(recentQuizzes.reduce((sum, q) => sum + q.score, 0) / recentQuizzes.length)
     : 0;
 
-  function openPanel(title: string, subtitle: string, content: React.ReactNode) {
-    setPanelContent({ title, subtitle, content });
-  }
-
   const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [newReleases, setNewReleases] = useState<ReturnType<typeof getNewReleasesSince>>([]);
+  const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
     const lastSeen = localStorage.getItem(LAST_SEEN_RELEASE_KEY);
@@ -64,7 +58,14 @@ export default function CommandCenter() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-5">
+    <div className="max-w-7xl mx-auto space-y-6">
+      <PageHeader
+        icon={LayoutDashboard}
+        iconClassName="text-emerald-500"
+        title="Command Center"
+        subtitle="Quick actions, progress, and intel summaries — open Intel Hub for deep dives."
+      />
+
       {showWhatsNew && newReleases.length > 0 && (
         <div className="relative rounded-xl bg-gradient-to-r from-amber-500/15 to-cyan-500/10 border border-amber-500/25 p-4 animate-fade-in">
           <button
@@ -96,20 +97,17 @@ export default function CommandCenter() {
           </div>
         </div>
       )}
-      {/* Mission Status Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
+
+      {/* Compact mission status — no duplicate agent/intel counts elsewhere on page */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatusCard icon={Shield} label="Level" value={currentLevel.title} color="text-emerald-500" sub={`${gameState.xp} XP`} />
         <StatusCard icon={Flame} label="Streak" value={`${gameState.currentStreak}`} color="text-orange-500" sub="days" />
         <StatusCard icon={Crosshair} label="Quizzes" value={`${gameState.totalQuizzesTaken}`} color="text-blue-500" sub={`${avgScore}% avg`} />
-        <StatusCard icon={Bot} label="Agent Leads" value={`${stats.totalLeads}`} color="text-cyan-500" sub={`${stats.pendingCount} pending`} />
-        <StatusCard icon={Radar} label="Intel" value={`${insights.length}`} color="text-purple-500" sub="insights" />
-        <StatusCard icon={Activity} label="Questions" value={`${stats.totalQuestions}`} color="text-green-500" sub="in bank" />
+        <StatusCard icon={Bot} label="Pending Leads" value={`${stats.pendingCount}`} color="text-cyan-500" sub={`${stats.totalLeads} total`} />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
-        {/* Left column — Primary actions + Playbooks */}
-        <div className="space-y-5 lg:col-span-2">
-          {/* Quick Action Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <ActionCard
               icon={Crosshair}
@@ -141,110 +139,50 @@ export default function CommandCenter() {
             />
           </div>
 
-          {/* Rising Threats + Pattern Intel */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-            {/* Rising Threats */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget">
-              <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-                <TrendingUp className="w-4 h-4 text-red-500" />
-                Rising Threats
-                <span className="ml-auto flex items-center gap-1 text-[10px] text-red-400">
-                  <Radio className="w-3 h-3 animate-pulse-dot" /> LIVE
-                </span>
-              </h3>
-              <div className="space-y-2">
-                {risingTopics.slice(0, 5).map((topic, i) => (
-                  <button
-                    key={i}
-                    onClick={() => navigate('/intel')}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left group"
-                  >
-                    <div className="text-xs font-bold text-gray-300 dark:text-gray-600 w-4">#{i + 1}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium truncate">{topic.topic}</div>
-                      <div className="text-[10px] text-gray-400">D{topic.domain} · Heat {topic.heat}</div>
-                    </div>
+          <SectionCard
+            title="Intel Snapshot"
+            icon={TrendingUp}
+            iconClassName="text-red-500"
+            action={
+              <button
+                onClick={() => navigate('/intel')}
+                className="text-xs text-emerald-500 hover:text-emerald-400 flex items-center gap-1"
+              >
+                Intel Hub <ChevronRight className="w-3 h-3" />
+              </button>
+            }
+          >
+            <p className="text-xs text-gray-400 mb-3">
+              Top rising exam topics — full heat map, traps, and research live in Intel Hub.
+            </p>
+            <div className="space-y-2">
+              {risingTopics.slice(0, 3).map((topic, i) => (
+                <button
+                  key={i}
+                  onClick={() => navigate('/intel')}
+                  className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left"
+                >
+                  <div className="text-xs font-bold text-gray-300 dark:text-gray-600 w-4">#{i + 1}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium truncate">{topic.topic}</div>
+                    <div className="text-[10px] text-gray-400">D{topic.domain} · Heat {topic.heat}</div>
+                  </div>
+                  <div className="w-12 h-1.5 rounded-full bg-gray-100 dark:bg-gray-700">
                     <div
-                      className="w-12 h-1.5 rounded-full bg-gray-100 dark:bg-gray-700"
-                    >
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${topic.heat}%`,
-                          background: `hsl(${120 - (topic.heat / 100) * 120}, 70%, 50%)`,
-                        }}
-                      />
-                    </div>
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => navigate('/intel')}
-                className="w-full mt-2 text-xs text-emerald-500 hover:text-emerald-400 flex items-center justify-center gap-1"
-              >
-                View all threats <ChevronRight className="w-3 h-3" />
-              </button>
-            </div>
-
-            {/* Trap Radar */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget">
-              <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
-                Active Trap Alerts
-              </h3>
-              <div className="space-y-2">
-                {TRAP_PATTERNS.filter(t => t.frequency === 'very_common').slice(0, 4).map(trap => (
-                  <button
-                    key={trap.id}
-                    onClick={() => openPanel('Trap Alert', trap.name, <TrapDetail trap={trap} />)}
-                    className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left group"
-                  >
-                    <div className="w-6 h-6 rounded bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
-                      <AlertTriangle className="w-3 h-3 text-red-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium truncate">{trap.name}</div>
-                      <div className="text-[10px] text-gray-400">{trap.frequency.replace('_', ' ')}</div>
-                    </div>
-                    <ChevronRight className="w-3 h-3 text-gray-300 group-hover:text-amber-500" />
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={() => navigate('/intel')}
-                className="w-full mt-2 text-xs text-emerald-500 hover:text-emerald-400 flex items-center justify-center gap-1"
-              >
-                View all traps <ChevronRight className="w-3 h-3" />
-              </button>
-            </div>
-          </div>
-
-          {/* Pattern Distribution + Recommendations */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget">
-            <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-              <BarChart3 className="w-4 h-4 text-purple-500" />
-              Question Pattern Analysis
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 mb-3">
-              {Object.entries(patternAnalysis.patternDistribution).map(([pattern, count]) => (
-                <div key={pattern} className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{count}</div>
-                  <div className="text-[10px] text-gray-500">{pattern}</div>
-                </div>
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${topic.heat}%`,
+                        background: `hsl(${120 - (topic.heat / 100) * 120}, 70%, 50%)`,
+                      }}
+                    />
+                  </div>
+                </button>
               ))}
             </div>
-            {patternAnalysis.recommendations.slice(0, 2).map((rec, i) => (
-              <div key={i} className="text-xs text-gray-500 dark:text-gray-400 flex items-start gap-2 mb-1">
-                <Lightbulb className="w-3 h-3 text-yellow-500 mt-0.5 flex-shrink-0" />
-                {rec}
-              </div>
-            ))}
-          </div>
+          </SectionCard>
         </div>
 
-        {/* Right column — Progress + Playbooks + Level */}
-        <div className="space-y-5">
-          {/* Level Progress */}
+        <div className="space-y-6">
           <div className="bg-gradient-to-br from-emerald-600 to-cyan-700 rounded-xl p-4 text-white">
             <div className="flex items-center gap-3 mb-3">
               <div
@@ -266,12 +204,7 @@ export default function CommandCenter() {
             </div>
           </div>
 
-          {/* Domain Readiness */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget">
-            <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-              <Target className="w-4 h-4 text-blue-500" />
-              Domain Readiness
-            </h3>
+          <SectionCard title="Domain Readiness" icon={Target} iconClassName="text-blue-500">
             {state.domains.map(domain => {
               const scores = gameState.domainScores[domain.id] || [];
               const avg = scores.length > 0 ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length) : 0;
@@ -279,10 +212,10 @@ export default function CommandCenter() {
                 <button
                   key={domain.id}
                   onClick={() => navigate('/study', { state: { startQuiz: true, domainId: domain.id } })}
-                  className="w-full mb-2 group"
+                  className="w-full mb-2 group last:mb-0"
                 >
                   <div className="flex items-center justify-between text-xs mb-1">
-                    <span className="truncate text-gray-600 dark:text-gray-400">D{domain.id}: {domain.name}</span>
+                    <span className="truncate text-gray-400">D{domain.id}: {domain.name}</span>
                     <span className={`font-bold ${avg >= 80 ? 'text-green-500' : avg >= 60 ? 'text-yellow-500' : avg > 0 ? 'text-red-400' : 'text-gray-400'}`}>
                       {avg > 0 ? `${avg}%` : '—'}
                     </span>
@@ -298,113 +231,125 @@ export default function CommandCenter() {
                 </button>
               );
             })}
-          </div>
-
-          {/* Quick Scenario Starters */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget">
-            <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-              <Theater className="w-4 h-4 text-indigo-500" />
-              Quick Scenarios
-            </h3>
-            <div className="space-y-2">
-              {QUESTION_PATTERNS.filter(p => ['best', 'most', 'first'].includes(p.id)).map(p => (
-                <button
-                  key={p.id}
-                  onClick={() => navigate(`/scenarios?mode=drill&pattern=${p.id}`)}
-                  className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors text-left group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                    {p.keyword}
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-xs font-medium">{p.name} Drill</div>
-                    <div className="text-[10px] text-gray-400">{p.examFrequency.replace('_', ' ')}</div>
-                  </div>
-                  <Play className="w-3 h-3 text-gray-300 group-hover:text-indigo-500" />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Learning Paths */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget">
-            <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-              <Lightbulb className="w-4 h-4 text-yellow-500" />
-              {LEARNING_PATH_WIDGET.title}
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">{LEARNING_PATH_WIDGET.description}</p>
-            <div className="space-y-2">
-              {AAISM_DOMAIN_GUIDES.map(guide => (
-                <button
-                  key={guide.id}
-                  onClick={() => navigate(`/knowledge?domain=${guide.id}`)}
-                  className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors text-left group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    D{guide.id}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium truncate">{guide.shortName}</div>
-                    <div className="text-[10px] text-gray-400">{guide.weight} · {guide.coreConcepts.length} concepts</div>
-                  </div>
-                  <ChevronRight className="w-3 h-3 text-gray-300 group-hover:text-emerald-500" />
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => navigate(LEARNING_PATH_WIDGET.ctaRoute)}
-              className="w-full mt-2 text-xs text-emerald-500 hover:text-emerald-400 flex items-center justify-center gap-1"
-            >
-              {LEARNING_PATH_WIDGET.ctaLabel} <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
-
-          {/* Playbook Previews */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget">
-            <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-              <Briefcase className="w-4 h-4 text-blue-500" />
-              Playbooks
-            </h3>
-            <div className="space-y-2">
-              {PLAYBOOKS.slice(0, 3).map(pb => (
-                <button
-                  key={pb.id}
-                  onClick={() => navigate('/playbooks')}
-                  className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-left group"
-                >
-                  <Layers className="w-4 h-4 text-blue-400 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-medium truncate">{pb.title}</div>
-                    <div className="text-[10px] text-gray-400">{pb.phases.length} phases · {pb.estimatedDuration}</div>
-                  </div>
-                  <ChevronRight className="w-3 h-3 text-gray-300 group-hover:text-blue-500" />
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => navigate('/playbooks')}
-              className="w-full mt-2 text-xs text-emerald-500 hover:text-emerald-400 flex items-center justify-center gap-1"
-            >
-              All playbooks <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
+          </SectionCard>
         </div>
       </div>
 
-      {/* Slide Panel */}
-      <SlidePanel
-        open={!!panelContent}
-        onClose={() => setPanelContent(null)}
-        title={panelContent?.title || ''}
-        subtitle={panelContent?.subtitle}
-      >
-        {panelContent?.content}
-      </SlidePanel>
+      {/* Collapsed secondary widgets */}
+      <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+        <button
+          onClick={() => setShowMore(!showMore)}
+          className="flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+        >
+          <ChevronDown className={`w-4 h-4 transition-transform ${showMore ? 'rotate-180' : ''}`} />
+          {showMore ? 'Hide secondary widgets' : 'Show more — scenarios, playbooks, patterns'}
+        </button>
+
+        {showMore && (
+          <div className="grid gap-6 mt-6 lg:grid-cols-3">
+            <SectionCard title="Quick Scenarios" icon={Theater} iconClassName="text-indigo-500" className="lg:col-span-1">
+              <div className="space-y-2">
+                {QUESTION_PATTERNS.filter(p => ['best', 'most', 'first'].includes(p.id)).map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => navigate(`/scenarios?mode=drill&pattern=${p.id}`)}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors text-left group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                      {p.keyword}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium truncate">{p.name} Drill</div>
+                    </div>
+                    <Play className="w-3 h-3 text-gray-300 group-hover:text-indigo-500" />
+                  </button>
+                ))}
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              title={LEARNING_PATH_WIDGET.title}
+              icon={Lightbulb}
+              iconClassName="text-yellow-500"
+              className="lg:col-span-1"
+              action={
+                <button
+                  onClick={() => navigate(LEARNING_PATH_WIDGET.ctaRoute)}
+                  className="text-xs text-emerald-500 hover:text-emerald-400"
+                >
+                  {LEARNING_PATH_WIDGET.ctaLabel} →
+                </button>
+              }
+            >
+              <div className="space-y-2">
+                {AAISM_DOMAIN_GUIDES.slice(0, 3).map(guide => (
+                  <button
+                    key={guide.id}
+                    onClick={() => navigate(`/knowledge?domain=${guide.id}`)}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors text-left"
+                  >
+                    <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      D{guide.id}
+                    </div>
+                    <span className="text-xs font-medium truncate">{guide.shortName}</span>
+                  </button>
+                ))}
+              </div>
+            </SectionCard>
+
+            <SectionCard
+              title="Playbooks"
+              icon={Briefcase}
+              iconClassName="text-blue-500"
+              className="lg:col-span-1"
+              action={
+                <button onClick={() => navigate('/playbooks')} className="text-xs text-emerald-500 hover:text-emerald-400">
+                  View all →
+                </button>
+              }
+            >
+              <div className="space-y-2">
+                {PLAYBOOKS.slice(0, 3).map(pb => (
+                  <button
+                    key={pb.id}
+                    onClick={() => navigate('/playbooks')}
+                    className="w-full text-left p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                  >
+                    <div className="text-xs font-medium truncate">{pb.title}</div>
+                    <div className="text-[10px] text-gray-400">{pb.phases.length} phases</div>
+                  </button>
+                ))}
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Question Pattern Analysis" icon={BarChart3} iconClassName="text-purple-500" className="lg:col-span-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2 mb-3">
+                {Object.entries(patternAnalysis.patternDistribution).map(([pattern, count]) => (
+                  <div key={pattern} className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{count}</div>
+                    <div className="text-[10px] text-gray-400">{pattern}</div>
+                  </div>
+                ))}
+              </div>
+              {patternAnalysis.recommendations.slice(0, 2).map((rec, i) => (
+                <div key={i} className="text-xs text-gray-400 flex items-start gap-2 mb-1">
+                  <Lightbulb className="w-3 h-3 text-yellow-500 mt-0.5 flex-shrink-0" />
+                  {rec}
+                </div>
+              ))}
+              <button
+                onClick={() => navigate('/intel')}
+                className="mt-2 text-xs text-emerald-500 hover:text-emerald-400 flex items-center gap-1"
+              >
+                Full pattern intel in Intel Hub <Radar className="w-3 h-3" />
+              </button>
+            </SectionCard>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
-// ============ SUB-COMPONENTS ============
 
 function StatusCard({ icon: Icon, label, value, color, sub }: {
   icon: typeof Shield; label: string; value: string; color: string; sub: string;
@@ -442,37 +387,5 @@ function ActionCard({ icon: Icon, title, description, gradient, onClick }: {
         <ChevronRight className="w-4 h-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
       </div>
     </button>
-  );
-}
-
-function TrapDetail({ trap }: { trap: typeof TRAP_PATTERNS[0] }) {
-  return (
-    <div className="space-y-4">
-      <p className="text-sm">{trap.description}</p>
-
-      <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3">
-        <h4 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-1">Example</h4>
-        <p className="text-sm">{trap.example}</p>
-      </div>
-
-      <div>
-        <h4 className="text-sm font-semibold text-orange-600 dark:text-orange-400 mb-1">Why Students Fall For It</h4>
-        <p className="text-sm">{trap.whyStudentsFail}</p>
-      </div>
-
-      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
-        <h4 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-1">How to Avoid</h4>
-        <p className="text-sm">{trap.howToAvoid}</p>
-      </div>
-
-      <div className="flex gap-1">
-        {trap.domains.map(d => (
-          <span key={d} className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded">D{d}</span>
-        ))}
-        <span className="text-xs px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded">
-          {trap.frequency.replace('_', ' ')}
-        </span>
-      </div>
-    </div>
   );
 }

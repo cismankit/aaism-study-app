@@ -22,6 +22,7 @@ import {
   type FeatureRequestPriority,
   type FeatureRequest,
 } from '../services/featureRequestStore';
+import PageHeader from '../components/PageHeader';
 
 const priorityOptions: { id: FeatureRequestPriority; label: string; color: string }[] = [
   { id: 'nice', label: 'Nice to have', color: 'border-gray-300 dark:border-gray-600' },
@@ -201,24 +202,13 @@ export default function FeatureRequest() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-3">
-          <Sparkles className="w-7 h-7 text-amber-500" />
-          Request a Feature
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
-          Two lines. Pick a tier. We ship over-the-air when it's ready.
-        </p>
-      </div>
-
-      <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-yellow-500/10 border border-amber-500/25 p-5">
-        <Coffee className="absolute top-4 right-4 w-10 h-10 text-amber-500/25 animate-float" />
-        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-          <strong>Fuel the next question.</strong> Tell us what would make your study flow better —
-          dark mode tweaks, new quiz modes, export tools, anything. No complex forms.
-        </p>
-      </div>
+    <div className="max-w-2xl mx-auto space-y-6">
+      <PageHeader
+        icon={Sparkles}
+        iconClassName="text-amber-500"
+        title="Request a Feature"
+        subtitle="Two lines, pick a tier, pay from the platform — track delivery on My Updates."
+      />
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* What do you want? */}

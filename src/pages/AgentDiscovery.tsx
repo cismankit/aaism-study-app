@@ -28,6 +28,7 @@ import {
   type DiscoveryStrategy,
 } from '../services/agentStore';
 import { loadAIConfig } from '../services/aiService';
+import PageHeader from '../components/PageHeader';
 
 type ViewTab = 'pipeline' | 'leads' | 'analytics' | 'history';
 type LeadFilter = 'all' | 'pending_review' | 'approved' | 'auto_approved' | 'rejected';
@@ -187,37 +188,29 @@ export default function AgentDiscovery() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
-            <Bot size={22} className="text-white" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Agent Discovery</h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Agentic AI auto-discovers ISACA-matching questions
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1">
+    <div className="max-w-5xl mx-auto space-y-6">
+      <PageHeader
+        icon={Bot}
+        iconClassName="text-violet-500"
+        title="Agent Discovery"
+        subtitle="AI auto-discovers ISACA-matching questions — review leads in the Leads tab."
+        action={
+          <div className="flex items-center gap-2 text-xs text-gray-400">
             <Settings size={12} />
             {aiConfig.provider} / {aiConfig.model}
+            <button
+              onClick={handleClearPipeline}
+              className="p-2 text-gray-400 hover:text-red-500 transition-colors ml-1"
+              title="Clear pipeline"
+            >
+              <Trash2 size={16} />
+            </button>
           </div>
-          <button
-            onClick={handleClearPipeline}
-            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-            title="Clear pipeline"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Live Agent Console */}
-      {(isRunning || liveLogs.length > 0) && (
+      {/* Live Agent Console — pipeline tab only */}
+      {activeTab === 'pipeline' && (isRunning || liveLogs.length > 0) && (
         <div className="bg-gray-900 dark:bg-black rounded-xl border border-gray-700 overflow-hidden shadow-xl">
           {/* Console Header */}
           <div className="px-4 py-2.5 bg-gray-800 dark:bg-gray-900 border-b border-gray-700 flex items-center justify-between">
@@ -383,30 +376,11 @@ export default function AgentDiscovery() {
         </div>
       )}
 
-      {/* Stats Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-        {[
-          { label: 'Total Leads', value: stats.totalLeads, icon: Layers, iconClass: 'text-violet-500' },
-          { label: 'Pending', value: stats.pendingCount, icon: Clock, iconClass: 'text-yellow-500' },
-          { label: 'Approved', value: stats.approvedCount, icon: CheckCircle, iconClass: 'text-green-500' },
-          { label: 'Avg Confidence', value: `${stats.avgConfidence}%`, icon: Target, iconClass: 'text-blue-500' },
-          { label: 'Coverage Gaps', value: stats.coverageGaps, icon: AlertTriangle, iconClass: 'text-orange-500' },
-        ].map(s => (
-          <div key={s.label} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-1.5 mb-1">
-              <s.icon size={12} className={s.iconClass} />
-              <span className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-wide">{s.label}</span>
-            </div>
-            <div className="text-lg font-bold text-gray-900 dark:text-white">{s.value}</div>
-          </div>
-        ))}
-      </div>
-
       {/* Tab Navigation */}
       <div className="flex gap-1 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
         {([
           { id: 'pipeline' as ViewTab, label: 'Pipeline', icon: Zap },
-          { id: 'leads' as ViewTab, label: `Leads (${stats.totalLeads})`, icon: Database },
+          { id: 'leads' as ViewTab, label: 'Leads', icon: Database },
           { id: 'analytics' as ViewTab, label: 'Analytics', icon: BarChart3 },
           { id: 'history' as ViewTab, label: 'History', icon: Activity },
         ]).map(tab => (

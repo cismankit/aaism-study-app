@@ -2,16 +2,18 @@ import { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   Search, BookOpen, ChevronRight, ExternalLink, AlertTriangle,
-  Target, Lightbulb, GraduationCap, Route, HelpCircle, Theater,
-  Briefcase, Crosshair, Radar, Eye, Zap, Building2, CheckCircle2,
+  Target, Lightbulb, GraduationCap, Route, HelpCircle,
+  Crosshair, Radar, Eye, Zap, Building2, CheckCircle2,
 } from 'lucide-react';
 import {
-  domains, topics, glossary, owaspLLM, searchKnowledgeBase, Topic, Term,
+  topics, glossary, owaspLLM, searchKnowledgeBase, Topic, Term,
 } from '../data/knowledgeBase';
 import { AAISM_DOMAIN_GUIDES, searchDomainGuides, type DomainGuide } from '../data/aaismDomainGuide';
 import { STUDY_PATHS, PLATFORM_WORKFLOWS, PLATFORM_META_SECTIONS } from '../data/platformMeta';
 import { getContentStats } from '../data/examContent';
 import { useGamification } from '../context/GamificationContext';
+import PageHeader from '../components/PageHeader';
+import SectionCard from '../components/SectionCard';
 
 type MainTab = 'domains' | 'topics' | 'glossary' | 'owasp' | 'platform' | 'search';
 
@@ -180,6 +182,7 @@ export default function KnowledgeBase() {
   const [mainTab, setMainTab] = useState<MainTab>('domains');
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [metaExpanded, setMetaExpanded] = useState(false);
   const [searchResults, setSearchResults] = useState<{
     topics: Topic[];
     terms: Term[];
@@ -221,87 +224,69 @@ export default function KnowledgeBase() {
     setMainTab('search');
   }
 
-  const mainTabs: Array<{ id: MainTab; label: string }> = [
-    { id: 'domains', label: 'Domain Guides' },
-    { id: 'topics', label: 'Topics' },
-    { id: 'glossary', label: 'Glossary' },
-    { id: 'owasp', label: 'OWASP LLM' },
-    { id: 'platform', label: 'Platform Meta' },
+  const mainTabs: Array<{ id: MainTab; label: string; description: string }> = [
+    { id: 'domains', label: 'Domain Guides', description: 'Full mastery guides with concepts, traps, and exam patterns per domain.' },
+    { id: 'topics', label: 'Topics', description: 'Curated topic summaries with key points and exam tips.' },
+    { id: 'glossary', label: 'Glossary', description: 'Domain-filtered terms and definitions.' },
+    { id: 'owasp', label: 'OWASP LLM', description: 'Top 10 LLM application risks and mitigations.' },
+    { id: 'platform', label: 'Platform', description: 'How AAISM features connect — workflows and study paths.' },
   ];
+
+  const activeTabMeta = mainTabs.find(t => t.id === mainTab);
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-3 text-gray-900 dark:text-white">
-          <BookOpen className="w-7 h-7 text-emerald-500" />
-          AAISM Knowledge Base
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
-          Domain-first mastery guides, exam patterns, and platform learning paths
-        </p>
-      </div>
+      <PageHeader
+        icon={BookOpen}
+        title="Knowledge Base"
+        subtitle="Domain guides, glossary, and reference — pick a domain below to start."
+      />
 
-      {/* Meta learning — study paths */}
-      <section className="p-5 rounded-xl bg-gradient-to-br from-emerald-500/10 via-cyan-500/5 to-purple-500/10 border border-emerald-500/20">
-        <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-white mb-1">
-          <Route className="w-5 h-5 text-emerald-500" />
-          How to Use This Platform to Master AAISM
-        </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          {PLATFORM_META_SECTIONS[0].content}
-        </p>
-        <div className="grid gap-3 sm:grid-cols-3">
-          {STUDY_PATHS.map(path => (
-            <div
-              key={path.id}
-              className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 osint-widget"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                {path.icon === 'cram' && <Zap className="w-4 h-4 text-yellow-500" />}
-                {path.icon === 'deep' && <BookOpen className="w-4 h-4 text-blue-500" />}
-                {path.icon === 'org' && <Building2 className="w-4 h-4 text-purple-500" />}
-                <h3 className="font-semibold text-sm text-gray-900 dark:text-white">{path.name}</h3>
-              </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{path.description}</p>
-              <ul className="space-y-1">
-                {path.steps.slice(0, 3).map((step, i) => (
-                  <li key={i}>
-                    <Link to={step.route} className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline">
-                      → {step.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+      {/* Collapsible study paths — avoids repeating Help Center content */}
+      <section className="rounded-xl border border-emerald-500/20 overflow-hidden">
+        <button
+          onClick={() => setMetaExpanded(!metaExpanded)}
+          className="w-full flex items-center justify-between gap-3 p-4 bg-emerald-500/5 hover:bg-emerald-500/10 transition-colors text-left"
+        >
+          <div className="flex items-center gap-2">
+            <Route className="w-5 h-5 text-emerald-500" />
+            <span className="font-semibold text-sm text-gray-900 dark:text-white">Study paths & platform overview</span>
+          </div>
+          <span className="text-xs text-gray-400">{metaExpanded ? 'Hide' : 'Show'}</span>
+        </button>
+        {metaExpanded && (
+          <div className="p-4 border-t border-emerald-500/20 space-y-4">
+            <p className="text-sm text-gray-400">{PLATFORM_META_SECTIONS[0].content}</p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {STUDY_PATHS.map(path => (
+                <div
+                  key={path.id}
+                  className="p-4 rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 osint-widget"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    {path.icon === 'cram' && <Zap className="w-4 h-4 text-yellow-500" />}
+                    {path.icon === 'deep' && <BookOpen className="w-4 h-4 text-blue-500" />}
+                    {path.icon === 'org' && <Building2 className="w-4 h-4 text-purple-500" />}
+                    <h3 className="font-semibold text-sm text-gray-900 dark:text-white">{path.name}</h3>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-2">{path.description}</p>
+                  <ul className="space-y-1">
+                    {path.steps.slice(0, 3).map((step, i) => (
+                      <li key={i}>
+                        <Link to={step.route} className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline">
+                          → {step.label}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-3 mt-4">
-          <Link
-            to="/help"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-emerald-500"
-          >
-            <HelpCircle className="w-3.5 h-3.5" /> Help Center
-          </Link>
-          <Link
-            to="/playbooks"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-emerald-500"
-          >
-            <Briefcase className="w-3.5 h-3.5" /> Playbooks
-          </Link>
-          <Link
-            to="/scenarios"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-emerald-500"
-          >
-            <Theater className="w-3.5 h-3.5" /> Scenario Lab
-          </Link>
-          <Link
-            to="/knowledge/visual"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-emerald-500"
-          >
-            <Eye className="w-3.5 h-3.5" /> Visual Knowledge Hub
-          </Link>
-        </div>
+            <Link to="/help" className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-emerald-500">
+              <HelpCircle className="w-3.5 h-3.5" /> Full getting started guide in Help Center
+            </Link>
+          </div>
+        )}
       </section>
 
       {/* Search */}
@@ -390,6 +375,10 @@ export default function KnowledgeBase() {
           )}
         </div>
       </div>
+
+      {activeTabMeta && mainTab !== 'search' && (
+        <p className="text-sm text-gray-400 -mt-2">{activeTabMeta.description}</p>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
@@ -551,65 +540,27 @@ export default function KnowledgeBase() {
           )}
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar — quick links only; domain picker is above */}
         <div className="space-y-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget">
-            <h3 className="font-semibold text-sm text-gray-900 dark:text-white mb-3">Domain Progress</h3>
-            {domainProgress.map(prog => (
-              <div key={prog.id} className="mb-3">
-                <div className="flex justify-between text-xs mb-1">
-                  <span className="text-gray-600 dark:text-gray-400">D{prog.id}</span>
-                  <span className="font-medium">{prog.avg > 0 ? `${prog.avg}%` : '—'}</span>
-                </div>
-                <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${prog.avg}%` }} />
-                </div>
-                <div className="text-[10px] text-gray-400 mt-0.5">{prog.qCount} questions in bank</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget">
-            <h3 className="font-semibold text-sm text-gray-900 dark:text-white mb-3">Quick Links</h3>
+          <SectionCard title="Quick Links" compact>
             <div className="space-y-2">
               {[
                 { to: '/study', icon: Crosshair, label: 'Study Ops' },
-                { to: '/scenarios', icon: Theater, label: 'Scenario Lab' },
-                { to: '/playbooks', icon: Briefcase, label: 'Playbooks' },
                 { to: '/intel', icon: Radar, label: 'Intel Hub' },
-                { to: '/help', icon: HelpCircle, label: 'Help Center' },
                 { to: '/knowledge/visual', icon: Eye, label: 'Visual Hub' },
+                { to: '/help', icon: HelpCircle, label: 'Help Center' },
               ].map(link => (
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-emerald-500 transition-colors"
+                  className="flex items-center gap-2 text-sm text-gray-400 hover:text-emerald-500 transition-colors"
                 >
                   <link.icon className="w-4 h-4" />
                   {link.label}
                 </Link>
               ))}
             </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 osint-widget">
-            <h3 className="font-semibold text-sm text-gray-900 dark:text-white mb-3">Exam Domains</h3>
-            {domains.map(domain => (
-              <button
-                key={domain.id}
-                onClick={() => handleDomainChange(domain.id)}
-                className={`w-full text-left p-2 rounded-lg mb-1 transition-colors ${
-                  activeDomain === domain.id ? 'bg-emerald-500/10 border border-emerald-500/30' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                }`}
-              >
-                <div className="flex justify-between text-xs">
-                  <span className="font-medium text-gray-900 dark:text-white">D{domain.id}</span>
-                  <span className="text-gray-500">{domain.weight}</span>
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{domain.name}</p>
-              </button>
-            ))}
-          </div>
+          </SectionCard>
 
           <a
             href="https://owasp.org/www-project-top-10-for-large-language-model-applications/"
