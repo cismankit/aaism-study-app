@@ -8,7 +8,10 @@ import {
 import {
   topics, glossary, owaspLLM, searchKnowledgeBase, Topic, Term,
 } from '../data/knowledgeBase';
-import { AAISM_DOMAIN_GUIDES, searchDomainGuides, type DomainGuide } from '../data/aaismDomainGuide';
+import { searchDomainGuides, type DomainGuide } from '../data/aaismDomainGuide';
+import { CERTIFICATIONS } from '../data/certifications';
+import { useCert } from '../context/CertContext';
+import CertSwitcher from '../components/CertSwitcher';
 import { STUDY_PATHS, PLATFORM_WORKFLOWS, PLATFORM_META_SECTIONS } from '../data/platformMeta';
 import { getContentStats } from '../data/examContent';
 import { useGamification } from '../context/GamificationContext';
@@ -173,11 +176,15 @@ function DomainGuidePanel({ guide }: { guide: DomainGuide }) {
 export default function KnowledgeBase() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { state: gameState } = useGamification();
-  const contentStats = getContentStats();
+  const { activeCert, setActiveCert } = useCert();
+  const contentStats = getContentStats(activeCert.id);
 
   const initialDomain = parseInt(searchParams.get('domain') || '1', 10);
+  const maxDomain = activeCert.domains.length > 0
+    ? Math.max(...activeCert.domains.map(d => d.id))
+    : 4;
   const [activeDomain, setActiveDomain] = useState(
-    initialDomain >= 1 && initialDomain <= 4 ? initialDomain : 1
+    initialDomain >= 1 && initialDomain <= maxDomain ? initialDomain : 1,
   );
   const [mainTab, setMainTab] = useState<MainTab>('domains');
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
@@ -191,21 +198,22 @@ export default function KnowledgeBase() {
 
   useEffect(() => {
     const d = parseInt(searchParams.get('domain') || '', 10);
-    if (d >= 1 && d <= 4) setActiveDomain(d);
-  }, [searchParams]);
+    if (d >= 1 && d <= maxDomain) setActiveDomain(d);
+  }, [searchParams, maxDomain]);
 
-  const activeGuide = AAISM_DOMAIN_GUIDES.find(g => g.id === activeDomain)!;
+  const certGuides = activeCert.domainGuides ?? [];
+  const activeGuide = certGuides.find(g => g.id === activeDomain);
 
   const domainProgress = useMemo(() => {
-    return [1, 2, 3, 4].map(id => {
-      const scores = gameState.domainScores[id] || [];
+    return activeCert.domains.map(d => {
+      const scores = gameState.domainScores[d.id] || [];
       const avg = scores.length > 0
         ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
         : 0;
-      const qCount = contentStats.questionsByDomain.find(d => d.domain === id)?.count ?? 0;
-      return { id, avg, qCount, attempts: scores.length };
+      const qCount = contentStats.questionsByDomain.find(x => x.domain === d.id)?.count ?? 0;
+      return { id: d.id, name: d.shortName, avg, qCount, attempts: scores.length };
     });
-  }, [gameState.domainScores, contentStats]);
+  }, [gameState.domainScores, contentStats, activeCert.domains]);
 
   const filteredTopics = topics.filter(t => t.domain === activeDomain);
   const filteredGlossary = glossary.filter(t => t.domain === activeDomain);
@@ -239,8 +247,32 @@ export default function KnowledgeBase() {
       <PageHeader
         icon={BookOpen}
         title="Knowledge Base"
-        subtitle="Domain guides, glossary, and reference — pick a domain below to start."
+        subtitle={`${activeCert.shortName} — domain guides, glossary, and reference.`}
       />
+
+      <div className="flex flex-wrap items-center gap-3">
+        <CertSwitcher />
+        {activeCert.status !== 'active' && (
+          <span className="text-[10px] px-2 py-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 font-medium">
+            {activeCert.status === 'preview' ? 'Preview track' : 'Coming soon'}
+          </span>
+        )}
+        {activeCert.id !== 'aaism' && (
+          <button
+            type="button"
+            onClick={() => setActiveCert('aaism')}
+            className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+          >
+            Switch to AAISM for full domain guides →
+          </button>
+        )}
+      </div>
+
+      {CERTIFICATIONS.filter(c => c.id !== activeCert.id).length > 0 && (
+        <p className="text-xs text-theme-muted">
+          Explore other tracks — use the cert picker above to switch between cybersecurity, AI, blockchain, and quantum paths.
+        </p>
+      )}
 
       {/* Collapsible study paths — avoids repeating Help Center content */}
       <section className="rounded-xl border border-emerald-500/20 overflow-hidden">
@@ -311,30 +343,33 @@ export default function KnowledgeBase() {
       </div>
 
       {/* Domain tabs with progress */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {AAISM_DOMAIN_GUIDES.map(guide => {
-          const prog = domainProgress.find(p => p.id === guide.id)!;
+      <div className={`grid grid-cols-2 gap-2 ${activeCert.domains.length > 4 ? 'sm:grid-cols-4' : 'sm:grid-cols-4'}`}>
+        {activeCert.domains.map(d => {
+          const prog = domainProgress.find(p => p.id === d.id)!;
+          const colorClass = DOMAIN_COLORS[d.id] ?? 'from-slate-500 to-slate-600';
           return (
             <button
-              key={guide.id}
-              onClick={() => handleDomainChange(guide.id)}
+              key={d.id}
+              onClick={() => handleDomainChange(d.id)}
               className={`p-3 rounded-xl text-left transition-all border ${
-                activeDomain === guide.id
-                  ? `bg-gradient-to-br ${DOMAIN_COLORS[guide.id]} text-white border-transparent shadow-lg`
+                activeDomain === d.id
+                  ? `bg-gradient-to-br ${colorClass} text-white border-transparent shadow-lg`
                   : 'bg-theme-elevated border-theme hover:border-emerald-400'
               }`}
             >
-              <div className="text-xs font-bold opacity-80">D{guide.id} · {guide.weight}</div>
-              <div className={`text-sm font-semibold mt-0.5 truncate ${activeDomain === guide.id ? 'text-white' : 'text-cockpit'}`}>
-                {guide.shortName}
+              <div className="text-xs font-bold opacity-80">
+                D{d.id}{d.weight ? ` · ${d.weight}` : ''}
               </div>
-              <div className={`text-[10px] mt-2 ${activeDomain === guide.id ? 'text-white/80' : 'text-gray-500'}`}>
+              <div className={`text-sm font-semibold mt-0.5 truncate ${activeDomain === d.id ? 'text-white' : 'text-cockpit'}`}>
+                {d.shortName}
+              </div>
+              <div className={`text-[10px] mt-2 ${activeDomain === d.id ? 'text-white/80' : 'text-gray-500'}`}>
                 {prog.qCount} questions · {prog.avg > 0 ? `${prog.avg}% ready` : 'Not started'}
               </div>
               {prog.avg > 0 && (
-                <div className={`h-1 rounded-full mt-1.5 overflow-hidden ${activeDomain === guide.id ? 'bg-white/30' : 'bg-gray-200 dark:bg-gray-700'}`}>
+                <div className={`h-1 rounded-full mt-1.5 overflow-hidden ${activeDomain === d.id ? 'bg-white/30' : 'bg-gray-200 dark:bg-gray-700'}`}>
                   <div
-                    className={`h-full rounded-full ${activeDomain === guide.id ? 'bg-white' : 'bg-emerald-500'}`}
+                    className={`h-full rounded-full ${activeDomain === d.id ? 'bg-white' : 'bg-emerald-500'}`}
                     style={{ width: `${prog.avg}%` }}
                   />
                 </div>
@@ -382,7 +417,24 @@ export default function KnowledgeBase() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          {mainTab === 'domains' && <DomainGuidePanel guide={activeGuide} />}
+          {mainTab === 'domains' && activeGuide && <DomainGuidePanel guide={activeGuide} />}
+          {mainTab === 'domains' && !activeGuide && (
+            <div className="p-6 rounded-xl bg-theme-elevated border border-theme osint-widget space-y-4">
+              <h2 className="text-lg font-semibold text-cockpit">
+                {activeCert.domains.find(d => d.id === activeDomain)?.name ?? `Domain ${activeDomain}`}
+              </h2>
+              <p className="text-sm text-cockpit-muted">
+                Full domain guides for {activeCert.shortName} are in preview. Practice questions and exam format are available —
+                deep-dive guides ship in a future update.
+              </p>
+              <p className="text-sm text-cockpit-muted">
+                {domainProgress.find(p => p.id === activeDomain)?.qCount ?? 0} practice questions in this domain.
+              </p>
+              <Link to="/study" className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline">
+                <Crosshair className="w-4 h-4" /> Start practice quiz
+              </Link>
+            </div>
+          )}
 
           {mainTab === 'topics' && (
             <div className="space-y-4">

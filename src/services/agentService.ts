@@ -1,6 +1,8 @@
 import { loadAIConfig, getModelCapability, getRecommendedFallbackModel, resolveAgentConfig, type AIConfig } from './aiService';
 import { runMultiAgentDiscovery, type ParsedQuestion } from './multiAgentOrchestrator';
-import { getAllQuestions, ALL_DOMAINS } from '../data/examContent';
+import { getAllQuestions, ALL_DOMAINS, getDomainsForCert } from '../data/examContent';
+import { getActiveCertId } from './certContextService';
+import { DEFAULT_CERT_ID } from '../data/certifications';
 import {
   type QuestionLead,
   type DiscoveryStrategy,
@@ -16,17 +18,21 @@ import {
 
 // ============ COVERAGE ANALYSIS ============
 
-export function analyzeCoverage(): {
+export function analyzeCoverage(certId?: string): {
   gaps: CoverageGap[];
   topicCounts: Record<string, number>;
   domainCounts: Record<number, number>;
   difficultyCounts: Record<string, number>;
   totalQuestions: number;
 } {
-  const existing = [...getAllQuestions(), ...getApprovedQuestions()];
+  const id = certId ?? getActiveCertId();
+  const domains = getDomainsForCert(id);
+  const domainIds = domains.map(d => d.id);
+  const existing = [...getAllQuestions(id), ...getApprovedQuestions()];
 
   const topicCounts: Record<string, number> = {};
-  const domainCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 };
+  const domainCounts: Record<number, number> = {};
+  domainIds.forEach(d => { domainCounts[d] = 0; });
   const difficultyCounts: Record<string, number> = { easy: 0, medium: 0, hard: 0 };
   const topicByDomainDifficulty: Record<string, { count: number; domain: number; difficulty: string }> = {};
 
@@ -44,17 +50,22 @@ export function analyzeCoverage(): {
   }
 
   const allTopics = new Set<string>();
-  ALL_DOMAINS.forEach(d => {
-    d.chapters.forEach(ch => {
-      ch.topics.forEach(t => allTopics.add(t.title));
+  if (id === DEFAULT_CERT_ID) {
+    ALL_DOMAINS.forEach(d => {
+      d.chapters.forEach(ch => {
+        ch.topics.forEach(t => allTopics.add(t.title));
+      });
     });
-  });
+  } else {
+    domains.forEach(d => allTopics.add(d.name));
+    existing.forEach(q => allTopics.add(q.topic || 'General'));
+  }
 
   const gaps: CoverageGap[] = [];
   const difficulties: Array<'easy' | 'medium' | 'hard'> = ['easy', 'medium', 'hard'];
 
   for (const topic of allTopics) {
-    for (const domain of [1, 2, 3, 4]) {
+    for (const domain of domainIds) {
       for (const diff of difficulties) {
         const key = `${domain}:${topic}:${diff}`;
         const entry = topicByDomainDifficulty[key];

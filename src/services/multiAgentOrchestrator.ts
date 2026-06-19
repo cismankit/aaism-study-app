@@ -9,7 +9,6 @@ import {
   resolveAgentConfig,
   resolveOllamaModel,
   defaultConfigs,
-  AAISM_CONTEXT,
   getModelCapability,
   getRecommendedFallbackModel,
   type AIConfig,
@@ -22,8 +21,9 @@ import {
   type LiveLogEntry,
 } from './agentService';
 import type { DiscoveryStrategy, CoverageGap } from './agentStore';
-import { getAllQuestions, type ExamQuestion } from '../data/examContent';
+import { getAllQuestions, getDomainsForCert, type ExamQuestion } from '../data/examContent';
 import { getApprovedQuestions } from './agentStore';
+import { getActiveCertification, buildCertTrainingContext } from './certContextService';
 
 export type AgentName = 'AnalystAgent' | 'DiscoverAgent' | 'CriticAgent' | 'DedupAgent';
 
@@ -168,14 +168,22 @@ function parseQuestions(response: string): ParsedQuestion[] {
 }
 
 function buildSimplePrompt(count: number, domain?: number): string {
-  const domainHint = domain ? `Focus on Domain ${domain}.` : 'Cover domains 1-4 evenly.';
-  return `Generate exactly ${count} ISACA AAISM exam questions. ${domainHint}
+  const cert = getActiveCertification();
+  const domains = getDomainsForCert(cert.id);
+  const maxDomain = domains.length > 0 ? Math.max(...domains.map(d => d.id)) : 4;
+  const domainHint = domain
+    ? `Focus on Domain ${domain}.`
+    : `Cover domains 1-${maxDomain} evenly.`;
+  return `Generate exactly ${count} ${cert.shortName} (${cert.vendor}) exam questions. ${domainHint}
 
-Return a JSON array. Each object: domain (1-4), question, options (4 strings with A/B/C/D), correctAnswer (0-3), explanation, difficulty (easy/medium/hard), topic, confidence (0-100).
-
-Example: [{"domain":1,"question":"What is the PRIMARY purpose of an AI Governance Board?","options":["A) Develop models","B) Provide oversight","C) Replace IT","D) Approve contracts"],"correctAnswer":1,"explanation":"Board provides oversight.","difficulty":"medium","topic":"AI Governance","confidence":85}]
+Return a JSON array. Each object: domain (1-${maxDomain}), question, options (4 strings with A/B/C/D), correctAnswer (0-3), explanation, difficulty (easy/medium/hard), topic, confidence (0-100).
 
 JSON array only.`;
+}
+
+function getDiscoveryContext(): string {
+  const cert = getActiveCertification();
+  return `${buildCertTrainingContext(cert)}\n\nYou generate ${cert.shortName} exam questions. Return ONLY valid JSON arrays.`;
 }
 
 async function callWithHeartbeat(
@@ -220,7 +228,7 @@ export async function runDiscoverAgent(
   const gapSummary = topGaps.slice(0, 5).map(g => `D${g.domain} ${g.topic} [${g.difficulty}]`).join(', ');
 
   const messages: Message[] = [
-    { role: 'system', content: `${AAISM_CONTEXT}\n\nYou generate ISACA AAISM exam questions. Return ONLY valid JSON arrays.` },
+    { role: 'system', content: getDiscoveryContext() },
     { role: 'user', content: buildSimplePrompt(count, ctx.strategy.targetDomain) +
       `\n\nStrategy: ${ctx.strategy.type}. Target: ${domainHint}. Gaps: ${gapSummary}.` +
       `\n\nStyle reference:\n${sampleQuestions.slice(0, 2).map(q => q.question).join('\n')}` },
@@ -290,13 +298,17 @@ export function runCriticAgent(
   agentLog('CriticAgent', ctx.callbacks, 'score', `Validating ${questions.length} questions (rule-based)`);
   ctx.callbacks.onPhaseChange('score', 'CriticAgent validating output...');
 
+  const maxDomain = Math.max(
+    ...getDomainsForCert(getActiveCertification().id).map(d => d.id),
+    4,
+  );
   const validated = questions.filter(q => {
     const valid =
       q.question.length >= 15 &&
       q.options.length === 4 &&
       q.options.every(o => o.length > 2) &&
       q.explanation.length >= 10 &&
-      q.domain >= 1 && q.domain <= 4;
+      q.domain >= 1 && q.domain <= maxDomain;
 
     if (!valid) {
       agentLog('CriticAgent', ctx.callbacks, 'score', `Rejected malformed question: ${q.question.slice(0, 40)}...`, 'warning');
@@ -383,7 +395,7 @@ async function runCriticAgentLLM(
   }));
 
   const messages: Message[] = [
-    { role: 'system', content: `${AAISM_CONTEXT}\n\nYou validate ISACA AAISM exam questions. Return ONLY JSON.` },
+    { role: 'system', content: `${getDiscoveryContext()}\n\nYou validate exam questions. Return ONLY JSON.` },
     { role: 'user', content: `Review these ${reviewPayload.length} questions. Return JSON: {"approved":[0,1,...],"rejected":[2],"notes":"..."}
 Reject questions that are off-topic, have ambiguous answers, or poor distractors.
 

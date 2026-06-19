@@ -14,7 +14,7 @@ import { getPipelineStats } from '../services/agentService';
 import { analyzeQuestionPatterns } from '../services/intelligenceAgent';
 import { PLAYBOOKS } from '../data/playbooks';
 import { LEARNING_PATH_WIDGET } from '../data/platformMeta';
-import { AAISM_DOMAIN_GUIDES } from '../data/aaismDomainGuide';
+import { useCert } from '../context/CertContext';
 import {
   getLatestRelease,
   getNewReleasesSince,
@@ -24,6 +24,7 @@ import {
 } from '../data/releaseFeed';
 import { consumeOnboardingHint, type OnboardingHint } from '../components/OnboardingWizard';
 import DomainMicroQuizModal, { WEAK_THRESHOLD } from '../components/DomainMicroQuizModal';
+import { CertTrainingBadge } from '../components/CertSwitcher';
 import { PLATFORM_ROADMAP, ROADMAP_STATUS_LABEL } from '../data/platformRoadmap';
 import { OSINT_SOURCES } from '../data/osintSources';
 import { getReadinessScore, getDomainProgress } from '../services/progressService';
@@ -48,6 +49,7 @@ const ONBOARDING_ACTIONS: Record<OnboardingHint, NextAction> = {
 export default function CommandCenter() {
   const navigate = useNavigate();
   const { state } = useApp();
+  const { activeCert } = useCert();
   const { state: gameState } = useGamification();
   const currentLevel = getLevelFromXP(gameState.xp);
   const xpProgress = getXPProgress(gameState.xp);
@@ -199,15 +201,18 @@ export default function CommandCenter() {
         <div>
           <div className="flex items-center gap-2 text-[10px] font-mono text-accent-emerald tracking-[0.25em] uppercase">
             <Radio className="w-3 h-3 animate-pulse-dot" />
-            Mission Control · AAISM-OPS
+            Mission Control · {activeCert.shortName}-OPS
           </div>
           <h1 className="text-2xl font-bold text-cockpit mt-1 flex items-center gap-2">
             <LayoutDashboard className="w-6 h-6 text-emerald-600 dark:text-emerald-500" />
             Command Center
           </h1>
           <p className="text-xs text-theme-muted mt-0.5">
-            Pilot seat — readiness, intel, and quick throttle to all ops
+            {activeCert.name} — readiness, intel, and quick throttle to all ops
           </p>
+          <div className="mt-2">
+            <CertTrainingBadge />
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -414,24 +419,24 @@ export default function CommandCenter() {
         {/* Right instrument panel */}
         <div className="lg:col-span-3 space-y-3 order-3">
           <InstrumentPanel title="Domain Readiness" icon={Target} accent="emerald">
-            {state.domains.map(domain => {
-              const scores = gameState.domainScores[domain.id] || [];
+            {activeCert.domains.map(certDomain => {
+              const scores = gameState.domainScores[certDomain.id] || [];
               const avg = scores.length > 0 ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length) : 0;
               return (
                 <button
-                  key={domain.id}
+                  key={certDomain.id}
                   onClick={() => {
                     if (avg > 0 && avg < WEAK_THRESHOLD) {
-                      setMicroQuizDomain({ id: domain.id, name: domain.name });
+                      setMicroQuizDomain({ id: certDomain.id, name: certDomain.name });
                     } else {
-                      navigate('/study', { state: { startQuiz: true, domainId: domain.id } });
+                      navigate('/study', { state: { startQuiz: true, domainId: certDomain.id } });
                     }
                   }}
                   className="w-full mb-2 group last:mb-0"
                   title={avg > 0 && avg < WEAK_THRESHOLD ? '3-question micro-drill for weak domain' : undefined}
                 >
                   <div className="flex items-center justify-between text-[10px] mb-1">
-                    <span className="truncate text-cockpit-muted">D{domain.id}: {domain.name}</span>
+                    <span className="truncate text-cockpit-muted">D{certDomain.id}: {certDomain.shortName}</span>
                     <span className={`font-bold font-mono ${avg >= 80 ? 'text-emerald-700 dark:text-emerald-400' : avg >= 60 ? 'text-amber-700 dark:text-amber-400' : avg > 0 ? 'text-red-600 dark:text-red-400' : 'text-cockpit-subtle'}`}>
                       {avg > 0 ? `${avg}%` : '—'}
                     </span>
@@ -569,7 +574,7 @@ export default function CommandCenter() {
               }
             >
               <div className="space-y-2">
-                {AAISM_DOMAIN_GUIDES.slice(0, 3).map(guide => (
+                {activeCert.domainGuides?.slice(0, 3).map(guide => (
                   <button
                     key={guide.id}
                     onClick={() => navigate(`/knowledge?domain=${guide.id}`)}

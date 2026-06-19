@@ -35,6 +35,8 @@ import OllamaModelManager from '../components/OllamaModelManager';
 import GroqApiKeySection from '../components/GroqApiKeySection';
 import SignInSyncSection from '../components/SignInSyncSection';
 import IntegrationsSettings from '../components/IntegrationsSettings';
+import { useCert } from '../context/CertContext';
+import { CERTIFICATIONS } from '../data/certifications';
 import { 
   Play,
   Target, 
@@ -714,6 +716,7 @@ type SettingsSection = 'ai' | 'integrations' | 'sync' | 'progress' | 'about';
 
 function SettingsTab() {
   const [section, setSection] = useState<SettingsSection>('ai');
+  const { defaultCertId, setDefaultCert, activeCert } = useCert();
   const [config, setConfig] = useState<AIConfig>(loadAIConfig);
   const [saved, setSaved] = useState(false);
   const [savedApiKey, setSavedApiKey] = useState(() => loadAIConfig().apiKey);
@@ -822,6 +825,24 @@ function SettingsTab() {
 
       {section === 'ai' && (
       <>
+      <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
+        <h3 className="font-semibold text-cockpit mb-2">Default certification track</h3>
+        <p className="text-sm text-cockpit-muted mb-4">
+          Certification loaded on startup. Active track: {activeCert.shortName}.
+        </p>
+        <select
+          value={defaultCertId}
+          onChange={e => setDefaultCert(e.target.value)}
+          className="w-full px-3 py-2 border border-theme rounded-lg bg-theme-elevated text-cockpit text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+        >
+          {CERTIFICATIONS.map(c => (
+            <option key={c.id} value={c.id}>
+              {c.shortName} — {c.vendor} ({c.status})
+            </option>
+          ))}
+        </select>
+      </div>
+
       {/* AI Settings */}
       <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
         <h3 className="font-semibold text-cockpit mb-4 flex items-center gap-2">

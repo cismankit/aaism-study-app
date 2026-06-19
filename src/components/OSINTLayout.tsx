@@ -6,8 +6,10 @@ import {
   HelpCircle, LifeBuoy, Heart, Sparkles, ChevronDown, Globe, PenLine,
 } from 'lucide-react';
 import Logo from './Logo';
+import CertSwitcher from './CertSwitcher';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AppProvider } from '../context/AppContext';
+import { CertProvider } from '../context/CertContext';
 import { GamificationProvider, useGamification } from '../context/GamificationContext';
 import { useTheme } from '../context/ThemeContext';
 import { getLevelFromXP } from '../data/gamificationData';
@@ -155,7 +157,7 @@ function Sidebar({
             <div className="sidebar-label overflow-hidden flex-1">
               <div className="text-sm font-bold text-cockpit leading-tight tracking-[0.12em] font-sans">AAISM</div>
               <div className="text-[10px] text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-400 dark:to-cyan-400 leading-tight tracking-wide font-medium">
-                Intelligence Platform
+                Multi-Cert Command Center
               </div>
             </div>
             <button
@@ -179,6 +181,18 @@ function Sidebar({
           </button>
         )}
       </div>
+
+      {/* Cert switcher */}
+      {!collapsed && (
+        <div className="px-2 py-2 border-b border-theme dark:border-gray-800">
+          <CertSwitcher />
+        </div>
+      )}
+      {collapsed && (
+        <div className="px-1 py-2 border-b border-theme dark:border-gray-800 flex justify-center">
+          <CertSwitcher compact />
+        </div>
+      )}
 
       {/* Nav sections */}
       <nav ref={navRef} className="sidebar-dock-nav flex-1 overflow-y-auto py-2 px-1.5 space-y-1" {...dockHandlers}>
@@ -348,6 +362,7 @@ function TopBar({
       </div>
 
       <div className="flex items-center gap-2">
+        <CertSwitcher compact />
         <button
           onClick={onOpenSearch}
           className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-cockpit-muted bg-cockpit-track hover:text-cockpit dark:hover:text-gray-300 transition-colors"
@@ -552,12 +567,14 @@ function LayoutContent() {
 
 export default function OSINTLayout() {
   return (
-    <AppProvider>
-      <GamificationProvider>
-        <PerformanceProvider>
-          <LayoutContent />
-        </PerformanceProvider>
-      </GamificationProvider>
-    </AppProvider>
+    <CertProvider>
+      <AppProvider>
+        <GamificationProvider>
+          <PerformanceProvider>
+            <LayoutContent />
+          </PerformanceProvider>
+        </GamificationProvider>
+      </AppProvider>
+    </CertProvider>
   );
 }

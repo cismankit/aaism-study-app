@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
+import { useCert } from '../context/CertContext';
 import { usePerformance } from '../components/OSINTLayout';
 import { getAllQuestions, getQuestionsByDomain, ExamQuestion } from '../data/examContent';
 import { 
@@ -38,7 +39,6 @@ import {
 } from 'lucide-react';
 import Tutor from './Tutor';
 import RemediationPanel from '../components/RemediationPanel';
-import { EXAM_QUESTION_COUNT, EXAM_DURATION_SECONDS } from '../constants/examConfig';
 
 type Tab = 'tutor' | 'notes' | 'flashcards' | 'quiz' | 'exam';
 type QuizState = 'setup' | 'active' | 'review';
@@ -49,6 +49,7 @@ export default function Study() {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<Tab>('tutor');
   const { setBgColor } = usePerformance();
+  const { activeCert } = useCert();
   const [quizBootstrap, setQuizBootstrap] = useState<{ domainId?: number; questionCount?: number } | null>(null);
 
   // Handle URL params for quiz generation
@@ -114,8 +115,10 @@ export default function Study() {
               <div className="flex items-center gap-2">
                 <ClipboardList className="w-5 h-5 text-red-500" />
                 <div>
-                  <div className="text-sm font-semibold text-cockpit">Timed Exam Mode</div>
-                  <div className="text-xs text-theme-muted">90 questions · 150 min · ISACA AAISM sim</div>
+                  <div className="text-sm font-semibold text-cockpit">{activeCert.shortName} Timed Exam</div>
+                  <div className="text-xs text-theme-muted">
+                    {activeCert.examFormat?.questions ?? 90} questions · {activeCert.examFormat?.minutes ?? 150} min · {activeCert.vendor}
+                  </div>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-red-400 group-hover:translate-x-0.5 transition-transform" />
@@ -152,6 +155,9 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
   const { addQuizAttempt } = useApp();
   const { completeQuiz } = useGamification();
   const { setBgColor } = usePerformance();
+  const { activeCert } = useCert();
+  const examQuestionCount = activeCert.examFormat?.questions ?? 90;
+  const examDurationSeconds = (activeCert.examFormat?.minutes ?? 150) * 60;
   const [quizState, setQuizState] = useState<QuizState>('setup');
   const [quizMode, setQuizMode] = useState<QuizMode>('practice');
   const [selectedDomain, setSelectedDomain] = useState<number | 'all'>('all');
@@ -163,7 +169,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
   const [questions, setQuestions] = useState<ShuffledQuestion[]>([]);
   const [examTimer, setExamTimer] = useState(0); // seconds remaining
 
-  const allQuestions = getAllQuestions();
+  const allQuestions = getAllQuestions(activeCert.id);
 
   // Exam timer countdown
   useEffect(() => {
@@ -249,7 +255,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
     const shuffledQs = [...qs].sort(() => Math.random() - 0.5);
     
     // Limit to 10 for practice, 90 for exam sim (real AAISM exam = 90 questions)
-    const count = quizMode === 'exam' ? Math.min(90, shuffledQs.length) : Math.min(10, shuffledQs.length);
+    const count = quizMode === 'exam' ? Math.min(examQuestionCount, shuffledQs.length) : Math.min(10, shuffledQs.length);
     const selectedQs = shuffledQs.slice(0, count);
     
     // Shuffle answer options for each question
@@ -263,7 +269,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
     setEarnedXP(0);
     // Set timer for exam mode: 150 minutes total (ISACA AAISM)
     if (quizMode === 'exam') {
-      setExamTimer(EXAM_DURATION_SECONDS);
+      setExamTimer(examDurationSeconds);
     }
     setQuizState('active');
   };
@@ -332,12 +338,11 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
 
   // SETUP STATE
   if (quizState === 'setup') {
-    const domainInfo = [
-      { id: 1, name: 'AI Governance & Program Mgmt (31%)', icon: '🏛️' },
-      { id: 2, name: 'AI Risk Management (31%)', icon: '⚠️' },
-      { id: 3, name: 'AI Technologies & Controls (38%)', icon: '⚙️' },
-      { id: 4, name: 'AI Operations (Part of D3)', icon: '📊' },
-    ];
+    const domainInfo = activeCert.domains.map(d => ({
+      id: d.id,
+      name: d.name,
+      icon: d.icon ?? '📘',
+    }));
 
     return (
       <div className="bg-theme-elevated rounded-xl border border-theme p-8">
@@ -346,7 +351,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
             <Target className="text-primary-600" size={32} />
           </div>
           <h2 className="text-2xl font-bold text-cockpit">Practice Quiz</h2>
-          <p className="text-theme-muted mt-2">Test your knowledge across AAISM exam domains</p>
+          <p className="text-theme-muted mt-2">Test your knowledge across {activeCert.shortName} exam domains</p>
         </div>
 
         {/* Mode Selection */}
@@ -1249,10 +1254,13 @@ function ExamSimTab() {
   const { addQuizAttempt } = useApp();
   const { completeQuiz } = useGamification();
   const { setBgColor } = usePerformance();
+  const { activeCert } = useCert();
+  const examQuestionCount = activeCert.examFormat?.questions ?? 90;
+  const examDurationSeconds = (activeCert.examFormat?.minutes ?? 150) * 60;
   const [examState, setExamState] = useState<'setup' | 'active' | 'review'>('setup');
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
-  const [timeRemaining, setTimeRemaining] = useState(150 * 60); // 150 minutes
+  const [timeRemaining, setTimeRemaining] = useState(examDurationSeconds);
   const [questions, setQuestions] = useState<ShuffledQuestion[]>([]);
 
   // Update background based on state
@@ -1290,13 +1298,13 @@ function ExamSimTab() {
   };
 
   const startExam = () => {
-    const allQ = getAllQuestions();
-    const selected = allQ.sort(() => Math.random() - 0.5).slice(0, EXAM_QUESTION_COUNT);
+    const allQ = getAllQuestions(activeCert.id);
+    const selected = allQ.sort(() => Math.random() - 0.5).slice(0, examQuestionCount);
     const shuffled = selected.map(shuffleOptions);
     setQuestions(shuffled);
     setAnswers(new Array(shuffled.length).fill(null));
     setCurrentQ(0);
-    setTimeRemaining(EXAM_DURATION_SECONDS);
+    setTimeRemaining(examDurationSeconds);
     setExamState('active');
   };
 
@@ -1337,17 +1345,17 @@ function ExamSimTab() {
           Exam Simulation
         </h2>
         <p className="text-cockpit-muted mb-6 max-w-md mx-auto">
-          Simulate the real AAISM exam experience with {EXAM_QUESTION_COUNT} questions and a 150-minute timer.
+          Simulate the {activeCert.shortName} exam with {examQuestionCount} questions and a {activeCert.examFormat?.minutes ?? 150}-minute timer.
           For the full timed mode with flagging and domain breakdown, use the dedicated exam route.
         </p>
         
         <div className="grid grid-cols-3 gap-4 mb-6 max-w-md mx-auto">
           <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
-            <div className="text-2xl font-bold text-cockpit">{EXAM_QUESTION_COUNT}</div>
+            <div className="text-2xl font-bold text-cockpit">{examQuestionCount}</div>
             <div className="text-xs text-theme-muted">Questions</div>
           </div>
           <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
-            <div className="text-2xl font-bold text-cockpit">150</div>
+            <div className="text-2xl font-bold text-cockpit">{activeCert.examFormat?.minutes ?? 150}</div>
             <div className="text-xs text-theme-muted">Minutes</div>
           </div>
           <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">

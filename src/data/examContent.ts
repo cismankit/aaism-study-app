@@ -4,6 +4,9 @@
 import { ADDITIONAL_QUESTIONS } from './additionalQuestions';
 import { SCENARIO_QUESTIONS } from './expandedQuestions';
 import { BULK_QUESTIONS } from './bulkQuestions';
+import { PREVIEW_CERT_QUESTIONS } from './certifications/questions/previewQuestions';
+import { DEFAULT_CERT_ID, getCertification } from './certifications/registry';
+import { getActiveCertId } from '../services/certContextService';
 
 export interface ExamTopic {
   id: string;
@@ -35,6 +38,7 @@ export interface Domain {
 export interface ExamQuestion {
   id: string;
   domain: number;
+  certId?: string;
   chapter?: string;
   question: string;
   options: string[];
@@ -42,6 +46,26 @@ export interface ExamQuestion {
   explanation: string;
   difficulty: 'easy' | 'medium' | 'hard';
   topic: string;
+}
+
+export function resolveQuestionCertId(q: ExamQuestion): string {
+  return q.certId ?? DEFAULT_CERT_ID;
+}
+
+export function getDomainsForCert(certId?: string) {
+  const id = certId ?? getActiveCertId();
+  const cert = getCertification(id);
+  if (!cert) return ALL_DOMAINS;
+  if (id === DEFAULT_CERT_ID) return ALL_DOMAINS;
+  return cert.domains.map(d => ({
+    id: d.id,
+    name: d.name,
+    weight: d.weight ?? '',
+    description: d.shortName,
+    chapters: [] as Chapter[],
+    keyFrameworks: [] as string[],
+    learningObjectives: [] as string[],
+  }));
 }
 
 // ============================================
@@ -1698,57 +1722,66 @@ function getAgentApprovedQuestions(): ExamQuestion[] {
   return [];
 }
 
-// Get all practice questions (including additional + scenario + agent-discovered banks)
-export function getAllQuestions(): ExamQuestion[] {
+function collectAaismQuestions(): ExamQuestion[] {
   const questions: ExamQuestion[] = [];
   ALL_DOMAINS.forEach(domain => {
     domain.chapters.forEach(chapter => {
       questions.push(...chapter.practiceQuestions);
     });
   });
-  // Add the expanded question banks
   questions.push(...ADDITIONAL_QUESTIONS);
   questions.push(...SCENARIO_QUESTIONS);
   questions.push(...BULK_QUESTIONS);
-  // Add agent-discovered approved questions
   questions.push(...getAgentApprovedQuestions());
   return questions;
 }
 
-// Get questions by domain (including additional expanded question bank)
-export function getQuestionsByDomain(domainId: number): ExamQuestion[] {
-  const domain = ALL_DOMAINS.find(d => d.id === domainId);
-  if (!domain) return [];
-  
-  const questions: ExamQuestion[] = [];
-  domain.chapters.forEach(chapter => {
-    questions.push(...chapter.practiceQuestions);
-  });
-  
-  // Add additional questions for this domain
-  const additionalForDomain = ADDITIONAL_QUESTIONS.filter(q => q.domain === domainId);
-  questions.push(...additionalForDomain);
-  
-  // Add scenario questions for this domain
-  const scenarioForDomain = SCENARIO_QUESTIONS.filter(q => q.domain === domainId);
-  questions.push(...scenarioForDomain);
-
-  const bulkForDomain = BULK_QUESTIONS.filter(q => q.domain === domainId);
-  questions.push(...bulkForDomain);
-  
-  return questions;
+// Get all practice questions for active (or specified) cert
+export function getAllQuestions(certId?: string): ExamQuestion[] {
+  const id = certId ?? getActiveCertId();
+  if (id === DEFAULT_CERT_ID) {
+    return collectAaismQuestions();
+  }
+  return PREVIEW_CERT_QUESTIONS.filter(q => resolveQuestionCertId(q) === id);
 }
 
-// Get questions by difficulty
-export function getQuestionsByDifficulty(difficulty: 'easy' | 'medium' | 'hard'): ExamQuestion[] {
-  return getAllQuestions().filter(q => q.difficulty === difficulty);
+// Get questions by domain for active (or specified) cert
+export function getQuestionsByDomain(domainId: number, certId?: string): ExamQuestion[] {
+  const id = certId ?? getActiveCertId();
+  if (id === DEFAULT_CERT_ID) {
+    const domain = ALL_DOMAINS.find(d => d.id === domainId);
+    if (!domain) return [];
+
+    const questions: ExamQuestion[] = [];
+    domain.chapters.forEach(chapter => {
+      questions.push(...chapter.practiceQuestions);
+    });
+    questions.push(...ADDITIONAL_QUESTIONS.filter(q => q.domain === domainId));
+    questions.push(...SCENARIO_QUESTIONS.filter(q => q.domain === domainId));
+    questions.push(...BULK_QUESTIONS.filter(q => q.domain === domainId));
+    return questions;
+  }
+  return PREVIEW_CERT_QUESTIONS.filter(
+    q => resolveQuestionCertId(q) === id && q.domain === domainId,
+  );
 }
 
-// Get random exam simulation (90 questions like real AAISM exam)
-export function getExamSimulation(questionCount: number = 90): ExamQuestion[] {
-  const allQuestions = getAllQuestions();
+// Get questions by difficulty for active cert
+export function getQuestionsByDifficulty(
+  difficulty: 'easy' | 'medium' | 'hard',
+  certId?: string,
+): ExamQuestion[] {
+  return getAllQuestions(certId).filter(q => q.difficulty === difficulty);
+}
+
+// Get random exam simulation sized to active cert exam format
+export function getExamSimulation(questionCount?: number, certId?: string): ExamQuestion[] {
+  const id = certId ?? getActiveCertId();
+  const cert = getCertification(id);
+  const count = questionCount ?? cert?.examFormat?.questions ?? 90;
+  const allQuestions = getAllQuestions(id);
   const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, Math.min(questionCount, shuffled.length));
+  return shuffled.slice(0, Math.min(count, shuffled.length));
 }
 
 // Get domain by ID
@@ -1763,19 +1796,27 @@ export function getChapterById(domainId: number, chapterId: string): Chapter | u
   return domain.chapters.find(c => c.id === chapterId);
 }
 
-// Statistics
-export function getContentStats() {
-  const allQuestions = getAllQuestions();
+// Statistics for active cert
+export function getContentStats(certId?: string) {
+  const id = certId ?? getActiveCertId();
+  const domains = getDomainsForCert(id);
+  const allQuestions = getAllQuestions(id);
+  const aaismChapters = id === DEFAULT_CERT_ID
+    ? ALL_DOMAINS.reduce((acc, d) => acc + d.chapters.length, 0)
+    : 0;
+  const aaismTopics = id === DEFAULT_CERT_ID
+    ? ALL_DOMAINS.reduce((acc, d) =>
+        acc + d.chapters.reduce((acc2, c) => acc2 + c.topics.length, 0), 0)
+    : 0;
   return {
-    totalDomains: ALL_DOMAINS.length,
-    totalChapters: ALL_DOMAINS.reduce((acc, d) => acc + d.chapters.length, 0),
-    totalTopics: ALL_DOMAINS.reduce((acc, d) => 
-      acc + d.chapters.reduce((acc2, c) => acc2 + c.topics.length, 0), 0),
+    totalDomains: domains.length,
+    totalChapters: aaismChapters,
+    totalTopics: aaismTopics,
     totalQuestions: allQuestions.length,
-    questionsByDomain: ALL_DOMAINS.map(d => ({
+    questionsByDomain: domains.map(d => ({
       domain: d.id,
       name: d.name,
-      count: getQuestionsByDomain(d.id).length
+      count: getQuestionsByDomain(d.id, id).length,
     })),
     questionsByDifficulty: {
       easy: getQuestionsByDifficulty('easy').length,

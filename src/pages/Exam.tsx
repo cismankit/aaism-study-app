@@ -12,9 +12,8 @@ import { useGamification } from '../context/GamificationContext';
 import {
   getExamSimulation, ExamQuestion,
 } from '../data/examContent';
+import { useCert } from '../context/CertContext';
 import {
-  EXAM_QUESTION_COUNT,
-  EXAM_DURATION_SECONDS,
   EXAM_MAX_PAUSES,
 } from '../constants/examConfig';
 import {
@@ -69,18 +68,28 @@ const DOMAIN_NAMES: Record<number, string> = {
   4: 'AI Operations',
 };
 
+function getDomainLabel(domainId: number, certDomains: Array<{ id: number; shortName: string }>): string {
+  const d = certDomains.find(x => x.id === domainId);
+  return d?.shortName ?? DOMAIN_NAMES[domainId] ?? `Domain ${domainId}`;
+}
+
 export default function Exam() {
   const navigate = useNavigate();
   const { addQuizAttempt } = useApp();
   const { completeQuiz } = useGamification();
   const { setBgColor } = usePerformance();
+  const { activeCert } = useCert();
+
+  const examQuestionCount = activeCert.examFormat?.questions ?? 90;
+  const examDurationSeconds = (activeCert.examFormat?.minutes ?? 150) * 60;
+  const certDomains = activeCert.domains;
 
   const [examState, setExamState] = useState<ExamState>('setup');
   const [questions, setQuestions] = useState<ShuffledQuestion[]>([]);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [flagged, setFlagged] = useState<Set<number>>(new Set());
   const [currentQ, setCurrentQ] = useState(0);
-  const [timeRemaining, setTimeRemaining] = useState(EXAM_DURATION_SECONDS);
+  const [timeRemaining, setTimeRemaining] = useState(examDurationSeconds);
   const [pauseCount, setPauseCount] = useState(0);
   const [timeUsed, setTimeUsed] = useState(0);
   const [domainBreakdown, setDomainBreakdown] = useState<Record<number, DomainBreakdown>>({});
@@ -104,7 +113,7 @@ export default function Exam() {
     );
     const pct = Math.round((correct / questions.length) * 100);
     const didPass = pct >= passThreshold;
-    const used = EXAM_DURATION_SECONDS - timeRemaining;
+    const used = examDurationSeconds - timeRemaining;
     const breakdown = computeDomainBreakdown(questions, finalAnswers);
 
     setCorrectCount(correct);
@@ -137,7 +146,7 @@ export default function Exam() {
     });
 
     setExamState('review');
-  }, [questions, timeRemaining, passThreshold, flagged.size, pauseCount, addQuizAttempt, completeQuiz, setBgColor]);
+  }, [questions, timeRemaining, passThreshold, flagged.size, pauseCount, addQuizAttempt, completeQuiz, setBgColor, examDurationSeconds]);
 
   useEffect(() => {
     if (examState !== 'active') return;
@@ -154,13 +163,13 @@ export default function Exam() {
   }, [examState, answers, finishExam]);
 
   const startExam = () => {
-    const raw = getExamSimulation(EXAM_QUESTION_COUNT);
+    const raw = getExamSimulation(examQuestionCount, activeCert.id);
     const shuffled = raw.map(shuffleOptions);
     setQuestions(shuffled);
     setAnswers(new Array(shuffled.length).fill(null));
     setFlagged(new Set());
     setCurrentQ(0);
-    setTimeRemaining(EXAM_DURATION_SECONDS);
+    setTimeRemaining(examDurationSeconds);
     setPauseCount(0);
     setExamState('active');
   };
@@ -194,8 +203,8 @@ export default function Exam() {
     return (
       <div className="max-w-2xl mx-auto">
         <PageHeader
-          title="Timed Exam Mode"
-          subtitle="Full ISACA AAISM simulation — 90 questions, 150 minutes, no hints"
+          title={`${activeCert.shortName} Timed Exam`}
+          subtitle={`${activeCert.vendor} simulation — ${examQuestionCount} questions, ${activeCert.examFormat?.minutes ?? 150} minutes, no hints`}
           icon={ClipboardList}
           iconClassName="text-red-500"
         />
@@ -207,11 +216,11 @@ export default function Exam() {
 
           <div className="grid grid-cols-3 gap-4 mb-6 max-w-md mx-auto">
             <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
-              <div className="text-2xl font-bold text-cockpit">{EXAM_QUESTION_COUNT}</div>
+              <div className="text-2xl font-bold text-cockpit">{examQuestionCount}</div>
               <div className="text-xs text-theme-muted">Questions</div>
             </div>
             <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
-              <div className="text-2xl font-bold text-cockpit">150</div>
+              <div className="text-2xl font-bold text-cockpit">{activeCert.examFormat?.minutes ?? 150}</div>
               <div className="text-xs text-theme-muted">Minutes</div>
             </div>
             <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
@@ -412,7 +421,7 @@ export default function Exam() {
         </p>
         <p className="text-sm text-theme-muted mb-6 flex items-center justify-center gap-1">
           <Clock className="w-4 h-4" />
-          Time used: {formatTime(timeUsed)} / {formatTime(EXAM_DURATION_SECONDS)}
+          Time used: {formatTime(timeUsed)} / {formatTime(examDurationSeconds)}
         </p>
 
         {/* Domain breakdown chart */}
@@ -426,7 +435,7 @@ export default function Exam() {
               <div key={domainId}>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-cockpit-muted">
-                    D{domainId}: {DOMAIN_NAMES[Number(domainId)] ?? `Domain ${domainId}`}
+                    D{domainId}: {getDomainLabel(Number(domainId), certDomains)}
                   </span>
                   <span className={`font-mono font-bold ${
                     data.pct >= passThreshold ? 'text-green-600' : 'text-red-500'

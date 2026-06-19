@@ -121,6 +121,12 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
     status: 'shipped',
   },
   {
+    id: 'multi-cert-platform',
+    title: 'Multi-cert Swiss Knife',
+    summary: 'Cert registry, global switcher, cert-filtered questions, KB, exam format, and agent prompts across cybersecurity, AI, blockchain, and quantum tracks.',
+    status: 'partial',
+  },
+  {
     id: 'question-bank-300',
     title: '300+ question bank',
     summary: 'Expanded exam-realistic questions across D1–D4 with varied difficulty in bulk question bank.',

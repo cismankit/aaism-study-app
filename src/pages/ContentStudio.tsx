@@ -34,7 +34,7 @@ import {
 } from '../services/contentStudioService';
 import { checkLLMHealth, getFixSteps, subscribeLLMHealth, type LLMHealthReport } from '../services/llmHealthService';
 import { addToContentQueue } from '../services/contentQueueService';
-import { AAISM_DOMAIN_GUIDES } from '../data/aaismDomainGuide';
+import { useCert } from '../context/CertContext';
 import { topics } from '../data/knowledgeBase';
 
 type StudioStep = 1 | 2 | 3 | 4;
@@ -51,6 +51,7 @@ const FORMAT_ICONS: Record<ContentFormatId, string> = {
 
 export default function ContentStudio() {
   const [searchParams] = useSearchParams();
+  const { activeCert } = useCert();
   const [step, setStep] = useState<StudioStep>(1);
   const [source, setSource] = useState<ContentSource>(() => resolveSourceFromParams(searchParams));
   const [sourceType, setSourceType] = useState<ContentSource['type']>(source.type);
@@ -195,7 +196,7 @@ export default function ContentStudio() {
         icon={PenLine}
         iconClassName="text-violet-500"
         title="Content Studio"
-        subtitle="Turn AAISM study intel into LinkedIn posts, YouTube scripts, GitHub READMEs, and more — powered by free LLMs."
+        subtitle={`Turn ${activeCert.shortName} study intel into LinkedIn posts, YouTube scripts, GitHub READMEs, and more.`}
         action={
           <div className="flex items-center gap-2">
             <button
@@ -279,13 +280,13 @@ export default function ContentStudio() {
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-medium text-theme-muted mb-1 block">AAISM Domain</label>
+                <label className="text-xs font-medium text-theme-muted mb-1 block">{activeCert.shortName} Domain</label>
                 <select
                   value={source.domain ?? 1}
                   onChange={e => updateSource({ domain: parseInt(e.target.value, 10) })}
                   className="w-full px-3 py-2 rounded-lg border border-theme bg-theme-elevated text-sm"
                 >
-                  {AAISM_DOMAIN_GUIDES.map(g => (
+                  {activeCert.domains.map(g => (
                     <option key={g.id} value={g.id}>D{g.id}: {g.shortName}</option>
                   ))}
                 </select>
