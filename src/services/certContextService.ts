@@ -59,7 +59,6 @@ export function buildCertTrainingContext(cert: Certification): string {
 
 Category: ${cert.category}
 Exam format: ${format}
-Status: ${cert.status}
 
 ## Exam Domains:
 ${domainLines.join('\n')}

@@ -24,7 +24,6 @@ import {
 } from '../data/releaseFeed';
 import { consumeOnboardingHint, type OnboardingHint } from '../components/OnboardingWizard';
 import DomainMicroQuizModal, { WEAK_THRESHOLD } from '../components/DomainMicroQuizModal';
-import { CertTrainingBadge } from '../components/CertSwitcher';
 import { PLATFORM_ROADMAP, ROADMAP_STATUS_LABEL } from '../data/platformRoadmap';
 import { OSINT_SOURCES } from '../data/osintSources';
 import { getReadinessScore, getDomainProgress } from '../services/progressService';
@@ -64,12 +63,12 @@ export default function CommandCenter() {
     : 0;
 
   const domainReadiness = useMemo(() => {
-    const progress = getDomainProgress();
+    const progress = getDomainProgress(activeCert.id);
     const withData = progress.filter(d => d.count > 0);
     return withData.length > 0
       ? Math.round(withData.reduce((a, d) => a + d.avg, 0) / withData.length)
       : 0;
-  }, [state.quizAttempts, gameState.domainScores]);
+  }, [state.quizAttempts, gameState.domainScores, activeCert.id]);
 
   const examCountdown = useMemo(() => {
     if (!state.examDate) return null;
@@ -166,7 +165,7 @@ export default function CommandCenter() {
     setShowWhatsNew(true);
   }
 
-  const hudValue = getReadinessScore();
+  const hudValue = getReadinessScore(activeCert.id);
   const ringCircumference = 2 * Math.PI * 88;
   const ringOffset = ringCircumference - (hudValue / 100) * ringCircumference;
 
@@ -208,11 +207,8 @@ export default function CommandCenter() {
             Command Center
           </h1>
           <p className="text-xs text-theme-muted mt-0.5">
-            {activeCert.name} — readiness, intel, and quick throttle to all ops
+            {activeCert.shortName} readiness · {activeCert.examFormat?.questions ?? 90}Q exam · {hudValue}% overall
           </p>
-          <div className="mt-2">
-            <CertTrainingBadge />
-          </div>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -418,7 +414,7 @@ export default function CommandCenter() {
 
         {/* Right instrument panel */}
         <div className="lg:col-span-3 space-y-3 order-3">
-          <InstrumentPanel title="Domain Readiness" icon={Target} accent="emerald">
+          <InstrumentPanel title={`${activeCert.shortName} Domain Readiness`} icon={Target} accent="emerald">
             {activeCert.domains.map(certDomain => {
               const scores = gameState.domainScores[certDomain.id] || [];
               const avg = scores.length > 0 ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length) : 0;

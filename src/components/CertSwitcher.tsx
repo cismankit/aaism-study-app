@@ -3,7 +3,6 @@ import { Shield, Brain, Link2, Atom, ChevronDown, Check } from 'lucide-react';
 import {
   CERTIFICATIONS,
   CERT_CATEGORIES,
-  type Certification,
   type CertCategory,
 } from '../data/certifications';
 import { useCert } from '../context/CertContext';
@@ -13,18 +12,6 @@ const CATEGORY_ICONS: Record<CertCategory, typeof Shield> = {
   ai: Brain,
   blockchain: Link2,
   quantum: Atom,
-};
-
-const STATUS_BADGE: Record<Certification['status'], string> = {
-  active: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400',
-  preview: 'bg-amber-500/20 text-amber-700 dark:text-amber-400',
-  'coming-soon': 'bg-gray-500/20 text-gray-600 dark:text-gray-400',
-};
-
-const STATUS_LABEL: Record<Certification['status'], string> = {
-  active: 'Active',
-  preview: 'Preview',
-  'coming-soon': 'Soon',
 };
 
 export default function CertSwitcher({ compact }: { compact?: boolean }) {
@@ -73,7 +60,7 @@ export default function CertSwitcher({ compact }: { compact?: boolean }) {
           role="listbox"
         >
           <div className="px-3 py-1.5 text-[10px] font-semibold tracking-widest text-theme-muted uppercase">
-            Cert Swiss Knife
+            Certification track
           </div>
           {CERT_CATEGORIES.map(cat => {
             const certs = CERTIFICATIONS.filter(c => c.category === cat.id);
@@ -113,9 +100,6 @@ export default function CertSwitcher({ compact }: { compact?: boolean }) {
                         </div>
                         <div className="text-[10px] text-theme-muted truncate">{cert.vendor}</div>
                       </div>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${STATUS_BADGE[cert.status]}`}>
-                        {STATUS_LABEL[cert.status]}
-                      </span>
                       {selected && <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
                     </button>
                   );
@@ -126,18 +110,5 @@ export default function CertSwitcher({ compact }: { compact?: boolean }) {
         </div>
       )}
     </div>
-  );
-}
-
-export function CertTrainingBadge() {
-  const { activeCert } = useCert();
-  const Icon = CATEGORY_ICONS[activeCert.category];
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 text-[10px] font-medium px-2 py-1 rounded-full border border-theme bg-theme-elevated text-cockpit-muted"
-    >
-      <Icon className="w-3 h-3" style={{ color: activeCert.color }} />
-      Training: {activeCert.shortName}
-    </span>
   );
 }

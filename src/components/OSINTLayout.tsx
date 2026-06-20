@@ -157,7 +157,7 @@ function Sidebar({
             <div className="sidebar-label overflow-hidden flex-1">
               <div className="text-sm font-bold text-cockpit leading-tight tracking-[0.12em] font-sans">AAISM</div>
               <div className="text-[10px] text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-400 dark:to-cyan-400 leading-tight tracking-wide font-medium">
-                Multi-Cert Command Center
+                Intelligence Platform
               </div>
             </div>
             <button
@@ -362,7 +362,6 @@ function TopBar({
       </div>
 
       <div className="flex items-center gap-2">
-        <CertSwitcher compact />
         <button
           onClick={onOpenSearch}
           className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-cockpit-muted bg-cockpit-track hover:text-cockpit dark:hover:text-gray-300 transition-colors"

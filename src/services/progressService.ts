@@ -2,6 +2,8 @@ import { QuizAttempt, GamificationState } from '../types';
 import { initialState, loadState as loadAppState } from '../data/initialData';
 import { initialGamificationState } from '../data/gamificationData';
 import { EXAM_PASS_THRESHOLD } from '../constants/examConfig';
+import { DEFAULT_CERT_ID, getCertification } from '../data/certifications/registry';
+import { getActiveCertId } from './certContextService';
 
 export const PROGRESS_STORAGE_KEY = 'aaism-progress';
 
@@ -28,7 +30,18 @@ export interface ExamAttemptRecord {
   pausedCount: number;
 }
 
-export interface ProgressSnapshot {
+export interface CertProgressSlice {
+  domainScores: Record<number, number[]>;
+  quizHistory: QuizAttempt[];
+  examAttempts: ExamAttemptRecord[];
+  examDate: string | null;
+  passThreshold: number;
+  totalQuizzesTaken: number;
+  perfectQuizzes: number;
+}
+
+/** @deprecated v1 flat snapshot — migrated to v2 on load */
+interface ProgressSnapshotV1 {
   version: 1;
   domainScores: Record<number, number[]>;
   quizHistory: QuizAttempt[];
@@ -48,20 +61,40 @@ export interface ProgressSnapshot {
   migratedAt?: string;
 }
 
-function defaultSnapshot(): ProgressSnapshot {
+export interface ProgressSnapshot {
+  version: 2;
+  streak: {
+    current: number;
+    longest: number;
+    lastActivityDate: string | null;
+  };
+  xp: number;
+  level: number;
+  totalStudyMinutes: number;
+  byCert: Record<string, CertProgressSlice>;
+  migratedAt?: string;
+}
+
+function defaultCertSlice(): CertProgressSlice {
   return {
-    version: 1,
     domainScores: {},
     quizHistory: [],
     examAttempts: [],
-    streak: { current: 0, longest: 0, lastActivityDate: null },
-    xp: 0,
-    level: 1,
     examDate: null,
     passThreshold: EXAM_PASS_THRESHOLD,
     totalQuizzesTaken: 0,
     perfectQuizzes: 0,
+  };
+}
+
+function defaultSnapshot(): ProgressSnapshot {
+  return {
+    version: 2,
+    streak: { current: 0, longest: 0, lastActivityDate: null },
+    xp: 0,
+    level: 1,
     totalStudyMinutes: 0,
+    byCert: { [DEFAULT_CERT_ID]: defaultCertSlice() },
   };
 }
 
@@ -79,9 +112,14 @@ function migrateFromLegacy(): ProgressSnapshot {
   const app = readJson<typeof initialState>(LEGACY_APP_KEY) ?? loadAppState();
   const game = readJson<GamificationState>(LEGACY_GAMIFICATION_KEY) ?? initialGamificationState;
 
-  snap.quizHistory = app.quizAttempts ?? [];
-  snap.examDate = app.examDate ?? null;
-  snap.domainScores = game.domainScores ?? {};
+  const aaism = defaultCertSlice();
+  aaism.quizHistory = app.quizAttempts ?? [];
+  aaism.examDate = app.examDate ?? null;
+  aaism.domainScores = game.domainScores ?? {};
+  aaism.totalQuizzesTaken = game.totalQuizzesTaken ?? 0;
+  aaism.perfectQuizzes = game.perfectQuizzes ?? 0;
+
+  snap.byCert[DEFAULT_CERT_ID] = aaism;
   snap.streak = {
     current: game.currentStreak ?? 0,
     longest: game.longestStreak ?? 0,
@@ -89,16 +127,54 @@ function migrateFromLegacy(): ProgressSnapshot {
   };
   snap.xp = game.xp ?? 0;
   snap.level = game.level ?? 1;
-  snap.totalQuizzesTaken = game.totalQuizzesTaken ?? 0;
-  snap.perfectQuizzes = game.perfectQuizzes ?? 0;
   snap.totalStudyMinutes = game.totalStudyMinutes ?? 0;
   snap.migratedAt = new Date().toISOString();
   return snap;
 }
 
+function migrateV1ToV2(v1: ProgressSnapshotV1): ProgressSnapshot {
+  const snap = defaultSnapshot();
+  snap.byCert[DEFAULT_CERT_ID] = {
+    domainScores: v1.domainScores ?? {},
+    quizHistory: v1.quizHistory ?? [],
+    examAttempts: v1.examAttempts ?? [],
+    examDate: v1.examDate ?? null,
+    passThreshold: v1.passThreshold ?? EXAM_PASS_THRESHOLD,
+    totalQuizzesTaken: v1.totalQuizzesTaken ?? 0,
+    perfectQuizzes: v1.perfectQuizzes ?? 0,
+  };
+  snap.streak = v1.streak ?? snap.streak;
+  snap.xp = v1.xp ?? 0;
+  snap.level = v1.level ?? 1;
+  snap.totalStudyMinutes = v1.totalStudyMinutes ?? 0;
+  snap.migratedAt = new Date().toISOString();
+  return snap;
+}
+
+export function getCertSlice(certId?: string): CertProgressSlice {
+  const id = certId ?? getActiveCertId();
+  const snap = loadProgress();
+  if (!snap.byCert[id]) {
+    snap.byCert[id] = defaultCertSlice();
+    saveProgress(snap);
+  }
+  return snap.byCert[id];
+}
+
 export function loadProgress(): ProgressSnapshot {
-  const existing = readJson<ProgressSnapshot>(PROGRESS_STORAGE_KEY);
-  if (existing?.version === 1) return existing;
+  const existing = readJson<ProgressSnapshot | ProgressSnapshotV1>(PROGRESS_STORAGE_KEY);
+  if (existing?.version === 2) {
+    if (!existing.byCert[DEFAULT_CERT_ID]) {
+      existing.byCert[DEFAULT_CERT_ID] = defaultCertSlice();
+      saveProgress(existing);
+    }
+    return existing;
+  }
+  if (existing?.version === 1) {
+    const migrated = migrateV1ToV2(existing);
+    saveProgress(migrated);
+    return migrated;
+  }
 
   const migrated = migrateFromLegacy();
   saveProgress(migrated);
@@ -113,16 +189,29 @@ export function saveProgress(data: ProgressSnapshot): void {
   }
 }
 
-/** Sync legacy stores into unified progress (call after context updates) */
+function domainIdsForCert(certId: string): number[] {
+  const cert = getCertification(certId);
+  if (cert?.domains.length) return cert.domains.map(d => d.id);
+  return [1, 2, 3, 4];
+}
+
+/** Sync legacy stores into unified progress for active (or specified) cert */
 export function syncFromContexts(
   quizAttempts: QuizAttempt[],
   examDate: string | null,
   gamification: GamificationState,
+  certId?: string,
 ): void {
+  const id = certId ?? getActiveCertId();
   const snap = loadProgress();
-  snap.quizHistory = quizAttempts;
-  snap.examDate = examDate;
-  snap.domainScores = gamification.domainScores;
+  snap.byCert[id] = {
+    ...(snap.byCert[id] ?? defaultCertSlice()),
+    quizHistory: quizAttempts,
+    examDate,
+    domainScores: gamification.domainScores,
+    totalQuizzesTaken: gamification.totalQuizzesTaken,
+    perfectQuizzes: gamification.perfectQuizzes,
+  };
   snap.streak = {
     current: gamification.currentStreak,
     longest: gamification.longestStreak,
@@ -130,39 +219,63 @@ export function syncFromContexts(
   };
   snap.xp = gamification.xp;
   snap.level = gamification.level;
-  snap.totalQuizzesTaken = gamification.totalQuizzesTaken;
-  snap.perfectQuizzes = gamification.perfectQuizzes;
   snap.totalStudyMinutes = gamification.totalStudyMinutes;
   saveProgress(snap);
 }
 
+export function loadCertIntoContexts(certId: string): {
+  domainScores: GamificationState['domainScores'];
+  quizHistory: QuizAttempt[];
+  examDate: string | null;
+  gamificationPartial: Pick<GamificationState, 'totalQuizzesTaken' | 'perfectQuizzes'>;
+} {
+  const slice = getCertSlice(certId);
+  return {
+    domainScores: slice.domainScores,
+    quizHistory: slice.quizHistory,
+    examDate: slice.examDate,
+    gamificationPartial: {
+      totalQuizzesTaken: slice.totalQuizzesTaken,
+      perfectQuizzes: slice.perfectQuizzes,
+    },
+  };
+}
+
 export function addExamAttempt(
   attempt: Omit<ExamAttemptRecord, 'id'>,
+  certId?: string,
 ): ExamAttemptRecord {
+  const id = certId ?? getActiveCertId();
   const snap = loadProgress();
+  const slice = snap.byCert[id] ?? defaultCertSlice();
   const record: ExamAttemptRecord = { ...attempt, id: crypto.randomUUID() };
-  snap.examAttempts = [...snap.examAttempts, record];
+  slice.examAttempts = [...slice.examAttempts, record];
+  snap.byCert[id] = slice;
   saveProgress(snap);
   return record;
 }
 
-export function getExamAttempts(): ExamAttemptRecord[] {
-  return loadProgress().examAttempts;
+export function getExamAttempts(certId?: string): ExamAttemptRecord[] {
+  return getCertSlice(certId).examAttempts;
 }
 
-export function getPassThreshold(): number {
-  return loadProgress().passThreshold;
+export function getPassThreshold(certId?: string): number {
+  return getCertSlice(certId).passThreshold;
 }
 
-export function setPassThreshold(threshold: number): void {
+export function setPassThreshold(threshold: number, certId?: string): void {
+  const id = certId ?? getActiveCertId();
   const snap = loadProgress();
-  snap.passThreshold = Math.max(50, Math.min(100, threshold));
+  const slice = snap.byCert[id] ?? defaultCertSlice();
+  slice.passThreshold = Math.max(50, Math.min(100, threshold));
+  snap.byCert[id] = slice;
   saveProgress(snap);
 }
 
-export function getDomainProgress(): Array<{ domainId: number; avg: number; count: number }> {
-  const { domainScores } = loadProgress();
-  return [1, 2, 3, 4].map(domainId => {
+export function getDomainProgress(certId?: string): Array<{ domainId: number; avg: number; count: number }> {
+  const id = certId ?? getActiveCertId();
+  const { domainScores } = getCertSlice(id);
+  return domainIdsForCert(id).map(domainId => {
     const scores = domainScores[domainId] ?? [];
     const avg = scores.length > 0
       ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
@@ -171,14 +284,16 @@ export function getDomainProgress(): Array<{ domainId: number; avg: number; coun
   });
 }
 
-export function getReadinessScore(): number {
+export function getReadinessScore(certId?: string): number {
+  const id = certId ?? getActiveCertId();
   const snap = loadProgress();
-  const domainAvgs = getDomainProgress().filter(d => d.count > 0).map(d => d.avg);
+  const slice = getCertSlice(id);
+  const domainAvgs = getDomainProgress(id).filter(d => d.count > 0).map(d => d.avg);
   const domainReadiness = domainAvgs.length > 0
     ? Math.round(domainAvgs.reduce((a, b) => a + b, 0) / domainAvgs.length)
     : 0;
 
-  const recent = snap.quizHistory.slice(-10);
+  const recent = slice.quizHistory.slice(-10);
   const avgQuiz = recent.length > 0
     ? Math.round(recent.reduce((s, q) => s + q.score, 0) / recent.length)
     : 0;
@@ -193,21 +308,45 @@ export function exportProgressJson(): string {
 
 export function importProgressJson(json: string): { ok: boolean; error?: string } {
   try {
-    const parsed = JSON.parse(json) as ProgressSnapshot;
-    if (parsed.version !== 1) return { ok: false, error: 'Unsupported progress file version' };
-    saveProgress(parsed);
-    return { ok: true };
+    const parsed = JSON.parse(json) as ProgressSnapshot | ProgressSnapshotV1;
+    if (parsed.version === 1) {
+      saveProgress(migrateV1ToV2(parsed));
+      return { ok: true };
+    }
+    if (parsed.version === 2) {
+      saveProgress(parsed);
+      return { ok: true };
+    }
+    return { ok: false, error: 'Unsupported progress file version' };
   } catch {
     return { ok: false, error: 'Invalid JSON file' };
   }
 }
 
-export function updateProgressFields(partial: Partial<ProgressSnapshot>): void {
+export function updateProgressFields(
+  partial: Partial<CertProgressSlice> & Partial<Pick<ProgressSnapshot, 'streak' | 'xp' | 'level' | 'totalStudyMinutes'>>,
+  certId?: string,
+): void {
+  const id = certId ?? getActiveCertId();
   const snap = loadProgress();
-  saveProgress({ ...snap, ...partial });
+  const slice = snap.byCert[id] ?? defaultCertSlice();
+  const {
+    streak,
+    xp,
+    level,
+    totalStudyMinutes,
+    ...certPartial
+  } = partial;
+
+  snap.byCert[id] = { ...slice, ...certPartial };
+  if (streak !== undefined) snap.streak = streak;
+  if (xp !== undefined) snap.xp = xp;
+  if (level !== undefined) snap.level = level;
+  if (totalStudyMinutes !== undefined) snap.totalStudyMinutes = totalStudyMinutes;
+  saveProgress(snap);
 }
 
-export function getLatestExamAttempt(): ExamAttemptRecord | null {
-  const attempts = getExamAttempts();
+export function getLatestExamAttempt(certId?: string): ExamAttemptRecord | null {
+  const attempts = getExamAttempts(certId);
   return attempts.length > 0 ? attempts[attempts.length - 1] : null;
 }

@@ -9,9 +9,7 @@ import {
   topics, glossary, owaspLLM, searchKnowledgeBase, Topic, Term,
 } from '../data/knowledgeBase';
 import { searchDomainGuides, type DomainGuide } from '../data/aaismDomainGuide';
-import { CERTIFICATIONS } from '../data/certifications';
 import { useCert } from '../context/CertContext';
-import CertSwitcher from '../components/CertSwitcher';
 import { STUDY_PATHS, PLATFORM_WORKFLOWS, PLATFORM_META_SECTIONS } from '../data/platformMeta';
 import { getContentStats } from '../data/examContent';
 import { useGamification } from '../context/GamificationContext';
@@ -176,7 +174,7 @@ function DomainGuidePanel({ guide }: { guide: DomainGuide }) {
 export default function KnowledgeBase() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { state: gameState } = useGamification();
-  const { activeCert, setActiveCert } = useCert();
+  const { activeCert } = useCert();
   const contentStats = getContentStats(activeCert.id);
 
   const initialDomain = parseInt(searchParams.get('domain') || '1', 10);
@@ -247,32 +245,12 @@ export default function KnowledgeBase() {
       <PageHeader
         icon={BookOpen}
         title="Knowledge Base"
-        subtitle={`${activeCert.shortName} — domain guides, glossary, and reference.`}
+        subtitle={`${activeCert.shortName} — ${contentStats.totalQuestions} questions · domain guides and reference.`}
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <CertSwitcher />
-        {activeCert.status !== 'active' && (
-          <span className="text-[10px] px-2 py-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 font-medium">
-            {activeCert.status === 'preview' ? 'Preview track' : 'Coming soon'}
-          </span>
-        )}
-        {activeCert.id !== 'aaism' && (
-          <button
-            type="button"
-            onClick={() => setActiveCert('aaism')}
-            className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
-          >
-            Switch to AAISM for full domain guides →
-          </button>
-        )}
-      </div>
-
-      {CERTIFICATIONS.filter(c => c.id !== activeCert.id).length > 0 && (
-        <p className="text-xs text-theme-muted">
-          Explore other tracks — use the cert picker above to switch between cybersecurity, AI, blockchain, and quantum paths.
-        </p>
-      )}
+      <p className="text-xs text-theme-muted -mt-2">
+        Switch certification track from the sidebar to explore guides for cybersecurity, AI, blockchain, and quantum paths.
+      </p>
 
       {/* Collapsible study paths — avoids repeating Help Center content */}
       <section className="rounded-xl border border-emerald-500/20 overflow-hidden">
@@ -424,10 +402,7 @@ export default function KnowledgeBase() {
                 {activeCert.domains.find(d => d.id === activeDomain)?.name ?? `Domain ${activeDomain}`}
               </h2>
               <p className="text-sm text-cockpit-muted">
-                Full domain guides for {activeCert.shortName} are in preview. Practice questions and exam format are available —
-                deep-dive guides ship in a future update.
-              </p>
-              <p className="text-sm text-cockpit-muted">
+                Domain guide content is loading for this track. You still have{' '}
                 {domainProgress.find(p => p.id === activeDomain)?.qCount ?? 0} practice questions in this domain.
               </p>
               <Link to="/study" className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline">

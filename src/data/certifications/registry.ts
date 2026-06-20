@@ -1,4 +1,10 @@
 import { AAISM_DOMAIN_GUIDES } from '../aaismDomainGuide';
+import { CAIS_DOMAIN_GUIDES } from './content/cais/guide';
+import { CBSP_DOMAIN_GUIDES } from './content/cbsp/guide';
+import { CEH_DOMAIN_GUIDES } from './content/ceh/guide';
+import { CISSP_GUIDES } from './content/cissp/guide';
+import { QIST_DOMAIN_GUIDES } from './content/qist/guide';
+import { SECURITY_PLUS_GUIDES } from './content/security-plus/guide';
 import type { Certification } from './types';
 
 export const DEFAULT_CERT_ID = 'aaism';
@@ -45,7 +51,8 @@ export const CERTIFICATIONS: Certification[] = [
     examFormat: { questions: 150, minutes: 180, passingScore: 70 },
     description: 'Premier cybersecurity certification covering eight domains of security leadership and technical depth.',
     color: '#3b82f6',
-    status: 'preview',
+    status: 'active',
+    domainGuides: CISSP_GUIDES,
   },
   {
     id: 'security-plus',
@@ -63,7 +70,8 @@ export const CERTIFICATIONS: Certification[] = [
     examFormat: { questions: 90, minutes: 90, passingScore: 75 },
     description: 'Entry-level cybersecurity certification validating baseline skills for security practitioners.',
     color: '#ef4444',
-    status: 'preview',
+    status: 'active',
+    domainGuides: SECURITY_PLUS_GUIDES,
   },
   {
     id: 'ceh',
@@ -81,7 +89,8 @@ export const CERTIFICATIONS: Certification[] = [
     examFormat: { questions: 125, minutes: 240, passingScore: 70 },
     description: 'Offensive security certification focused on ethical hacking methodology and attack vectors.',
     color: '#a855f7',
-    status: 'preview',
+    status: 'active',
+    domainGuides: CEH_DOMAIN_GUIDES,
   },
   {
     id: 'cais',
@@ -98,7 +107,8 @@ export const CERTIFICATIONS: Certification[] = [
     examFormat: { questions: 100, minutes: 120, passingScore: 70 },
     description: 'AI-focused security certification bridging ML engineering and enterprise security operations.',
     color: '#06b6d4',
-    status: 'preview',
+    status: 'active',
+    domainGuides: CAIS_DOMAIN_GUIDES,
   },
   {
     id: 'cbsp',
@@ -115,7 +125,8 @@ export const CERTIFICATIONS: Certification[] = [
     examFormat: { questions: 75, minutes: 90, passingScore: 70 },
     description: 'Blockchain security certification covering smart contracts, consensus attacks, and key custody.',
     color: '#f59e0b',
-    status: 'preview',
+    status: 'active',
+    domainGuides: CBSP_DOMAIN_GUIDES,
   },
   {
     id: 'qist',
@@ -129,7 +140,8 @@ export const CERTIFICATIONS: Certification[] = [
     examFormat: { questions: 60, minutes: 90, passingScore: 70 },
     description: 'Emerging quantum security track — qubits, QKD basics, and NIST post-quantum migration planning.',
     color: '#8b5cf6',
-    status: 'coming-soon',
+    status: 'active',
+    domainGuides: QIST_DOMAIN_GUIDES,
   },
 ];
 

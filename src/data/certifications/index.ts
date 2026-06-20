@@ -6,4 +6,3 @@ export {
   getCertification,
   getCertificationsByCategory,
 } from './registry';
-export { PREVIEW_CERT_QUESTIONS } from './questions/previewQuestions';

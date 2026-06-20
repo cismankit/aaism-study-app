@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode, useRef } from 'react';
 import { 
   GamificationState, 
   UnlockedBadge, 
@@ -12,7 +12,8 @@ import {
   getLevelFromXP,
   generateDailyChallenge 
 } from '../data/gamificationData';
-import { loadProgress, updateProgressFields } from '../services/progressService';
+import { loadProgress, updateProgressFields, loadCertIntoContexts } from '../services/progressService';
+import { useCert } from './CertContext';
 
 // Actions
 type GamificationAction =
@@ -148,6 +149,8 @@ function gamificationReducer(state: GamificationState, action: GamificationActio
 
 // Provider
 export function GamificationProvider({ children }: { children: ReactNode }) {
+  const { activeCertId } = useCert();
+  const prevCertRef = useRef(activeCertId);
   const [state, dispatch] = useReducer(gamificationReducer, initialGamificationState);
   const [notifications, setNotifications] = React.useState<AchievementNotification[]>([]);
 
@@ -189,6 +192,27 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  useEffect(() => {
+    if (prevCertRef.current === activeCertId) return;
+    const outgoingCert = prevCertRef.current;
+    updateProgressFields({
+      domainScores: state.domainScores,
+      totalQuizzesTaken: state.totalQuizzesTaken,
+      perfectQuizzes: state.perfectQuizzes,
+    }, outgoingCert);
+    const loaded = loadCertIntoContexts(activeCertId);
+    dispatch({
+      type: 'LOAD_STATE',
+      payload: {
+        ...state,
+        domainScores: loaded.domainScores,
+        totalQuizzesTaken: loaded.gamificationPartial.totalQuizzesTaken,
+        perfectQuizzes: loaded.gamificationPartial.perfectQuizzes,
+      },
+    });
+    prevCertRef.current = activeCertId;
+  }, [activeCertId]);
+
   // Save state to localStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -204,8 +228,8 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
       totalQuizzesTaken: state.totalQuizzesTaken,
       perfectQuizzes: state.perfectQuizzes,
       totalStudyMinutes: state.totalStudyMinutes,
-    });
-  }, [state]);
+    }, activeCertId);
+  }, [state, activeCertId]);
 
   // Save notifications
   useEffect(() => {

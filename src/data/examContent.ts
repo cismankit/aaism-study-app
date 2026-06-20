@@ -4,7 +4,12 @@
 import { ADDITIONAL_QUESTIONS } from './additionalQuestions';
 import { SCENARIO_QUESTIONS } from './expandedQuestions';
 import { BULK_QUESTIONS } from './bulkQuestions';
-import { PREVIEW_CERT_QUESTIONS } from './certifications/questions/previewQuestions';
+import { CAIS_QUESTIONS } from './certifications/content/cais/questions';
+import { CBSP_QUESTIONS } from './certifications/content/cbsp/questions';
+import { CEH_QUESTIONS } from './certifications/content/ceh/questions';
+import { CISSP_QUESTIONS } from './certifications/content/cissp/questions';
+import { QIST_QUESTIONS } from './certifications/content/qist/questions';
+import { SECURITY_PLUS_QUESTIONS } from './certifications/content/security-plus/questions';
 import { DEFAULT_CERT_ID, getCertification } from './certifications/registry';
 import { getActiveCertId } from '../services/certContextService';
 
@@ -1736,13 +1741,34 @@ function collectAaismQuestions(): ExamQuestion[] {
   return questions;
 }
 
+const CERT_QUESTION_BANKS: Record<string, ExamQuestion[]> = {
+  cissp: CISSP_QUESTIONS,
+  'security-plus': SECURITY_PLUS_QUESTIONS,
+  ceh: CEH_QUESTIONS,
+  cais: CAIS_QUESTIONS,
+  cbsp: CBSP_QUESTIONS,
+  qist: QIST_QUESTIONS,
+};
+
+function getCertQuestionBank(certId: string): ExamQuestion[] {
+  return CERT_QUESTION_BANKS[certId] ?? [];
+}
+
+export function getCertQuestionCounts(): Record<string, number> {
+  const counts: Record<string, number> = { [DEFAULT_CERT_ID]: collectAaismQuestions().length };
+  for (const [certId, bank] of Object.entries(CERT_QUESTION_BANKS)) {
+    counts[certId] = bank.length;
+  }
+  return counts;
+}
+
 // Get all practice questions for active (or specified) cert
 export function getAllQuestions(certId?: string): ExamQuestion[] {
   const id = certId ?? getActiveCertId();
   if (id === DEFAULT_CERT_ID) {
     return collectAaismQuestions();
   }
-  return PREVIEW_CERT_QUESTIONS.filter(q => resolveQuestionCertId(q) === id);
+  return getCertQuestionBank(id);
 }
 
 // Get questions by domain for active (or specified) cert
@@ -1761,9 +1787,7 @@ export function getQuestionsByDomain(domainId: number, certId?: string): ExamQue
     questions.push(...BULK_QUESTIONS.filter(q => q.domain === domainId));
     return questions;
   }
-  return PREVIEW_CERT_QUESTIONS.filter(
-    q => resolveQuestionCertId(q) === id && q.domain === domainId,
-  );
+  return getCertQuestionBank(id).filter(q => q.domain === domainId);
 }
 
 // Get questions by difficulty for active cert
@@ -1819,9 +1843,9 @@ export function getContentStats(certId?: string) {
       count: getQuestionsByDomain(d.id, id).length,
     })),
     questionsByDifficulty: {
-      easy: getQuestionsByDifficulty('easy').length,
-      medium: getQuestionsByDifficulty('medium').length,
-      hard: getQuestionsByDifficulty('hard').length
-    }
+      easy: getQuestionsByDifficulty('easy', id).length,
+      medium: getQuestionsByDifficulty('medium', id).length,
+      hard: getQuestionsByDifficulty('hard', id).length,
+    },
   };
 }

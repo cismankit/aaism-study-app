@@ -43,7 +43,6 @@ import {
 } from '../services/leadVotesService';
 import { isEnsembleEnabled } from '../services/ensembleConfig';
 import PageHeader from '../components/PageHeader';
-import { CertTrainingBadge } from '../components/CertSwitcher';
 import { useCert } from '../context/CertContext';
 
 type ViewTab = 'pipeline' | 'leads' | 'analytics' | 'history';
@@ -319,7 +318,6 @@ export default function AgentDiscovery() {
         subtitle={`Multi-agent pipeline discovers ${activeCert.shortName} exam questions — gap analysis uses active cert domains.`}
         action={
           <div className="flex items-center gap-2 text-xs text-theme-muted">
-            <CertTrainingBadge />
             <Settings size={12} />
             {aiConfig.provider} / {aiConfig.model}
             <button

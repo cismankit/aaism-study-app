@@ -60,61 +60,61 @@ function updateSyncMeta(partial: Partial<SyncMeta>): void {
   writeJson(SYNC_META_KEY, { ...getSyncMeta(), ...partial });
 }
 
-/** Latest-wins merge per top-level field; arrays use longer/more recent history */
+/** Latest-wins merge per top-level field; cert slices merged per certId */
 export function mergeProgress(local: ProgressSnapshot, remote: ProgressSnapshot): ProgressSnapshot {
-  const localTime = local.migratedAt ?? (local.quizHistory.length > 0 ? local.quizHistory[local.quizHistory.length - 1].date : '');
-  const remoteTime = remote.migratedAt ?? (remote.quizHistory.length > 0 ? remote.quizHistory[remote.quizHistory.length - 1].date : '');
+  const localTime = local.migratedAt ?? '';
+  const remoteTime = remote.migratedAt ?? '';
 
-  const pick = <K extends keyof ProgressSnapshot>(key: K): ProgressSnapshot[K] => {
-    if (key === 'quizHistory') {
-      const merged = [...local.quizHistory];
-      const ids = new Set(merged.map(q => q.id));
-      for (const q of remote.quizHistory) {
-        if (!ids.has(q.id)) merged.push(q);
-      }
-      return merged.sort((a, b) => a.date.localeCompare(b.date)) as ProgressSnapshot[K];
+  const mergeCertSlice = (a: ProgressSnapshot['byCert'][string], b: ProgressSnapshot['byCert'][string]) => {
+    const mergedQuiz = [...(a?.quizHistory ?? [])];
+    const quizIds = new Set(mergedQuiz.map(q => q.id));
+    for (const q of b?.quizHistory ?? []) {
+      if (!quizIds.has(q.id)) mergedQuiz.push(q);
     }
-    if (key === 'examAttempts') {
-      const merged = [...local.examAttempts];
-      const ids = new Set(merged.map(e => e.id));
-      for (const e of remote.examAttempts) {
-        if (!ids.has(e.id)) merged.push(e);
-      }
-      return merged.sort((a, b) => a.date.localeCompare(b.date)) as ProgressSnapshot[K];
+    mergedQuiz.sort((x, y) => x.date.localeCompare(y.date));
+
+    const mergedExams = [...(a?.examAttempts ?? [])];
+    const examIds = new Set(mergedExams.map(e => e.id));
+    for (const e of b?.examAttempts ?? []) {
+      if (!examIds.has(e.id)) mergedExams.push(e);
     }
-    if (key === 'domainScores') {
-      const out: Record<number, number[]> = { ...local.domainScores };
-      for (const [d, scores] of Object.entries(remote.domainScores)) {
-        const id = Number(d);
-        const existing = out[id] ?? [];
-        out[id] = existing.length >= scores.length ? existing : scores;
-      }
-      return out as ProgressSnapshot[K];
+    mergedExams.sort((x, y) => x.date.localeCompare(y.date));
+
+    const outScores: Record<number, number[]> = { ...(a?.domainScores ?? {}) };
+    for (const [d, scores] of Object.entries(b?.domainScores ?? {})) {
+      const id = Number(d);
+      const existing = outScores[id] ?? [];
+      outScores[id] = existing.length >= scores.length ? existing : scores;
     }
-    if (key === 'streak') {
-      return (remote.streak.longest > local.streak.longest ? remote.streak : local.streak) as ProgressSnapshot[K];
-    }
-    if (key === 'xp' || key === 'level' || key === 'totalQuizzesTaken' || key === 'perfectQuizzes' || key === 'totalStudyMinutes') {
-      const l = local[key] as number;
-      const r = remote[key] as number;
-      return (r > l ? remote[key] : local[key]) as ProgressSnapshot[K];
-    }
-    return (remoteTime > localTime ? remote[key] : local[key]) as ProgressSnapshot[K];
+
+    const useRemote = remoteTime > localTime;
+    return {
+      domainScores: outScores,
+      quizHistory: mergedQuiz,
+      examAttempts: mergedExams,
+      examDate: useRemote ? (b?.examDate ?? a?.examDate ?? null) : (a?.examDate ?? b?.examDate ?? null),
+      passThreshold: useRemote ? (b?.passThreshold ?? a?.passThreshold ?? 65) : (a?.passThreshold ?? b?.passThreshold ?? 65),
+      totalQuizzesTaken: Math.max(a?.totalQuizzesTaken ?? 0, b?.totalQuizzesTaken ?? 0),
+      perfectQuizzes: Math.max(a?.perfectQuizzes ?? 0, b?.perfectQuizzes ?? 0),
+    };
   };
 
+  const certIds = new Set([
+    ...Object.keys(local.byCert ?? {}),
+    ...Object.keys(remote.byCert ?? {}),
+  ]);
+  const byCert: ProgressSnapshot['byCert'] = {};
+  for (const certId of certIds) {
+    byCert[certId] = mergeCertSlice(local.byCert?.[certId], remote.byCert?.[certId]);
+  }
+
   return {
-    version: 1,
-    domainScores: pick('domainScores'),
-    quizHistory: pick('quizHistory'),
-    examAttempts: pick('examAttempts'),
-    streak: pick('streak'),
-    xp: pick('xp'),
-    level: pick('level'),
-    examDate: pick('examDate'),
-    passThreshold: pick('passThreshold'),
-    totalQuizzesTaken: pick('totalQuizzesTaken'),
-    perfectQuizzes: pick('perfectQuizzes'),
-    totalStudyMinutes: pick('totalStudyMinutes'),
+    version: 2,
+    byCert,
+    streak: remote.streak.longest > local.streak.longest ? remote.streak : local.streak,
+    xp: Math.max(local.xp, remote.xp),
+    level: Math.max(local.level, remote.level),
+    totalStudyMinutes: Math.max(local.totalStudyMinutes, remote.totalStudyMinutes),
     migratedAt: new Date().toISOString(),
   };
 }
@@ -284,6 +284,9 @@ export function importCloudBlobJson(json: string): { ok: boolean; error?: string
     const parsed = JSON.parse(json) as CloudBlob;
     if (parsed.version !== 1 || !parsed.progress) {
       return { ok: false, error: 'Invalid cloud blob format' };
+    }
+    if (parsed.progress.version !== 2) {
+      return { ok: false, error: 'Unsupported progress version in cloud blob' };
     }
     const session = getCurrentSession();
     if (!session) return { ok: false, error: 'No active session' };

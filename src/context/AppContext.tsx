@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { AppState, QuizAttempt, StudySession, Note } from '../types';
 import { loadState, saveState, initialState } from '../data/initialData';
-import { loadProgress, updateProgressFields } from '../services/progressService';
+import { loadProgress, updateProgressFields, loadCertIntoContexts } from '../services/progressService';
+import { useCert } from './CertContext';
 
 interface AppContextType {
   state: AppState;
@@ -18,18 +19,36 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const { activeCertId } = useCert();
+  const prevCertRef = useRef(activeCertId);
   const [state, setState] = useState<AppState>(() => {
-    loadProgress(); // trigger migration on first load
+    loadProgress();
     return loadState();
   });
+
+  useEffect(() => {
+    if (prevCertRef.current === activeCertId) return;
+    const outgoingCert = prevCertRef.current;
+    updateProgressFields({
+      quizHistory: state.quizAttempts,
+      examDate: state.examDate,
+    }, outgoingCert);
+    const loaded = loadCertIntoContexts(activeCertId);
+    setState(prev => ({
+      ...prev,
+      quizAttempts: loaded.quizHistory,
+      examDate: loaded.examDate,
+    }));
+    prevCertRef.current = activeCertId;
+  }, [activeCertId]);
 
   useEffect(() => {
     saveState(state);
     updateProgressFields({
       quizHistory: state.quizAttempts,
       examDate: state.examDate,
-    });
-  }, [state]);
+    }, activeCertId);
+  }, [state, activeCertId]);
 
   const updateChapterProgress = (resourceId: string, chapterId: string, pass: number, completed: boolean) => {
     setState(prev => ({
