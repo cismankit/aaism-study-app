@@ -1,4 +1,6 @@
+import { ensureAIReady, formatAIBlockedMessage } from './autoConfigService';
 import { getModelCapability, getRecommendedFallbackModel, resolveAIConfigForRun, type AIConfig } from './aiService';
+import { linkAbortSignal, isKillSwitchActive, KILL_SWITCH_HALT_MESSAGE } from './killSwitchService';
 import { runMultiAgentDiscovery, type ParsedQuestion } from './multiAgentOrchestrator';
 import { getAllQuestions, ALL_DOMAINS, getDomainsForCert } from '../data/examContent';
 import { getActiveCertId } from './certContextService';
@@ -116,6 +118,7 @@ class AgentAbortError extends Error {
 }
 
 function checkAbort(callbacks: AgentCallbacks) {
+  if (isKillSwitchActive()) throw new AgentAbortError();
   if (callbacks.signal?.aborted) throw new AgentAbortError();
 }
 
@@ -133,20 +136,40 @@ export async function runDiscoveryAgent(
   callbacks: AgentCallbacks,
   config?: AIConfig,
 ): Promise<AgentRun> {
+  const runSignal = linkAbortSignal(callbacks.signal);
+  const effectiveCallbacks = { ...callbacks, signal: runSignal };
+
+  if (isKillSwitchActive()) {
+    const run = startRun(strategy);
+    const errMsg = KILL_SWITCH_HALT_MESSAGE;
+    updateRun(run.id, { status: 'failed', completedAt: new Date().toISOString(), error: errMsg });
+    effectiveCallbacks.onError(errMsg);
+    return { ...run, status: 'failed', error: errMsg };
+  }
+
+  const readyCheck = await ensureAIReady();
+  if (!readyCheck.ready) {
+    const run = startRun(strategy);
+    const blocked = formatAIBlockedMessage(readyCheck);
+    updateRun(run.id, { status: 'failed', completedAt: new Date().toISOString(), error: blocked });
+    effectiveCallbacks.onError(blocked);
+    return { ...run, status: 'failed', error: blocked };
+  }
+
   const aiConfig = config || await resolveAIConfigForRun();
   const run = startRun(strategy);
 
   try {
-    checkAbort(callbacks);
+    checkAbort(effectiveCallbacks);
     addLogEntry(run.id, { phase: 'analyze', message: 'Starting multi-agent discovery pipeline' });
 
     const modelCap = getModelCapability(aiConfig.model);
-    emitLog(callbacks, 'analyze', `Multi-agent pipeline init (model: ${aiConfig.model}, tier: ${modelCap.tier})`, 'info');
+    emitLog(effectiveCallbacks, 'analyze', `Multi-agent pipeline init (model: ${aiConfig.model}, tier: ${modelCap.tier})`, 'info');
 
     let deduped: Array<ParsedQuestion & { similarityScore: number }>;
     let runSummary;
     try {
-      const result = await runMultiAgentDiscovery(strategy, callbacks, aiConfig, callbacks.signal);
+      const result = await runMultiAgentDiscovery(strategy, effectiveCallbacks, aiConfig, runSignal);
       deduped = result.discovered;
       runSummary = result.summary;
     } catch (discoverError) {
@@ -154,8 +177,8 @@ export async function runDiscoveryAgent(
           (discoverError instanceof Error && discoverError.name === 'AgentAbortError')) throw discoverError;
       const errMsg = discoverError instanceof Error ? discoverError.message : String(discoverError);
       if (aiConfig.provider === 'ollama' && modelCap.tier === 'small') {
-        emitLog(callbacks, 'discover', `TIP: Switch to ${getRecommendedFallbackModel()} for reliable JSON output`, 'warning');
-        emitLog(callbacks, 'discover', 'Groq is FREE and excellent for structured JSON — https://console.groq.com', 'warning');
+        emitLog(effectiveCallbacks, 'discover', `TIP: Switch to ${getRecommendedFallbackModel()} for reliable JSON output`, 'warning');
+        emitLog(effectiveCallbacks, 'discover', 'Groq is FREE and excellent for structured JSON — https://console.groq.com', 'warning');
       }
       throw new Error(errMsg);
     }
@@ -167,7 +190,7 @@ export async function runDiscoveryAgent(
     const unique = deduped.filter(q => q.similarityScore < 60);
     const duplicates = deduped.filter(q => q.similarityScore >= 60);
 
-    emitLog(callbacks, 'deduplicate', `Pipeline result: ${unique.length} unique, ${duplicates.length} duplicates filtered`, 'success');
+    emitLog(effectiveCallbacks, 'deduplicate', `Pipeline result: ${unique.length} unique, ${duplicates.length} duplicates filtered`, 'success');
 
     addLogEntry(run.id, {
       phase: 'deduplicate',
@@ -175,15 +198,15 @@ export async function runDiscoveryAgent(
     });
 
     // Phase 4: Score
-    checkAbort(callbacks);
-    callbacks.onPhaseChange('score', `Scoring ${unique.length} unique questions...`);
-    emitLog(callbacks, 'score', `Classifying ${unique.length} leads (auto-approve threshold: ${strategy.autoApproveThreshold}%)`, 'info');
+    checkAbort(effectiveCallbacks);
+    effectiveCallbacks.onPhaseChange('score', `Scoring ${unique.length} unique questions...`);
+    emitLog(effectiveCallbacks, 'score', `Classifying ${unique.length} leads (auto-approve threshold: ${strategy.autoApproveThreshold}%)`, 'info');
     addLogEntry(run.id, { phase: 'score', message: 'Scoring and classifying leads' });
 
     const leads: QuestionLead[] = unique.map((q, i) => {
       const isAutoApprove = q.confidence >= strategy.autoApproveThreshold && q.similarityScore < 30;
       const status = isAutoApprove ? 'auto_approved' : 'pending_review';
-      emitLog(callbacks, 'score',
+      emitLog(effectiveCallbacks, 'score',
         `  Q${i + 1}: confidence ${q.confidence}% / similarity ${q.similarityScore}% → ${status === 'auto_approved' ? 'AUTO-APPROVED' : 'pending review'}`,
         isAutoApprove ? 'success' : 'info'
       );
@@ -219,9 +242,9 @@ export async function runDiscoveryAgent(
     });
 
     // Phase 5: Populate
-    checkAbort(callbacks);
-    callbacks.onPhaseChange('populate', `Adding ${leads.length} leads to pipeline...`);
-    emitLog(callbacks, 'populate', `Writing ${leads.length} leads to pipeline store`, 'info');
+    checkAbort(effectiveCallbacks);
+    effectiveCallbacks.onPhaseChange('populate', `Adding ${leads.length} leads to pipeline...`);
+    emitLog(effectiveCallbacks, 'populate', `Writing ${leads.length} leads to pipeline store`, 'info');
     addLogEntry(run.id, { phase: 'populate', message: `Populating ${leads.length} leads` });
 
     const updatedState = addLeads(leads);
@@ -229,9 +252,9 @@ export async function runDiscoveryAgent(
     const autoApproved = leads.filter(l => l.status === 'auto_approved').length;
     const pendingReview = leads.filter(l => l.status === 'pending_review').length;
 
-    emitLog(callbacks, 'populate', `${autoApproved} auto-approved → added to question bank`, 'success');
-    emitLog(callbacks, 'populate', `${pendingReview} pending your review`, 'info');
-    emitLog(callbacks, 'populate', `Total in pipeline: ${updatedState.leads.length} leads`, 'success');
+    emitLog(effectiveCallbacks, 'populate', `${autoApproved} auto-approved → added to question bank`, 'success');
+    emitLog(effectiveCallbacks, 'populate', `${pendingReview} pending your review`, 'info');
+    emitLog(effectiveCallbacks, 'populate', `Total in pipeline: ${updatedState.leads.length} leads`, 'success');
 
     addLogEntry(run.id, {
       phase: 'populate',
@@ -239,10 +262,10 @@ export async function runDiscoveryAgent(
       data: { autoApproved, pendingReview, totalInPipeline: updatedState.leads.length },
     });
 
-    emitLog(callbacks, 'populate', 'Agent run completed successfully', 'success');
+    emitLog(effectiveCallbacks, 'populate', 'Agent run completed successfully', 'success');
 
     if (runSummary) {
-      emitLog(callbacks, 'populate',
+      emitLog(effectiveCallbacks, 'populate',
         `Per-agent confidence: ${runSummary.agentConfidences.map(a => `${a.agent} ${a.avgConfidence}%`).join(' · ')}`,
         'info');
     }
@@ -257,23 +280,23 @@ export async function runDiscoveryAgent(
     };
     updateRun(run.id, completedRun);
 
-    callbacks.onLeadsFound(leads);
-    callbacks.onComplete({ ...run, ...completedRun } as AgentRun);
+    effectiveCallbacks.onLeadsFound(leads);
+    effectiveCallbacks.onComplete({ ...run, ...completedRun } as AgentRun);
 
     return { ...run, ...completedRun } as AgentRun;
   } catch (error) {
     if (error instanceof AgentAbortError) {
-      emitLog(callbacks, 'populate', 'Agent stopped by user', 'warning');
+      emitLog(effectiveCallbacks, 'populate', 'Agent stopped by user', 'warning');
       updateRun(run.id, { status: 'failed', completedAt: new Date().toISOString(), error: 'Stopped by user' });
       addLogEntry(run.id, { phase: 'populate', message: 'Agent stopped by user' });
-      callbacks.onComplete({ ...run, status: 'failed', completedAt: new Date().toISOString(), leadsFound: 0, leadsApproved: 0 } as AgentRun);
+      effectiveCallbacks.onComplete({ ...run, status: 'failed', completedAt: new Date().toISOString(), leadsFound: 0, leadsApproved: 0 } as AgentRun);
       return { ...run, status: 'failed', error: 'Stopped by user' };
     }
     const errMsg = error instanceof Error ? error.message : String(error);
-    emitLog(callbacks, 'error', `Agent failed: ${errMsg}`, 'warning');
+    emitLog(effectiveCallbacks, 'error', `Agent failed: ${errMsg}`, 'warning');
     updateRun(run.id, { status: 'failed', completedAt: new Date().toISOString(), error: errMsg });
     addLogEntry(run.id, { phase: 'discover', message: `Agent failed: ${errMsg}` });
-    callbacks.onError(errMsg);
+    effectiveCallbacks.onError(errMsg);
     return { ...run, status: 'failed', error: errMsg };
   }
 }

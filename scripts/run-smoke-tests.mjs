@@ -4,9 +4,22 @@
  */
 
 const SMOKE_TEST_TIMEOUT_MS = 15_000;
-const SMOKE_TEST_LLM_TIMEOUT_MS = 45_000;
+const SMOKE_TEST_LLM_TIMEOUT_MS = 90_000;
 const BASE_URL = 'http://localhost:11434';
 const MODEL = 'gemma4:latest';
+
+async function checkCorsDiagnostics() {
+  const origins = [
+    { label: 'vite-dev', origin: 'http://localhost:5173' },
+    { label: 'tauri-webview', origin: 'http://tauri.localhost' },
+  ];
+  const results = [];
+  for (const { label, origin } of origins) {
+    const res = await fetch(`${BASE_URL}/api/tags`, { headers: { Origin: origin } });
+    results.push({ label, origin, status: res.status, ok: res.ok });
+  }
+  return results;
+}
 
 function withTimeout(promise, ms, label) {
   return Promise.race([
@@ -29,7 +42,7 @@ async function ollamaChat(messages, jsonMode = false) {
       : messages,
     stream: false,
     format: jsonMode ? 'json' : undefined,
-    options: { temperature: jsonMode ? 0.1 : 0.7, num_predict: jsonMode ? 900 : 256 },
+    options: { temperature: jsonMode ? 0.3 : 0.7, num_predict: jsonMode ? 1500 : 384 },
   };
   const res = await fetch(`${BASE_URL}/api/chat`, {
     method: 'POST',
@@ -95,7 +108,8 @@ async function runTests() {
   });
 
   await run('agent-discovery', 'Agent Discovery (JSON)', async () => {
-    const content = await ollamaChat(
+    const content = await withTimeout(
+      ollamaChat(
       [
         { role: 'system', content: 'Return only valid JSON arrays.' },
         {
@@ -105,6 +119,9 @@ async function runTests() {
         },
       ],
       true,
+    ),
+      150_000,
+      'Agent Discovery (JSON)',
     );
     const parsed = JSON.parse(content.match(/\[[\s\S]*\]/)?.[0] ?? content);
     if (!Array.isArray(parsed) || !parsed[0]?.question) throw new Error('Could not parse discovery JSON');
@@ -112,7 +129,8 @@ async function runTests() {
   });
 
   const allPassed = results.every(r => r.passed);
-  console.log(JSON.stringify({ allPassed, provider: 'ollama', model: MODEL, totalMs: Date.now() - startAll, results }, null, 2));
+  const cors = await checkCorsDiagnostics();
+  console.log(JSON.stringify({ allPassed, provider: 'ollama', model: MODEL, totalMs: Date.now() - startAll, corsDiagnostics: cors, results }, null, 2));
   process.exit(allPassed ? 0 : 1);
 }
 

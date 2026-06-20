@@ -6,7 +6,7 @@ import {
   type OllamaModel,
   AI_CONFIG_CHANGED_EVENT,
 } from './aiService';
-import { normalizeOllamaBaseUrl } from './ollamaAppService';
+import { normalizeOllamaBaseUrl, DEFAULT_OLLAMA_URL } from './ollamaAppService';
 
 export interface ProviderHealth {
   provider: AIProvider;
@@ -153,9 +153,12 @@ export async function checkLLMHealth(): Promise<LLMHealthReport> {
   const config = loadAIConfig();
   const providers: Partial<Record<AIProvider, ProviderHealth>> = {};
 
-  providers.ollama = await checkOllamaHealth(config.baseUrl, config.model);
+  // Always probe Ollama — primary provider or Groq fallback path
+  const ollamaBase = config.provider === 'ollama' ? config.baseUrl : DEFAULT_OLLAMA_URL;
+  const ollamaModel = config.provider === 'ollama' ? config.model : undefined;
+  providers.ollama = await checkOllamaHealth(ollamaBase, ollamaModel);
 
-  if (config.apiKey || config.provider === 'groq') {
+  if (config.apiKey?.trim() || config.provider === 'groq') {
     providers.groq = await checkGroqHealth(config.apiKey);
   }
 
@@ -164,7 +167,7 @@ export async function checkLLMHealth(): Promise<LLMHealthReport> {
     ? (providers.ollama?.healthy ?? false)
     : active === 'groq'
       ? (providers.groq?.healthy ?? false)
-      : !!config.apiKey?.trim();
+      : Boolean(config.apiKey?.trim());
 
   const report: LLMHealthReport = {
     activeProvider: active,

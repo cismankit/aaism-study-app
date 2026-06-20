@@ -8,10 +8,45 @@ import {
   syncAIConfigToConnectors,
 } from './connectorRegistry';
 import {
+  combineAbortSignals,
+  getKillSwitchAbortSignal,
+  isKillSwitchActive,
+  KILL_SWITCH_HALT_MESSAGE,
+} from './killSwitchService';
+import { findForbiddenTerm, forbiddenContentMessage } from '../data/platformRegistry';
+import {
+  createRateLimiter,
+  isAllowedCloudAiBaseUrl,
+  isAllowedOllamaUrl,
+  RATE_LIMITS,
+  sanitizeSecretsInMessage,
+} from '../data/securityPolicy';
+import {
   normalizeOllamaBaseUrl,
   DEFAULT_OLLAMA_URL,
   testOllamaConnection,
+  ollamaFetch,
 } from './ollamaAppService';
+
+const checkGroqRateLimit = createRateLimiter(RATE_LIMITS.groq.maxPerMinute);
+const checkOpenAiRateLimit = createRateLimiter(RATE_LIMITS.openai.maxPerMinute);
+const checkClaudeRateLimit = createRateLimiter(RATE_LIMITS.claude.maxPerMinute);
+
+function assertSafeOllamaBaseUrl(baseUrl: string): string | null {
+  const normalized = normalizeOllamaBaseUrl(baseUrl);
+  if (!isAllowedOllamaUrl(normalized)) {
+    return 'Invalid Ollama URL — only localhost or 127.0.0.1 over http(s) is allowed';
+  }
+  return null;
+}
+
+function assertSafeCloudBaseUrl(baseUrl: string, provider: string): string | null {
+  const normalized = baseUrl.replace(/\/+$/, '');
+  if (!isAllowedCloudAiBaseUrl(normalized)) {
+    return `Invalid ${provider} base URL — must be HTTPS to a known provider host`;
+  }
+  return null;
+}
 
 export type AIProvider = 'ollama' | 'groq' | 'claude' | 'openai';
 
@@ -72,6 +107,8 @@ export interface ChatOptions {
   numPredict?: number;
   /** Request timeout in ms (Ollama/Groq/OpenAI fetch) */
   timeoutMs?: number;
+  /** Optional run-level abort (agent missions, team packs, etc.) */
+  signal?: AbortSignal;
 }
 
 // Default configurations for each provider
@@ -470,8 +507,12 @@ export async function pullOllamaModel(
   baseUrl = 'http://localhost:11434',
   onProgress?: (status: string) => void,
 ): Promise<{ success: boolean; error?: string }> {
+  const normalized = normalizeOllamaBaseUrl(baseUrl);
+  const urlError = assertSafeOllamaBaseUrl(normalized);
+  if (urlError) return { success: false, error: urlError };
+
   try {
-    const response = await fetch(`${baseUrl}/api/pull`, {
+    const response = await ollamaFetch(`${normalized}/api/pull`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: modelName, stream: true }),
@@ -652,12 +693,18 @@ async function callOllama(config: AIConfig, messages: Message[], options?: ChatO
       body.format = 'json';
     }
 
-    const baseUrl = config.baseUrl ?? defaultConfigs.ollama.baseUrl!;
-    const response = await fetch(`${baseUrl}/api/chat`, {
+    const baseUrl = normalizeOllamaBaseUrl(config.baseUrl ?? defaultConfigs.ollama.baseUrl!);
+    const urlError = assertSafeOllamaBaseUrl(baseUrl);
+    if (urlError) return { content: '', error: urlError };
+
+    const abortSignals = [AbortSignal.timeout(timeoutMs), getKillSwitchAbortSignal()];
+    if (options?.signal) abortSignals.push(options.signal);
+    const response = await ollamaFetch(`${baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(timeoutMs),
+      signal: combineAbortSignals(...abortSignals),
+      timeout: timeoutMs,
     });
 
     if (!response.ok) {
@@ -666,13 +713,21 @@ async function callOllama(config: AIConfig, messages: Message[], options?: ChatO
     }
 
     const data = await response.json();
-    const content = data.message?.content || '';
+    const msg = data.message ?? {};
+    let content = (msg.content ?? '').trim();
+    if (!content && !options?.jsonMode && msg.thinking) {
+      content = String(msg.thinking).trim();
+    }
     if (!content) {
-      return { content: '', error: 'Ollama returned empty response — try a different model' };
+      return { content: '', error: 'Ollama returned empty response — try a different model or increase num_predict' };
     }
     return { content };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
+    if (error instanceof Error && error.name === 'AbortError') {
+      if (isKillSwitchActive()) return { content: '', error: KILL_SWITCH_HALT_MESSAGE };
+      return { content: '', error: 'AI request cancelled' };
+    }
     if (msg.includes('not found') || msg.includes('ollama pull')) {
       return { content: '', error: msg };
     }
@@ -685,11 +740,18 @@ async function callClaude(config: AIConfig, messages: Message[]): Promise<AIResp
     return { content: '', error: 'Claude API key not configured' };
   }
 
+  const rateError = checkClaudeRateLimit();
+  if (rateError) return { content: '', error: rateError };
+
+  const baseUrl = config.baseUrl ?? defaultConfigs.claude.baseUrl!;
+  const urlError = assertSafeCloudBaseUrl(baseUrl, 'Claude');
+  if (urlError) return { content: '', error: urlError };
+
   try {
     const systemMessage = messages.find(m => m.role === 'system')?.content || '';
     const chatMessages = messages.filter(m => m.role !== 'system');
 
-    const response = await fetch(`${config.baseUrl}/v1/messages`, {
+    const response = await fetch(`${baseUrl}/v1/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -713,25 +775,9 @@ async function callClaude(config: AIConfig, messages: Message[]): Promise<AIResp
     const data = await response.json();
     return { content: data.content?.[0]?.text || '' };
   } catch (error) {
-    return { content: '', error: `Claude API error: ${error}` };
+    const raw = error instanceof Error ? error.message : String(error);
+    return { content: '', error: sanitizeSecretsInMessage(`Claude API error: ${raw}`) };
   }
-}
-
-/** Client-side Groq throttle — max calls per rolling minute */
-const GROQ_MAX_CALLS_PER_MINUTE = 30;
-const groqCallTimestamps: number[] = [];
-
-function checkGroqRateLimit(): string | null {
-  const now = Date.now();
-  while (groqCallTimestamps.length > 0 && now - groqCallTimestamps[0] >= 60_000) {
-    groqCallTimestamps.shift();
-  }
-  if (groqCallTimestamps.length >= GROQ_MAX_CALLS_PER_MINUTE) {
-    const waitSec = Math.ceil((60_000 - (now - groqCallTimestamps[0])) / 1000);
-    return `Groq rate limit reached (${GROQ_MAX_CALLS_PER_MINUTE}/min). Retry in ~${waitSec}s.`;
-  }
-  groqCallTimestamps.push(now);
-  return null;
 }
 
 async function callGroq(config: AIConfig, messages: Message[], options?: ChatOptions): Promise<AIResponse> {
@@ -742,8 +788,15 @@ async function callGroq(config: AIConfig, messages: Message[], options?: ChatOpt
   const rateError = checkGroqRateLimit();
   if (rateError) return { content: '', error: rateError };
 
+  const baseUrl = config.baseUrl ?? defaultConfigs.groq.baseUrl!;
+  const urlError = assertSafeCloudBaseUrl(baseUrl, 'Groq');
+  if (urlError) return { content: '', error: urlError };
+
   try {
-    const response = await fetch(`${config.baseUrl}/v1/chat/completions`, {
+    const timeoutMs = options?.timeoutMs ?? 120_000;
+    const abortSignals = [AbortSignal.timeout(timeoutMs), getKillSwitchAbortSignal()];
+    if (options?.signal) abortSignals.push(options.signal);
+    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -756,6 +809,7 @@ async function callGroq(config: AIConfig, messages: Message[], options?: ChatOpt
         temperature: options?.temperature ?? (options?.jsonMode ? 0.1 : 0.7),
         response_format: options?.jsonMode ? { type: 'json_object' } : undefined,
       }),
+      signal: combineAbortSignals(...abortSignals),
     });
 
     if (!response.ok) {
@@ -766,8 +820,12 @@ async function callGroq(config: AIConfig, messages: Message[], options?: ChatOpt
     const data = await response.json();
     return { content: data.choices?.[0]?.message?.content || '' };
   } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      if (isKillSwitchActive()) return { content: '', error: KILL_SWITCH_HALT_MESSAGE };
+      return { content: '', error: 'AI request cancelled' };
+    }
     const raw = error instanceof Error ? error.message : String(error);
-    return { content: '', error: sanitizeErrorMessage(`Groq API error: ${raw}`) };
+    return { content: '', error: sanitizeSecretsInMessage(`Groq API error: ${raw}`) };
   }
 }
 
@@ -776,8 +834,18 @@ async function callOpenAI(config: AIConfig, messages: Message[], options?: ChatO
     return { content: '', error: 'OpenAI API key not configured' };
   }
 
+  const rateError = checkOpenAiRateLimit();
+  if (rateError) return { content: '', error: rateError };
+
+  const baseUrl = config.baseUrl ?? defaultConfigs.openai.baseUrl!;
+  const urlError = assertSafeCloudBaseUrl(baseUrl, 'OpenAI');
+  if (urlError) return { content: '', error: urlError };
+
   try {
-    const response = await fetch(`${config.baseUrl}/v1/chat/completions`, {
+    const timeoutMs = options?.timeoutMs ?? 120_000;
+    const abortSignals = [AbortSignal.timeout(timeoutMs), getKillSwitchAbortSignal()];
+    if (options?.signal) abortSignals.push(options.signal);
+    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -790,6 +858,7 @@ async function callOpenAI(config: AIConfig, messages: Message[], options?: ChatO
         temperature: options?.temperature ?? (options?.jsonMode ? 0.1 : 0.7),
         response_format: options?.jsonMode ? { type: 'json_object' } : undefined,
       }),
+      signal: combineAbortSignals(...abortSignals),
     });
 
     if (!response.ok) {
@@ -800,11 +869,26 @@ async function callOpenAI(config: AIConfig, messages: Message[], options?: ChatO
     const data = await response.json();
     return { content: data.choices?.[0]?.message?.content || '' };
   } catch (error) {
-    return { content: '', error: `OpenAI API error: ${error}` };
+    if (error instanceof Error && error.name === 'AbortError') {
+      if (isKillSwitchActive()) return { content: '', error: KILL_SWITCH_HALT_MESSAGE };
+      return { content: '', error: 'AI request cancelled' };
+    }
+    const raw = error instanceof Error ? error.message : String(error);
+    return { content: '', error: sanitizeSecretsInMessage(`OpenAI API error: ${raw}`) };
   }
 }
 
 export async function chat(config: AIConfig, messages: Message[], options?: ChatOptions): Promise<AIResponse> {
+  if (isKillSwitchActive()) {
+    return { content: '', error: KILL_SWITCH_HALT_MESSAGE };
+  }
+
+  const userText = messages.filter(m => m.role === 'user').map(m => m.content).join('\n');
+  const forbidden = findForbiddenTerm(userText);
+  if (forbidden) {
+    return { content: '', error: forbiddenContentMessage(forbidden) };
+  }
+
   const hasSystem = messages.some(m => m.role === 'system');
   const fullMessages: Message[] = hasSystem
     ? messages
@@ -1032,10 +1116,6 @@ export function clearAIConfigApiKey(): void {
   saveAIConfig({ ...config, apiKey: undefined });
 }
 
-function sanitizeErrorMessage(message: string): string {
-  return message.replace(/gsk_[a-zA-Z0-9_-]+/g, 'gsk_***').replace(/sk-[a-zA-Z0-9_-]+/g, 'sk-***');
-}
-
 export interface GroqConnectionResult {
   success: boolean;
   message: string;
@@ -1051,8 +1131,11 @@ export async function fetchGroqModels(config: AIConfig): Promise<GroqConnectionR
   const rateError = checkGroqRateLimit();
   if (rateError) return { success: false, message: rateError };
 
+  const baseUrl = config.baseUrl ?? defaultConfigs.groq.baseUrl!;
+  const urlError = assertSafeCloudBaseUrl(baseUrl, 'Groq');
+  if (urlError) return { success: false, message: urlError };
+
   try {
-    const baseUrl = config.baseUrl ?? defaultConfigs.groq.baseUrl!;
     const response = await fetch(`${baseUrl}/v1/models`, {
       headers: { Authorization: `Bearer ${config.apiKey}` },
       signal: AbortSignal.timeout(10_000),
@@ -1075,7 +1158,7 @@ export async function fetchGroqModels(config: AIConfig): Promise<GroqConnectionR
     };
   } catch (error) {
     const raw = error instanceof Error ? error.message : String(error);
-    return { success: false, message: sanitizeErrorMessage(`Groq unreachable: ${raw}`) };
+    return { success: false, message: sanitizeSecretsInMessage(`Groq unreachable: ${raw}`) };
   }
 }
 
@@ -1094,7 +1177,7 @@ export async function testConnection(config: AIConfig): Promise<{ success: boole
   ]);
 
   if (response.error) {
-    return { success: false, message: sanitizeErrorMessage(response.error) };
+    return { success: false, message: sanitizeSecretsInMessage(response.error) };
   }
 
   return { success: true, message: 'Connected successfully!' };

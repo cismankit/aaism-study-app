@@ -26,7 +26,7 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npm run build:pages
+      - run: npm run quality:gate
 
       - uses: actions/upload-pages-artifact@v3
         with:

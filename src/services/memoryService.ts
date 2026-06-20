@@ -17,6 +17,7 @@
  * ```
  */
 
+import { isAllowedHttpsUrl } from '../data/securityPolicy';
 import { PROGRESS_STORAGE_KEY, type MissionLogEntry } from './progressService';
 import { CAREER_STORAGE_KEY, type CompanyProfile } from '../data/careerIntel';
 import { loadIntegrationsConfig } from './integrationsConfigService';
@@ -330,6 +331,9 @@ export async function pushToSupabase(memory?: AegisMemory): Promise<{ ok: boolea
   if (!cfg) {
     return { ok: false, message: 'Supabase not configured — add URL + anon key in Integrations.' };
   }
+  if (!isAllowedHttpsUrl(cfg.url, { allowLocalhost: true })) {
+    return { ok: false, message: 'Supabase URL must use HTTPS.' };
+  }
 
   const body = memory ?? loadMemory();
   const remoteId = body.sync.remoteId ?? 'local';
@@ -375,6 +379,9 @@ export async function pullFromSupabase(): Promise<{ ok: boolean; message: string
   const cfg = getSupabaseConfig();
   if (!cfg) {
     return { ok: false, message: 'Supabase not configured.' };
+  }
+  if (!isAllowedHttpsUrl(cfg.url, { allowLocalhost: true })) {
+    return { ok: false, message: 'Supabase URL must use HTTPS.' };
   }
 
   const local = loadMemory();

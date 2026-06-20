@@ -31,6 +31,7 @@ import {
   type IntegrationsConfig,
 } from './integrationsConfigService';
 import { RSS_SOURCES } from '../data/rssSources';
+import { validateUrlForFetch } from '../data/securityPolicy';
 
 export const CONNECTORS_CONFIG_KEY = 'aegis-connectors-config';
 
@@ -399,6 +400,8 @@ async function testConnectorConnection(id: ConnectorId, fields: Record<string, s
   switch (id) {
     case 'ollama': {
       const baseUrl = fields.baseUrl || 'http://localhost:11434';
+      const urlCheck = validateUrlForFetch(baseUrl, 'ollama');
+      if (!urlCheck.ok) return { ok: false, message: urlCheck.reason ?? 'Invalid Ollama URL' };
       const status = await checkOllamaStatus(baseUrl);
       if (!status.running) {
         return { ok: false, message: status.error ?? 'Ollama not running — click "Open Ollama app" in Local LLM Hub' };
@@ -417,6 +420,9 @@ async function testConnectorConnection(id: ConnectorId, fields: Record<string, s
     }
     case 'groq': {
       if (!fields.apiKey?.trim()) return { ok: false, message: 'Groq API key required' };
+      const groqBase = defaultConfigs.groq.baseUrl!;
+      const groqUrlCheck = validateUrlForFetch(groqBase, 'cloud-ai');
+      if (!groqUrlCheck.ok) return { ok: false, message: groqUrlCheck.reason ?? 'Invalid Groq URL' };
       const result = await fetchGroqModels({
         provider: 'groq',
         apiKey: fields.apiKey,
@@ -427,6 +433,9 @@ async function testConnectorConnection(id: ConnectorId, fields: Record<string, s
     }
     case 'anthropic': {
       if (!fields.apiKey?.trim()) return { ok: false, message: 'Anthropic API key required' };
+      const anthropicBase = defaultConfigs.claude.baseUrl!;
+      const anthropicCheck = validateUrlForFetch(anthropicBase, 'cloud-ai');
+      if (!anthropicCheck.ok) return { ok: false, message: anthropicCheck.reason ?? 'Invalid Anthropic URL' };
       const result = await testAIConnection({
         provider: 'claude',
         apiKey: fields.apiKey,
@@ -437,6 +446,9 @@ async function testConnectorConnection(id: ConnectorId, fields: Record<string, s
     }
     case 'openai': {
       if (!fields.apiKey?.trim()) return { ok: false, message: 'OpenAI API key required' };
+      const openaiBase = defaultConfigs.openai.baseUrl!;
+      const openaiCheck = validateUrlForFetch(openaiBase, 'cloud-ai');
+      if (!openaiCheck.ok) return { ok: false, message: openaiCheck.reason ?? 'Invalid OpenAI URL' };
       const result = await testAIConnection({
         provider: 'openai',
         apiKey: fields.apiKey,
@@ -449,6 +461,8 @@ async function testConnectorConnection(id: ConnectorId, fields: Record<string, s
       if (!fields.url?.trim() || !fields.anonKey?.trim()) {
         return { ok: false, message: 'Supabase URL and anon key required' };
       }
+      const supaCheck = validateUrlForFetch(fields.url, 'https');
+      if (!supaCheck.ok) return { ok: false, message: supaCheck.reason ?? 'Invalid Supabase URL' };
       const result = await testSupabaseConnection(fields.url, fields.anonKey);
       return { ok: result.ok, message: result.message };
     }

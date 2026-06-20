@@ -2,6 +2,9 @@ import { RSS_SOURCES, type RssSource, type RssSourceCategory } from '../data/rss
 import { COMMUNITY_INSIGHTS } from '../data/communityIntelligence';
 import { getPipelineStats } from './agentService';
 import { loadInsights } from './intelligenceAgent';
+import { isSafeFetchUrl } from '../data/securityPolicy';
+
+export { isSafeFetchUrl } from '../data/securityPolicy';
 
 export interface IntelFeedItem {
   id: string;
@@ -202,21 +205,6 @@ function readStaleCache(): IntelFeedItem[] {
     return (JSON.parse(raw) as FeedCache).items ?? [];
   } catch {
     return [];
-  }
-}
-
-/** Validate RSS source URL before proxy fetch — blocks javascript: and non-http(s) schemes */
-export function isSafeFetchUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    if (!['http:', 'https:'].includes(parsed.protocol)) return false;
-    const host = parsed.hostname.toLowerCase();
-    if (host === 'localhost' || host === '127.0.0.1' || host.startsWith('192.168.') || host.startsWith('10.')) {
-      return false;
-    }
-    return true;
-  } catch {
-    return false;
   }
 }
 

@@ -37,6 +37,7 @@ import GroqApiKeySection from '../components/GroqApiKeySection';
 import SignInSyncSection from '../components/SignInSyncSection';
 import IntegrationsSettings from '../components/IntegrationsSettings';
 import ConnectorsSettings from '../components/ConnectorsSettings';
+import AutoConfigurationSettings from '../components/AutoConfigurationSettings';
 import AIConnectionStatusPill from '../components/AIConnectionStatusPill';
 import { useSettingsHealthPoll } from '../hooks/useSettingsHealthPoll';
 import AboutPanel from '../components/AboutPanel';
@@ -879,6 +880,7 @@ function SettingsTab() {
 
       {section === 'ai' && (
       <>
+      <AutoConfigurationSettings />
       <AIConnectionStatusPill className="mb-4" />
 
       <div className="bg-theme-elevated rounded-xl p-6 border border-theme">

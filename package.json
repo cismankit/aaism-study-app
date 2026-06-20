@@ -4,10 +4,14 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/sync-version.mjs",
+    "prebuild": "node scripts/sync-version.mjs",
     "dev": "vite",
     "build": "tsc && vite build",
     "build:pages": "GITHUB_PAGES=true tsc && GITHUB_PAGES=true vite build",
+    "quality:gate": "node scripts/quality-gate.mjs",
     "preview": "vite preview",
+    "sync:version": "node scripts/sync-version.mjs",
     "sync:tauri": "node scripts/sync-tauri-version.mjs",
     "stamp:icons": "node scripts/stamp-icon.mjs",
     "tauri": "tauri",
@@ -17,6 +21,7 @@
     "tauri:build:release": "node scripts/prepare-tauri-build.mjs release"
   },
   "dependencies": {
+    "@tauri-apps/plugin-http": "^2.5.9",
     "@tauri-apps/plugin-shell": "^2.3.0",
     "lucide-react": "^0.294.0",
     "react": "^18.2.0",
@@ -35,7 +40,7 @@
     "sharp": "^0.34.2",
     "tailwindcss": "^3.3.5",
     "typescript": "^5.2.2",
-    "vite": "^5.0.0",
+    "vite": "^6.4.3",
     "vite-plugin-pwa": "^1.3.0"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"

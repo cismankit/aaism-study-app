@@ -1,5 +1,7 @@
 import { chat, resolveAIConfigForRun, type Message } from './aiService';
-import { buildOpsSystemPrompt } from './agentPrompts';
+import { linkAbortSignal, isKillSwitchActive, KILL_SWITCH_HALT_MESSAGE } from './killSwitchService';
+import { ensureAIReady, formatAIBlockedMessage } from './autoConfigService';
+import { buildOpsSystemPrompt, getAgentTimeoutMs } from './agentPrompts';
 import { recordAgentSummary } from './memoryService';
 
 export type OpsAgentId = 'openclaw' | 'hermes' | 'claude-analyst';
@@ -166,7 +168,34 @@ export async function analyzeWithOpsAgent(
   agentId: OpsAgentId,
   input: string,
   context?: string,
+  signal?: AbortSignal,
 ): Promise<OpsAnalysisResult> {
+  const runSignal = linkAbortSignal(signal);
+
+  if (isKillSwitchActive()) {
+    return {
+      summary: '',
+      findings: [],
+      nextSteps: [],
+      commands: [],
+      mitreMapping: [],
+      error: KILL_SWITCH_HALT_MESSAGE,
+    };
+  }
+
+  const readyCheck = await ensureAIReady();
+  if (!readyCheck.ready) {
+    const blocked = formatAIBlockedMessage(readyCheck);
+    return {
+      summary: '',
+      findings: [],
+      nextSteps: readyCheck.fixSteps,
+      commands: [],
+      mitreMapping: [],
+      error: blocked,
+    };
+  }
+
   const agent = getOpsAgent(agentId);
   const config = await resolveAIConfigForRun();
 
@@ -180,7 +209,13 @@ export async function analyzeWithOpsAgent(
     },
   ];
 
-  const response = await chat(config, messages, { jsonMode: true, temperature: 0.3 });
+  const response = await chat(config, messages, {
+    jsonMode: true,
+    temperature: 0.3,
+    numPredict: 1500,
+    timeoutMs: getAgentTimeoutMs(agentId),
+    signal: runSignal,
+  });
 
   if (response.error) {
     return {
@@ -208,7 +243,15 @@ export async function generateMiniLabFromIncident(
   input: string,
   certId: string,
   domainId: number,
+  signal?: AbortSignal,
 ): Promise<{ title: string; steps: string[]; type: string } | null> {
+  const runSignal = linkAbortSignal(signal);
+
+  if (isKillSwitchActive()) return null;
+
+  const readyCheck = await ensureAIReady();
+  if (!readyCheck.ready) return null;
+
   const config = await resolveAIConfigForRun();
   const response = await chat(config, [
     {
@@ -219,7 +262,7 @@ export async function generateMiniLabFromIncident(
       role: 'user',
       content: `Cert: ${certId}, Domain: ${domainId}\nIncident data:\n${input.slice(0, 3000)}`,
     },
-  ], { jsonMode: true, temperature: 0.4 });
+  ], { jsonMode: true, temperature: 0.4, signal: runSignal });
 
   if (response.error || !response.content) return null;
   try {

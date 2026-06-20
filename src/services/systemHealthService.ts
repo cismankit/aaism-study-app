@@ -12,6 +12,7 @@ import {
   isSupabaseConfigured,
   testSupabaseConnection,
 } from './integrationsConfigService';
+import { refreshConnectorStatus } from './connectorRegistry';
 import { getSyncMeta } from './syncService';
 
 export type SystemIssueId =
@@ -153,6 +154,9 @@ let systemPollTimer: ReturnType<typeof setInterval> | null = null;
 function buildSystemReport(llm: LLMHealthReport): SystemHealthReport {
   if (llm.overallHealthy && llm.activeProvider === 'ollama') {
     clearDismissedIssue('ollama-offline');
+  }
+  if (llm.providers.ollama?.healthy) {
+    void refreshConnectorStatus('ollama');
   }
 
   const issues: SystemIssue[] = [

@@ -1,5 +1,6 @@
 import { isTauri } from '../utils/tauriEnv';
 import { isLocalhost } from './gpuDetection';
+import { isAllowedOllamaUrl } from '../data/securityPolicy';
 
 export const DEFAULT_OLLAMA_URL = 'http://localhost:11434';
 export const OLLAMA_FETCH_TIMEOUT_MS = 8_000;
@@ -19,6 +20,31 @@ export interface OllamaConnectionTest {
   error?: string;
 }
 
+type OllamaFetchInit = RequestInit & { timeout?: number };
+
+let tauriFetchPromise: Promise<typeof fetch> | null = null;
+
+async function getTauriFetch(): Promise<typeof fetch> {
+  if (!tauriFetchPromise) {
+    tauriFetchPromise = import('@tauri-apps/plugin-http').then(m => m.fetch as typeof fetch);
+  }
+  return tauriFetchPromise;
+}
+
+/**
+ * Fetch Ollama API — in the Tauri Mac app uses native HTTP (reqwest) to bypass
+ * CORS: Ollama returns 403 for Origin http://tauri.localhost while Node/CLI works.
+ */
+export async function ollamaFetch(url: string, init?: OllamaFetchInit): Promise<Response> {
+  const { timeout, ...rest } = init ?? {};
+  const ms = timeout ?? OLLAMA_FETCH_TIMEOUT_MS;
+  if (isTauri()) {
+    const fetchFn = await getTauriFetch();
+    return fetchFn(url, { ...rest, timeout: ms } as RequestInit);
+  }
+  return fetch(url, { ...rest, signal: AbortSignal.timeout(ms) });
+}
+
 /** Normalize user-entered Ollama base URL — always falls back to localhost:11434. */
 export function normalizeOllamaBaseUrl(url?: string | null): string {
   const trimmed = url?.trim();
@@ -36,7 +62,6 @@ function modelNameMatches(names: string[], configured: string): boolean {
 /** True when the app can call Ollama's localhost API (browser dev, Tauri Mac app). */
 export function canUseOllamaApi(): boolean {
   if (typeof window === 'undefined') return false;
-  // Tauri Mac app is never "remote" — always allow localhost Ollama API.
   if (isTauri()) return true;
   return isLocalhost();
 }
@@ -47,6 +72,16 @@ export async function testOllamaConnection(
   configuredModel?: string,
 ): Promise<OllamaConnectionTest> {
   const url = normalizeOllamaBaseUrl(baseUrl);
+  if (!isAllowedOllamaUrl(url)) {
+    return {
+      connected: false,
+      models: [],
+      defaultModel: null,
+      latencyMs: 0,
+      baseUrl: url,
+      error: 'Invalid Ollama URL — only localhost or 127.0.0.1 over http(s) is allowed',
+    };
+  }
   return probeOllama(url, configuredModel, url !== DEFAULT_OLLAMA_URL);
 }
 
@@ -57,13 +92,18 @@ async function probeOllama(
 ): Promise<OllamaConnectionTest> {
   const start = performance.now();
   try {
-    const response = await fetch(`${url}/api/tags`, {
+    const response = await ollamaFetch(`${url}/api/tags`, {
       method: 'GET',
       signal: AbortSignal.timeout(OLLAMA_FETCH_TIMEOUT_MS),
+      timeout: OLLAMA_FETCH_TIMEOUT_MS,
     });
     const latencyMs = Math.round(performance.now() - start);
 
     if (!response.ok) {
+      const corsHint =
+        response.status === 403 && isTauri()
+          ? ' (CORS blocked in WebView — rebuild app with HTTP plugin)'
+          : '';
       if (allowFallback) return probeOllama(DEFAULT_OLLAMA_URL, configuredModel, false);
       return {
         connected: false,
@@ -71,7 +111,7 @@ async function probeOllama(
         defaultModel: null,
         latencyMs,
         baseUrl: url,
-        error: `Ollama not responding (${response.status})`,
+        error: `Ollama not responding (${response.status})${corsHint}`,
       };
     }
 
@@ -130,7 +170,7 @@ export async function runOllamaTestPrompt(
 ): Promise<{ ok: boolean; message: string; reply?: string }> {
   const url = normalizeOllamaBaseUrl(baseUrl);
   try {
-    const response = await fetch(`${url}/api/generate`, {
+    const response = await ollamaFetch(`${url}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -140,6 +180,7 @@ export async function runOllamaTestPrompt(
         options: { num_predict: 16 },
       }),
       signal: AbortSignal.timeout(30_000),
+      timeout: 30_000,
     });
 
     if (!response.ok) {

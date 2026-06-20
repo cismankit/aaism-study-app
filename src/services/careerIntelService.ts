@@ -21,6 +21,7 @@ import {
   buildJobAnalysisProvenance,
   buildPeopleMapProvenance,
 } from './confidenceService';
+import { isSafeFetchUrl } from '../data/securityPolicy';
 
 function readProfiles(): CompanyProfile[] {
   try {
@@ -57,6 +58,7 @@ export function deleteCompanyProfile(id: string): void {
 }
 
 async function fetchJobTextFromUrl(url: string): Promise<string | null> {
+  if (!isSafeFetchUrl(url)) return null;
   try {
     const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
     const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });

@@ -3,17 +3,18 @@ import {
   LayoutDashboard, Radar, Eye, Bot, Zap,
   Sun, Moon, Flame, ChevronRight, Settings, Menu,
   Activity, Map, Crosshair, PanelLeftClose,
-  Terminal, Users, Target, Briefcase, Focus,
+  Terminal, Users, Target, Briefcase, Focus, Octagon,
 } from 'lucide-react';
 import Logo from './Logo';
 import CertSwitcher from './CertSwitcher';
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { AppProvider } from '../context/AppContext';
 import { CertProvider, useCert } from '../context/CertContext';
 import { GamificationProvider, useGamification } from '../context/GamificationContext';
 import { useTheme } from '../context/ThemeContext';
 import { getLevelFromXP } from '../data/gamificationData';
 import AchievementToast from './AchievementToast';
+import AutoConfigToast from './AutoConfigToast';
 import MatrixRain, { MatrixColor } from './MatrixRain';
 import LiveIntelFeed from './LiveIntelFeed';
 import GlobalSearch, { useGlobalSearchShortcut } from './GlobalSearch';
@@ -38,6 +39,12 @@ import { getNextBestAction } from '../services/sidebarJourneyService';
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from '../constants/platformBrand';
 import { isFeatureUnlocked, type GatedFeatureId } from '../services/productTierService';
 import { isJobSeekerModeEnabled } from '../services/integrationsConfigService';
+import {
+  engageKillSwitch,
+  releaseKillSwitch,
+  subscribeKillSwitch,
+  type KillSwitchState,
+} from '../services/killSwitchService';
 
 interface PerformanceContextType {
   bgColor: MatrixColor;
@@ -500,6 +507,99 @@ function Sidebar({
   );
 }
 
+// ============ KILL SWITCH ============
+
+function KillSwitchBanner() {
+  const [state, setState] = useState<KillSwitchState>({ active: false });
+
+  useEffect(() => subscribeKillSwitch(setState), []);
+
+  if (!state.active) return null;
+
+  const handleRelease = () => {
+    const ok = window.confirm(
+      'Release the emergency kill switch and resume all AI actions?\n\nConfirm you intentionally want to re-enable agent runs.',
+    );
+    if (ok) releaseKillSwitch(true);
+  };
+
+  return (
+    <div
+      role="alert"
+      className="w-full bg-red-600 text-white px-4 py-2 flex items-center justify-center gap-3 text-sm font-medium shrink-0 animate-fade-in"
+    >
+      <Octagon className="w-4 h-4 shrink-0" aria-hidden />
+      <span>
+        All AI actions halted
+        {state.reason ? ` — ${state.reason}` : ''}
+      </span>
+      <button
+        type="button"
+        onClick={handleRelease}
+        className="ml-2 px-3 py-0.5 rounded bg-white/20 hover:bg-white/30 underline-offset-2 hover:underline transition-colors"
+      >
+        Release
+      </button>
+    </div>
+  );
+}
+
+function EmergencyStopButton() {
+  const [active, setActive] = useState(false);
+
+  useEffect(() => subscribeKillSwitch(s => setActive(s.active)), []);
+
+  const handleEngage = () => {
+    if (active) return;
+    const ok = window.confirm(
+      'EMERGENCY STOP — halt ALL in-flight AI agent runs immediately?\n\nThis blocks new AI calls until you release the kill switch.',
+    );
+    if (ok) engageKillSwitch('Manual emergency stop');
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleEngage}
+      disabled={active}
+      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+        active
+          ? 'bg-red-900/40 text-red-300 cursor-not-allowed'
+          : 'bg-red-600 hover:bg-red-700 text-white shadow-sm shadow-red-600/30'
+      }`}
+      title={active ? 'Kill switch active' : 'Emergency stop — halt all AI (⌘⇧.)'}
+      aria-label="Emergency stop — halt all AI actions"
+    >
+      <Octagon className="w-3.5 h-3.5" />
+      <span className="hidden sm:inline">EMERGENCY STOP</span>
+    </button>
+  );
+}
+
+function useKillSwitchShortcuts(onEngage: () => void) {
+  const lastEscRef = useRef(0);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === '.') {
+        e.preventDefault();
+        onEngage();
+        return;
+      }
+      if (e.key === 'Escape') {
+        const now = Date.now();
+        if (now - lastEscRef.current < 500) {
+          e.preventDefault();
+          onEngage();
+        }
+        lastEscRef.current = now;
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onEngage]);
+}
+
 // ============ TOP BAR ============
 
 function TopBar({
@@ -517,6 +617,7 @@ function TopBar({
   const location = useLocation();
   const [hasUnseen, setHasUnseen] = useState(false);
   const [aiReady, setAiReady] = useState(false);
+  const [killActive, setKillActive] = useState(false);
 
   useEffect(() => {
     setHasUnseen(hasUnseenReleases());
@@ -525,6 +626,18 @@ function TopBar({
   useEffect(() => {
     return subscribeLLMHealth(report => setAiReady(isAIReady(report)));
   }, []);
+
+  useEffect(() => subscribeKillSwitch(s => setKillActive(s.active)), []);
+
+  const handleEmergencyEngage = useCallback(() => {
+    if (killActive) return;
+    const ok = window.confirm(
+      'EMERGENCY STOP — halt ALL in-flight AI agent runs immediately?\n\nThis blocks new AI calls until you release the kill switch.',
+    );
+    if (ok) engageKillSwitch('Manual emergency stop');
+  }, [killActive]);
+
+  useKillSwitchShortcuts(handleEmergencyEngage);
 
   const currentPage = navSections.flatMap(s => s.items).find(item =>
     item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to),
@@ -549,6 +662,8 @@ function TopBar({
       </div>
 
       <div className="flex items-center gap-2">
+        <EmergencyStopButton />
+
         <button
           onClick={onOpenSearch}
           className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-cockpit-muted bg-cockpit-track hover:text-cockpit dark:hover:text-gray-300 transition-colors"
@@ -722,6 +837,8 @@ function LayoutContent() {
           onOpenSearch={() => setSearchOpen(true)}
         />
 
+        <KillSwitchBanner />
+
         <SystemHealthBanner />
 
         <PwaInstallBanner />
@@ -758,6 +875,7 @@ function LayoutContent() {
       </div>
 
       <AchievementToast />
+      <AutoConfigToast />
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
       {showOnboarding && <OnboardingWizard onComplete={dismissOnboarding} />}
     </div>

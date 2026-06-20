@@ -25,6 +25,7 @@ import { getApprovedQuestions } from './agentStore';
 import { getActiveCertification } from './certContextService';
 import { buildDiscoverySystemPrompt, buildCriticSystemPrompt } from './agentPrompts';
 import { recordAgentSummary } from './memoryService';
+import { isKillSwitchActive } from './killSwitchService';
 
 export type AgentName = 'AnalystAgent' | 'DiscoverAgent' | 'CriticAgent' | 'DedupAgent';
 
@@ -65,7 +66,7 @@ function agentLog(
 }
 
 function checkAbort(ctx: OrchestratorContext) {
-  if (ctx.signal?.aborted) {
+  if (isKillSwitchActive() || ctx.signal?.aborted) {
     const err = new Error('Agent stopped by user');
     err.name = 'AgentAbortError';
     throw err;
@@ -210,7 +211,7 @@ async function callWithHeartbeat(
     agentLog('DiscoverAgent', ctx.callbacks, 'discover', `${label} (${tick * 5}s)...`, 'thinking');
   }, 5000);
   try {
-    const resp = await chatJson(config, messages);
+    const resp = await chatJson(config, messages, { signal: ctx.signal });
     if (resp.error) throw new Error(resp.error);
     return resp.content;
   } finally {
@@ -416,7 +417,7 @@ ${JSON.stringify(reviewPayload, null, 2)}` },
   ];
 
   try {
-    const resp = await chatJson(criticConfig, messages);
+    const resp = await chatJson(criticConfig, messages, { signal: ctx.signal });
     if (resp.error) throw new Error(resp.error);
     const parsed = JSON.parse(sanitizeJsonString(resp.content)) as { approved?: number[] };
     const approvedIdx = new Set(parsed.approved ?? rulePassed.map((_, i) => i));

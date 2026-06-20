@@ -3,6 +3,7 @@
  */
 
 import { chat, resolveAIConfigForRun } from './aiService';
+import { isKillSwitchActive, KILL_SWITCH_HALT_MESSAGE, linkAbortSignal } from './killSwitchService';
 import { buildCertTrainingContext, getActiveCertification } from './certContextService';
 import { buildMissionHandoffPrompt } from './agentPrompts';
 import { type OpsAgentId } from './opsAgentService';
@@ -206,6 +207,7 @@ async function runAgentStep(
   certContext: string,
   handoffs: AgentHandoff[],
   callbacks: MissionOrchestratorCallbacks,
+  signal?: AbortSignal,
 ): Promise<string> {
   const idx = handoffs.findIndex(h => h.agent === agentId && h.phase === phase);
   if (idx >= 0) {
@@ -215,11 +217,15 @@ async function runAgentStep(
 
   await delay(400);
 
+  if (isKillSwitchActive() || signal?.aborted) {
+    throw new Error(KILL_SWITCH_HALT_MESSAGE);
+  }
+
   const config = await resolveAIConfigForRun();
   const response = await chat(config, [
     { role: 'system', content: `${buildMissionHandoffPrompt(agentId)}\n\n${certContext}\nReturn concise JSON or plain text.` },
     { role: 'user', content: userPrompt },
-  ], { jsonMode: false, temperature: 0.3 });
+  ], { jsonMode: false, temperature: 0.3, numPredict: 384, timeoutMs: 60_000, signal });
 
   if (response.error) {
     const errMsg = `${agentId} ${phase}: ${response.error}`;
@@ -297,6 +303,14 @@ export async function orchestrateStudyMission(
   callbacks: MissionOrchestratorCallbacks,
   signal?: AbortSignal,
 ): Promise<StudyMissionPlan> {
+  const runSignal = linkAbortSignal(signal);
+
+  if (isKillSwitchActive()) {
+    const errMsg = KILL_SWITCH_HALT_MESSAGE;
+    callbacks.onError(errMsg);
+    throw new Error(errMsg);
+  }
+
   const cert = getActiveCertification();
   const certContext = buildCertTrainingContext(cert);
   const { domainId, domainName } = resolveDomain(cert.id, goal);
@@ -323,7 +337,7 @@ export async function orchestrateStudyMission(
   callbacks.onHandoffUpdate([...handoffs]);
 
   const checkAbort = () => {
-    if (signal?.aborted) throw new Error('Mission cancelled');
+    if (isKillSwitchActive() || runSignal.aborted) throw new Error(KILL_SWITCH_HALT_MESSAGE);
   };
 
   checkAbort();
@@ -336,6 +350,7 @@ export async function orchestrateStudyMission(
     certContext,
     handoffs,
     callbacks,
+    runSignal,
   );
   checkAbort();
 
@@ -354,6 +369,7 @@ export async function orchestrateStudyMission(
     certContext,
     handoffs,
     callbacks,
+    runSignal,
   );
   checkAbort();
 
@@ -366,6 +382,7 @@ export async function orchestrateStudyMission(
     certContext,
     handoffs,
     callbacks,
+    runSignal,
   );
   checkAbort();
 

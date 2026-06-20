@@ -4,6 +4,7 @@ import {
   APP_NAME,
   APP_VERSION,
   APP_BUILD,
+  APP_BUILD_DATE,
   BUNDLE_ID,
   APP_WINDOW_TITLE,
 } from '../constants/appMeta';
@@ -45,8 +46,12 @@ export default function AboutPanel() {
           <dd className="font-mono text-cockpit">{APP_VERSION}</dd>
         </div>
         <div className="rounded-lg border border-theme bg-cockpit-track/40 px-3 py-2">
-          <dt className="text-[10px] uppercase tracking-wide text-cockpit-muted">Build</dt>
+          <dt className="text-[10px] uppercase tracking-wide text-cockpit-muted">Git</dt>
           <dd className="font-mono text-cockpit">{APP_BUILD}</dd>
+        </div>
+        <div className="rounded-lg border border-theme bg-cockpit-track/40 px-3 py-2">
+          <dt className="text-[10px] uppercase tracking-wide text-cockpit-muted">Built</dt>
+          <dd className="font-mono text-cockpit">{APP_BUILD_DATE}</dd>
         </div>
         <div className="rounded-lg border border-theme bg-cockpit-track/40 px-3 py-2 sm:col-span-2">
           <dt className="text-[10px] uppercase tracking-wide text-cockpit-muted">Bundle ID</dt>

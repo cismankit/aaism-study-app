@@ -4,6 +4,7 @@
 interface ImportMetaEnv {
   readonly VITE_APP_VERSION: string;
   readonly VITE_APP_BUILD: string;
+  readonly VITE_APP_BUILD_DATE: string;
   readonly VITE_BUNDLE_ID: string;
 }
 

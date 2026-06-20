@@ -1,7 +1,9 @@
 import { chat, resolveAIConfigForRun, type AIConfig } from './aiService';
+import { ensureAIReady, formatAIBlockedMessage } from './autoConfigService';
+import { linkAbortSignal, isKillSwitchActive, KILL_SWITCH_HALT_MESSAGE } from './killSwitchService';
 import { buildCertTrainingContext, getActiveCertification } from './certContextService';
 import { type OpsAgentId } from './opsAgentService';
-import { buildTeamPackPrompt } from './agentPrompts';
+import { buildTeamPackPrompt, getAgentTimeoutMs } from './agentPrompts';
 import { OSINT_SOURCES } from '../data/osintSources';
 import {
   getTeamPack,
@@ -48,6 +50,7 @@ export interface TeamPackCallbacks {
 const STUDIO_PREFILL_KEY = 'aaism-team-pack-studio';
 
 function checkAbort(signal?: AbortSignal) {
+  if (isKillSwitchActive()) throw new Error(KILL_SWITCH_HALT_MESSAGE);
   if (signal?.aborted) throw new Error('Mission cancelled');
 }
 
@@ -143,6 +146,99 @@ function buildStepUserMessage(
   ].filter(Boolean).join('\n\n');
 }
 
+function buildBatchedStepUserMessage(
+  pack: TeamPack,
+  userPrompt: string,
+  certShortName: string,
+  certName: string,
+  osintContext: string,
+): string {
+  const stepsSpec = pack.steps
+    .map((s, i) => `${i + 1}. [id=${s.id}] ${s.label}: ${s.description}`)
+    .join('\n');
+
+  const sourceBlock = pack.outputType === 'osint-summary' && osintContext
+    ? `\n\nVerified OSINT directory entries (cite URLs from this list):\n${osintContext}`
+    : '';
+
+  return [
+    `User mission prompt: ${userPrompt}`,
+    `Active certification: ${certShortName} (${certName})`,
+    `Execute ALL ${pack.steps.length} steps below in one pass.`,
+    sourceBlock,
+    `Steps:\n${stepsSpec}`,
+    'Return JSON: { "steps": [{ "id": "step-id", "content": "markdown deliverable", "confidence": 0-100, "sourceType": "llm"|"osint-directory"|"cert-context"|"user-prompt", "summary": "one-line status" }] }',
+    'Include one entry per step id, in order. Each step builds on prior context within your response.',
+  ].filter(Boolean).join('\n\n');
+}
+
+function parseBatchedStepResponse(
+  raw: string,
+  pack: TeamPack,
+): StepOutput[] | null {
+  try {
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+    const parsed = JSON.parse(jsonMatch[0]) as { steps?: unknown[] };
+    if (!Array.isArray(parsed.steps) || parsed.steps.length === 0) return null;
+
+    const byId = new Map<string, StepOutput>();
+    for (const entry of parsed.steps) {
+      if (!entry || typeof entry !== 'object') continue;
+      const row = entry as Record<string, unknown>;
+      const id = String(row.id ?? '').trim();
+      if (!id) continue;
+      const step = pack.steps.find(s => s.id === id);
+      const fallbackSource = step ? inferStepSourceType(step, pack) : 'llm';
+      byId.set(id, parseStepResponse(JSON.stringify(row), fallbackSource));
+    }
+
+    const ordered = pack.steps.map(step => {
+      const output = byId.get(step.id);
+      if (output?.content && !output.error) return output;
+      return output ?? { content: '', confidence: 0, sourceType: inferStepSourceType(step, pack), error: `Missing step: ${step.label}` };
+    });
+
+    if (ordered.every(o => o.content && !o.error)) return ordered;
+    if (ordered.some(o => o.content && !o.error)) return ordered;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function executeStepsBatched(
+  pack: TeamPack,
+  userPrompt: string,
+  certContext: string,
+  osintContext: string,
+  agentId: OpsAgentId,
+  config: AIConfig,
+  certShortName: string,
+  certName: string,
+  signal?: AbortSignal,
+): Promise<StepOutput[] | null> {
+  checkAbort(signal);
+  const systemPrompt = buildSystemPrompt(pack, agentId, certContext);
+
+  const response = await chat(config, [
+    { role: 'system', content: systemPrompt },
+    {
+      role: 'user',
+      content: buildBatchedStepUserMessage(pack, userPrompt, certShortName, certName, osintContext),
+    },
+  ], {
+    jsonMode: true,
+    temperature: 0.4,
+    timeoutMs: getAgentTimeoutMs('team-pack'),
+  });
+
+  checkAbort(signal);
+  if (response.error) return null;
+
+  return parseBatchedStepResponse(response.content, pack);
+}
+
 async function executeStep(
   pack: TeamPack,
   step: TeamPackStep,
@@ -168,7 +264,7 @@ async function executeStep(
         pack, step, stepIndex, userPrompt, certShortName, certName, osintContext, priorOutputs,
       ),
     },
-  ], { jsonMode: true, temperature: 0.4 });
+  ], { jsonMode: true, temperature: 0.4, timeoutMs: getAgentTimeoutMs('team-pack'), signal });
 
   checkAbort(signal);
 
@@ -237,6 +333,23 @@ export async function runTeamPackMission(
   const pack = getTeamPack(packId);
   if (!pack) throw new Error('Unknown team pack');
 
+  const runSignal = linkAbortSignal(signal);
+
+  if (isKillSwitchActive()) {
+    const errMsg = KILL_SWITCH_HALT_MESSAGE;
+    callbacks?.onPhaseChange('error');
+    callbacks?.onError(errMsg);
+    throw new Error(errMsg);
+  }
+
+  const readyCheck = await ensureAIReady();
+  if (!readyCheck.ready) {
+    const blocked = formatAIBlockedMessage(readyCheck);
+    callbacks?.onPhaseChange('error');
+    callbacks?.onError(blocked);
+    throw new Error(blocked);
+  }
+
   const cert = getActiveCertification();
   const certContext = buildCertTrainingContext(cert);
   const agent = agentId ?? pack.defaultAgent;
@@ -258,41 +371,63 @@ export async function runTeamPackMission(
     ? buildOsintContext(cert.shortName)
     : '';
 
-  for (let i = 0; i < pack.steps.length; i++) {
-    checkAbort(signal);
-    const step = pack.steps[i];
+  // Batched LLM call: N steps → 1 request when possible
+  stepStatuses.forEach((_, i) => { stepStatuses[i] = { ...stepStatuses[i], status: 'running' }; });
+  notify?.onStepsUpdate([...stepStatuses]);
 
-    stepStatuses[i] = { ...stepStatuses[i], status: 'running' };
+  const batched = await executeStepsBatched(
+    pack, userPrompt, certContext, osintContext, agent,
+    config, cert.shortName, cert.name, runSignal,
+  );
+
+  if (batched && batched.every(o => o.content && !o.error)) {
+    for (let i = 0; i < pack.steps.length; i++) {
+      stepOutputs.push(batched[i]);
+      stepStatuses[i] = { ...stepStatuses[i], status: 'done', output: batched[i] };
+    }
     notify?.onStepsUpdate([...stepStatuses]);
-
-    const output = await executeStep(
-      pack,
-      step,
-      i,
-      userPrompt,
-      certContext,
-      osintContext,
-      stepOutputs,
-      agent,
-      config,
-      cert.shortName,
-      cert.name,
-      signal,
-    );
-
-    stepOutputs.push(output);
-
-    if (output.error || !output.content) {
-      stepStatuses[i] = { ...stepStatuses[i], status: 'error', output };
-      notify?.onStepsUpdate([...stepStatuses]);
-      const errMsg = output.error ?? `Step "${step.label}" produced no content`;
-      notify?.onPhaseChange('error');
-      notify?.onError(errMsg);
-      throw new Error(errMsg);
+  } else {
+    stepOutputs.length = 0;
+    for (let i = 0; i < pack.steps.length; i++) {
+      stepStatuses[i] = { ...stepStatuses[i], status: 'pending' };
     }
 
-    stepStatuses[i] = { ...stepStatuses[i], status: 'done', output };
-    notify?.onStepsUpdate([...stepStatuses]);
+    for (let i = 0; i < pack.steps.length; i++) {
+      checkAbort(runSignal);
+      const step = pack.steps[i];
+
+      stepStatuses[i] = { ...stepStatuses[i], status: 'running' };
+      notify?.onStepsUpdate([...stepStatuses]);
+
+      const output = await executeStep(
+        pack,
+        step,
+        i,
+        userPrompt,
+        certContext,
+        osintContext,
+        stepOutputs,
+        agent,
+        config,
+        cert.shortName,
+        cert.name,
+        runSignal,
+      );
+
+      stepOutputs.push(output);
+
+      if (output.error || !output.content) {
+        stepStatuses[i] = { ...stepStatuses[i], status: 'error', output };
+        notify?.onStepsUpdate([...stepStatuses]);
+        const errMsg = output.error ?? `Step "${step.label}" produced no content`;
+        notify?.onPhaseChange('error');
+        notify?.onError(errMsg);
+        throw new Error(errMsg);
+      }
+
+      stepStatuses[i] = { ...stepStatuses[i], status: 'done', output };
+      notify?.onStepsUpdate([...stepStatuses]);
+    }
   }
 
   const result = parseMissionResult(pack, stepOutputs, cert.shortName);

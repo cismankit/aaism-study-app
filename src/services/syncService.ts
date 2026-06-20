@@ -1,5 +1,6 @@
 import { loadAIConfig, saveAIConfig, type AIConfig } from './aiService';
 import { getEffectiveSupabaseConfig, isSupabaseConfigured } from './integrationsConfigService';
+import { isAllowedHttpsUrl } from '../data/securityPolicy';
 import { reportSyncError, clearSyncError } from './systemHealthService';
 import { getCurrentSession, isSignedIn } from './authService';
 import {
@@ -209,6 +210,9 @@ export async function pushProgressToCloud(): Promise<{ ok: boolean; message: str
 async function pushToSupabase(blob: CloudBlob, userId: string): Promise<{ ok: boolean; message: string }> {
   const cfg = getEffectiveSupabaseConfig();
   if (!cfg) return { ok: false, message: 'Supabase not configured' };
+  if (!isAllowedHttpsUrl(cfg.url, { allowLocalhost: true })) {
+    return { ok: false, message: 'Supabase URL must use HTTPS' };
+  }
 
   try {
     const res = await fetch(`${cfg.url.replace(/\/$/, '')}/rest/v1/aaism_sync_blobs`, {
@@ -236,6 +240,7 @@ async function pushToSupabase(blob: CloudBlob, userId: string): Promise<{ ok: bo
 async function pullFromSupabase(userId: string): Promise<CloudBlob | null> {
   const cfg = getEffectiveSupabaseConfig();
   if (!cfg) return null;
+  if (!isAllowedHttpsUrl(cfg.url, { allowLocalhost: true })) return null;
 
   try {
     const res = await fetch(

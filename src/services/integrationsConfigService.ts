@@ -1,5 +1,7 @@
 /** In-app integration config — stored in localStorage only, never committed to git */
 
+import { isAllowedHttpsUrl } from '../data/securityPolicy';
+
 export const INTEGRATIONS_CONFIG_KEY = 'aaism-integrations-config';
 
 export interface IntegrationsConfig {
@@ -178,6 +180,10 @@ export async function testSupabaseConnection(
   const cfg = url && anonKey ? { url: url.trim(), anonKey: anonKey.trim() } : getEffectiveSupabaseConfig();
   if (!cfg) {
     return { ok: false, message: 'Supabase URL and anon key required.' };
+  }
+
+  if (!isAllowedHttpsUrl(cfg.url, { allowLocalhost: true })) {
+    return { ok: false, message: 'Supabase URL must use HTTPS.' };
   }
 
   try {
