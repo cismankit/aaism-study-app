@@ -3,12 +3,12 @@ import {
   checkOllamaStatus,
   pullOllamaModel,
   pickBestInstalledModel,
+  resolveOllamaModel,
   type OllamaModel,
 } from '../services/aiService';
 import {
   getConnectorState,
-  saveConnectorsConfig,
-  loadConnectorsConfig,
+  syncOllamaSelection,
 } from '../services/connectorRegistry';
 import { RECOMMENDED_OLLAMA_PULLS } from '../data/connectors/definitions';
 import { detectGpuHint } from '../services/gpuDetection';
@@ -17,6 +17,12 @@ import {
   openOllamaApp,
   runOllamaTestPrompt,
 } from '../services/ollamaAppService';
+import { notifyOllamaConnected } from '../services/systemHealthService';
+import {
+  markConnectionVerified,
+  getConnectionVerification,
+  isConnectionVerified,
+} from '../services/connectionVerificationService';
 import { isTauri } from '../utils/tauriEnv';
 import {
   Server, Copy, Check, Loader2, Download, RefreshCw, AlertCircle, CheckCircle2,
@@ -49,6 +55,7 @@ export default function LocalLLMHub({ onModelChange }: LocalLLMHubProps) {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [verification, setVerification] = useState(() => getConnectionVerification());
 
   const gpu = detectGpuHint();
 
@@ -58,6 +65,9 @@ export default function LocalLLMHub({ onModelChange }: LocalLLMHubProps) {
     setRunning(status.running);
     setModels(status.models);
     setRefreshing(false);
+    if (status.running) {
+      void notifyOllamaConnected();
+    }
     return status;
   }, [baseUrl]);
 
@@ -72,6 +82,21 @@ export default function LocalLLMHub({ onModelChange }: LocalLLMHubProps) {
   useEffect(() => {
     setSelectedModel(defaultModel);
   }, [defaultModel]);
+
+  useEffect(() => {
+    if (!running || models.length === 0) return;
+    void (async () => {
+      const resolved = await resolveOllamaModel({
+        provider: 'ollama',
+        baseUrl,
+        model: defaultModel,
+      });
+      if (resolved.fallbackUsed && resolved.model !== selectedModel) {
+        setSelectedModel(resolved.model);
+        syncOllamaSelection(resolved.model, { baseUrl });
+      }
+    })();
+  }, [running, models, defaultModel, baseUrl, selectedModel]);
 
   useEffect(() => {
     if (running && models.length > 0) {
@@ -125,14 +150,9 @@ export default function LocalLLMHub({ onModelChange }: LocalLLMHubProps) {
 
   const setDefaultModel = (modelName: string) => {
     setSelectedModel(modelName);
-    const config = loadConnectorsConfig();
-    config.connectors.ollama = {
-      ...(config.connectors.ollama ?? { enabled: true, fields: {} }),
-      enabled: true,
-      fields: { ...ollamaState.fields, baseUrl, model: modelName },
-    };
-    saveConnectorsConfig(config);
+    syncOllamaSelection(modelName, { baseUrl, enabled: true, setPrimary: true });
     onModelChange?.(modelName);
+    void notifyOllamaConnected();
   };
 
   const handleOpenOllama = async () => {
@@ -174,8 +194,12 @@ export default function LocalLLMHub({ onModelChange }: LocalLLMHubProps) {
     const result = await runOllamaTestPrompt(baseUrl, model);
     setTestResult(result);
     setTesting(false);
-    if (result.ok && model !== selectedModel) {
-      setDefaultModel(model);
+    if (result.ok) {
+      markConnectionVerified('ollama', model);
+      setVerification(getConnectionVerification());
+      if (model !== selectedModel) {
+        setDefaultModel(model);
+      }
     }
   };
 
@@ -421,7 +445,20 @@ export default function LocalLLMHub({ onModelChange }: LocalLLMHubProps) {
               {testResult.message}
             </div>
           )}
-          {hubStatus === 'connected' && testResult?.ok && (
+          {(testResult?.ok || isConnectionVerified('ollama')) && verification && (
+            <div className="p-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                  Connection verified ✓
+                </p>
+                <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80">
+                  Valid until {new Date(verification.expiresAt).toLocaleString()} · model {verification.model}
+                </p>
+              </div>
+            </div>
+          )}
+          {hubStatus === 'connected' && testResult?.ok && !verification && (
             <p className="text-xs text-emerald-600 font-medium">All set — Ollama is online and responding.</p>
           )}
         </div>

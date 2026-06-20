@@ -4,7 +4,9 @@ import {
   loadAIConfig,
   pickBestInstalledModel,
   type OllamaModel,
+  AI_CONFIG_CHANGED_EVENT,
 } from './aiService';
+import { normalizeOllamaBaseUrl } from './ollamaAppService';
 
 export interface ProviderHealth {
   provider: AIProvider;
@@ -24,11 +26,23 @@ export interface LLMHealthReport {
 }
 
 const HEALTH_CACHE_KEY = 'aaism-llm-health-cache';
-const POLL_INTERVAL_MS = 60_000;
+export const POLL_INTERVAL_MS = 60_000;
+export const SETTINGS_POLL_INTERVAL_MS = 30_000;
+
+export type FixAction =
+  | { type: 'open-ollama'; label: string }
+  | { type: 'navigate'; href: string; label: string };
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 let lastReport: LLMHealthReport | null = null;
 const listeners = new Set<(report: LLMHealthReport) => void>();
+const afterCheckHooks = new Set<(report: LLMHealthReport) => void>();
+
+/** Register a hook fired after each LLM health check (e.g. sync system health banner). */
+export function onLLMHealthChecked(hook: (report: LLMHealthReport) => void): () => void {
+  afterCheckHooks.add(hook);
+  return () => afterCheckHooks.delete(hook);
+}
 
 function modelIsInstalled(models: OllamaModel[], modelName: string): boolean {
   const names = models.map(m => m.name);
@@ -39,7 +53,7 @@ function modelIsInstalled(models: OllamaModel[], modelName: string): boolean {
 
 async function checkOllamaHealth(baseUrl?: string, configuredModel?: string): Promise<ProviderHealth> {
   const now = new Date().toISOString();
-  const status = await checkOllamaStatus(baseUrl);
+  const status = await checkOllamaStatus(normalizeOllamaBaseUrl(baseUrl));
 
   if (!status.running) {
     return {
@@ -164,6 +178,7 @@ export async function checkLLMHealth(): Promise<LLMHealthReport> {
   } catch { /* ignore */ }
 
   listeners.forEach(fn => fn(report));
+  afterCheckHooks.forEach(fn => fn(report));
   return report;
 }
 
@@ -184,11 +199,6 @@ export function subscribeLLMHealth(listener: (report: LLMHealthReport) => void):
 }
 
 export function startLLMHealthPolling(): () => void {
-  const config = loadAIConfig();
-  if (config.provider !== 'ollama') {
-    return () => {};
-  }
-
   const tick = () => {
     if (document.visibilityState === 'hidden') return;
     void checkLLMHealth();
@@ -200,13 +210,77 @@ export function startLLMHealthPolling(): () => void {
   const onVisibility = () => {
     if (document.visibilityState === 'visible') void checkLLMHealth();
   };
+  const onConfigChanged = () => {
+    void checkLLMHealth();
+  };
   document.addEventListener('visibilitychange', onVisibility);
+  window.addEventListener(AI_CONFIG_CHANGED_EVENT, onConfigChanged);
 
   return () => {
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = null;
     document.removeEventListener('visibilitychange', onVisibility);
+    window.removeEventListener(AI_CONFIG_CHANGED_EVENT, onConfigChanged);
   };
+}
+
+export function formatConnectedStatusLabel(report: LLMHealthReport): string {
+  const { activeProvider, providers } = report;
+  const health = providers[activeProvider];
+
+  if (activeProvider === 'ollama') {
+    const count = health?.installedModels?.length ?? 0;
+    const model = health?.resolvedModel ?? health?.configuredModel ?? loadAIConfig().model;
+    return `Connected to Ollama · ${count} model${count === 1 ? '' : 's'} · ${model}`;
+  }
+
+  if (activeProvider === 'groq') {
+    return `Connected to Groq · ${health?.configuredModel ?? loadAIConfig().model}`;
+  }
+
+  const name = activeProvider === 'claude' ? 'Claude' : activeProvider === 'openai' ? 'OpenAI' : activeProvider;
+  return `Connected to ${name} · ${health?.configuredModel ?? loadAIConfig().model}`;
+}
+
+/** Actionable banner line when AI is healthy, e.g. "Ollama connected — using gemma4:latest" */
+export function formatConnectedBannerMessage(report: LLMHealthReport): string {
+  const { activeProvider, providers } = report;
+  const health = providers[activeProvider];
+  const model = health?.resolvedModel ?? health?.configuredModel ?? loadAIConfig().model;
+
+  if (activeProvider === 'ollama') {
+    return `Ollama connected — using ${model}`;
+  }
+  if (activeProvider === 'groq') {
+    return `Groq connected — using ${model}`;
+  }
+  const name = activeProvider === 'claude' ? 'Claude' : 'OpenAI';
+  return `${name} connected — using ${model}`;
+}
+
+export function getFixAction(report: LLMHealthReport): FixAction | null {
+  if (report.overallHealthy) return null;
+
+  if (report.activeProvider === 'ollama') {
+    const msg = report.providers.ollama?.message ?? '';
+    if (msg.includes('not running') || msg.includes('Ollama not')) {
+      return { type: 'open-ollama', label: 'Open Ollama app' };
+    }
+    if (msg.includes('no models') || msg.includes('not found')) {
+      return { type: 'navigate', href: '/settings', label: 'Pull a model' };
+    }
+    return { type: 'open-ollama', label: 'Fix connection' };
+  }
+
+  if (report.activeProvider === 'groq') {
+    return { type: 'navigate', href: '/settings', label: 'Add Groq API key' };
+  }
+
+  return { type: 'navigate', href: '/settings', label: 'Configure provider' };
+}
+
+export function isAIReady(report: LLMHealthReport | null): boolean {
+  return report?.overallHealthy ?? false;
 }
 
 export function getFixSteps(report: LLMHealthReport | null): string[] {

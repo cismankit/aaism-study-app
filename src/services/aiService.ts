@@ -7,6 +7,11 @@ import {
   CONNECTORS_CONFIG_KEY,
   syncAIConfigToConnectors,
 } from './connectorRegistry';
+import {
+  normalizeOllamaBaseUrl,
+  DEFAULT_OLLAMA_URL,
+  testOllamaConnection,
+} from './ollamaAppService';
 
 export type AIProvider = 'ollama' | 'groq' | 'claude' | 'openai';
 
@@ -87,6 +92,31 @@ export const defaultConfigs: Record<AIProvider, Partial<AIConfig>> = {
 
 /** localStorage key for AI provider config (API keys stored here — browser only, never sent to AAISM servers) */
 export const AI_CONFIG_STORAGE_KEY = 'aaism-ai-config';
+
+export const AI_CONFIG_CHANGED_EVENT = 'aaism-ai-config-changed';
+
+type AIConfigListener = (config: AIConfig) => void;
+const aiConfigListeners = new Set<AIConfigListener>();
+
+export function subscribeAIConfig(listener: AIConfigListener): () => void {
+  aiConfigListeners.add(listener);
+  listener(loadAIConfig());
+  return () => aiConfigListeners.delete(listener);
+}
+
+export function initAIConfigSync(): void {
+  if (typeof window === 'undefined') return;
+  window.addEventListener(AI_CONFIG_CHANGED_EVENT, () => {
+    const config = loadLegacyAIConfig();
+    aiConfigListeners.forEach(l => l(config));
+  });
+}
+
+export function dispatchAIConfigChanged(config: AIConfig): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(AI_CONFIG_CHANGED_EVENT, { detail: config }));
+  aiConfigListeners.forEach(l => l(config));
+}
 
 /** Groq cloud models — static fallback when /v1/models fetch fails */
 export const GROQ_MODELS: readonly GroqModelOption[] = [
@@ -351,12 +381,9 @@ export async function resolveAgentConfig(config?: AIConfig): Promise<AIConfig> {
   const base = config || loadAIConfig();
   if (base.provider !== 'ollama') return base;
 
-  const models = await detectOllamaModels(base.baseUrl);
-  const best = pickBestInstalledModel(models);
-  if (best && best !== base.model) {
-    return { ...base, model: best };
-  }
-  return base;
+  const resolved = await resolveOllamaModel(base);
+  if (resolved.error) return base;
+  return { ...base, model: resolved.model };
 }
 
 export function getModelCapability(modelName: string): ModelCapability {
@@ -411,30 +438,22 @@ export function getRecommendedFallbackModel(): string {
 }
 
 // Check if Ollama is running and get available models
-export async function checkOllamaStatus(baseUrl = 'http://localhost:11434'): Promise<{ running: boolean; models: OllamaModel[]; error?: string }> {
-  try {
-    const response = await fetch(`${baseUrl}/api/tags`, {
-      method: 'GET',
-      signal: AbortSignal.timeout(3000),
-    });
-
-    if (!response.ok) {
-      return { running: false, models: [], error: 'Ollama not responding' };
-    }
-
-    const data = await response.json();
-    return {
-      running: true,
-      models: data.models || [],
-    };
-  } catch {
+export async function checkOllamaStatus(baseUrl = DEFAULT_OLLAMA_URL): Promise<{ running: boolean; models: OllamaModel[]; error?: string }> {
+  const result = await testOllamaConnection(baseUrl);
+  if (!result.connected) {
     return {
       running: false,
       models: [],
-      error: 'Ollama is not running. Open Settings → AI Provider and click "Open Ollama app".',
+      error: result.error ?? 'Ollama is not running. Open Settings → AI Provider and click "Open Ollama app".',
     };
   }
+  return {
+    running: true,
+    models: result.models as OllamaModel[],
+  };
 }
+
+export { testOllamaConnection, normalizeOllamaBaseUrl, DEFAULT_OLLAMA_URL };
 
 /** Alias for Settings — fetch installed Ollama models */
 export async function detectOllamaModels(baseUrl = 'http://localhost:11434'): Promise<OllamaModel[]> {
@@ -949,7 +968,7 @@ export function loadLegacyAIConfig(): AIConfig {
   } as AIConfig;
 }
 
-export function loadAIConfig(): AIConfig {
+function loadAIConfigFromStorage(): AIConfig {
   try {
     if (localStorage.getItem(CONNECTORS_CONFIG_KEY)) {
       return buildAIConfigFromConnectors();
@@ -960,23 +979,37 @@ export function loadAIConfig(): AIConfig {
   return loadLegacyAIConfig();
 }
 
-/** Load AI config with Groq fallback when primary provider lacks credentials */
-export function loadAIConfigWithFallback(): AIConfig {
+export function loadAIConfig(): AIConfig {
+  return loadAIConfigFromStorage();
+}
+
+/** Load AI config with Groq fallback when primary provider lacks credentials or Ollama fails */
+export async function loadAIConfigWithFallback(): Promise<AIConfig> {
   try {
     if (localStorage.getItem(CONNECTORS_CONFIG_KEY)) {
-      return resolveAIConfigWithFallback().config;
+      return (await resolveAIConfigWithFallback()).config;
     }
   } catch {
     /* fall through */
   }
-  return loadAIConfig();
+  return loadAIConfigFromStorage();
 }
 
-export function saveAIConfig(config: AIConfig): void {
+/** Resolve config for agent runs — fresh read, Ollama model resolution, Groq only when Ollama fails */
+export async function resolveAIConfigForRun(config?: AIConfig): Promise<AIConfig> {
+  if (config) return config;
+  const { config: resolved } = await resolveAIConfigWithFallback();
+  return resolved;
+}
+
+export function saveAIConfig(config: AIConfig, options?: { skipDispatch?: boolean }): void {
   try {
     localStorage.setItem(AI_CONFIG_KEY, JSON.stringify(config));
     if (localStorage.getItem(CONNECTORS_CONFIG_KEY)) {
       syncAIConfigToConnectors(config);
+    }
+    if (!options?.skipDispatch) {
+      dispatchAIConfigChanged(config);
     }
   } catch {
     // Storage quota or private mode — never log config (may contain API keys)

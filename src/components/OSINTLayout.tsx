@@ -22,12 +22,14 @@ import PwaInstallBanner from './PwaInstallBanner';
 import {
   checkSystemHealth,
   dismissSystemIssue,
+  getConnectedBannerMessage,
   getPrimaryBannerIssue,
+  startSystemHealthPolling,
   subscribeSystemHealth,
   type SystemHealthReport,
   type SystemIssue,
 } from '../services/systemHealthService';
-import { startLLMHealthPolling } from '../services/llmHealthService';
+import { isAIReady, subscribeLLMHealth } from '../services/llmHealthService';
 import { hasUnseenReleases } from '../data/releaseFeed';
 import SidebarJourneyHint from './SidebarJourneyHint';
 import { useSidebarDock } from '../hooks/useSidebarDock';
@@ -514,10 +516,15 @@ function TopBar({
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const [hasUnseen, setHasUnseen] = useState(false);
+  const [aiReady, setAiReady] = useState(false);
 
   useEffect(() => {
     setHasUnseen(hasUnseenReleases());
   }, [location.pathname]);
+
+  useEffect(() => {
+    return subscribeLLMHealth(report => setAiReady(isAIReady(report)));
+  }, []);
 
   const currentPage = navSections.flatMap(s => s.items).find(item =>
     item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to),
@@ -565,10 +572,17 @@ function TopBar({
 
         <NavLink
           to="/settings"
-          className="p-1.5 rounded-lg hover:bg-cockpit-track transition-colors text-theme-muted"
-          aria-label="Open settings"
+          className="relative p-1.5 rounded-lg hover:bg-cockpit-track transition-colors text-theme-muted"
+          aria-label={aiReady ? 'Open settings — AI ready' : 'Open settings'}
         >
           <Settings className="w-4 h-4" />
+          {aiReady && (
+            <span
+              className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-theme-elevated"
+              title="AI connected"
+              aria-hidden
+            />
+          )}
         </NavLink>
 
         <button
@@ -593,6 +607,17 @@ function SystemHealthBanner() {
   }, []);
 
   const issue = getPrimaryBannerIssue(report);
+  const connectedMessage = getConnectedBannerMessage(report);
+
+  if (connectedMessage) {
+    return (
+      <div className="mx-3 sm:mx-5 mt-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 flex items-center gap-3 animate-fade-in">
+        <span className="text-sm leading-none" aria-hidden>🟢</span>
+        <p className="text-xs font-medium text-emerald-800 dark:text-emerald-300">{connectedMessage}</p>
+      </div>
+    );
+  }
+
   if (!issue) return null;
 
   return (
@@ -667,8 +692,7 @@ function LayoutContent() {
   useGlobalSearchShortcut(() => setSearchOpen(true));
 
   useEffect(() => {
-    void checkSystemHealth();
-    return startLLMHealthPolling();
+    return startSystemHealthPolling();
   }, []);
 
   return (

@@ -1,10 +1,100 @@
 import { isTauri } from '../utils/tauriEnv';
 import { isLocalhost } from './gpuDetection';
 
+export const DEFAULT_OLLAMA_URL = 'http://localhost:11434';
+export const OLLAMA_FETCH_TIMEOUT_MS = 8_000;
+
+export interface OllamaTagModel {
+  name: string;
+  size?: number;
+  modified_at?: string;
+}
+
+export interface OllamaConnectionTest {
+  connected: boolean;
+  models: OllamaTagModel[];
+  defaultModel: string | null;
+  latencyMs: number;
+  baseUrl: string;
+  error?: string;
+}
+
+/** Normalize user-entered Ollama base URL — always falls back to localhost:11434. */
+export function normalizeOllamaBaseUrl(url?: string | null): string {
+  const trimmed = url?.trim();
+  if (!trimmed) return DEFAULT_OLLAMA_URL;
+  const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `http://${trimmed}`;
+  return withProtocol.replace(/\/+$/, '');
+}
+
+function modelNameMatches(names: string[], configured: string): boolean {
+  if (names.includes(configured)) return true;
+  const base = configured.split(':')[0];
+  return names.some(n => n === base || n.startsWith(`${base}:`));
+}
+
 /** True when the app can call Ollama's localhost API (browser dev, Tauri Mac app). */
 export function canUseOllamaApi(): boolean {
   if (typeof window === 'undefined') return false;
-  return isLocalhost() || isTauri();
+  // Tauri Mac app is never "remote" — always allow localhost Ollama API.
+  if (isTauri()) return true;
+  return isLocalhost();
+}
+
+/** Probe Ollama /api/tags — used by health checks and Settings test buttons. */
+export async function testOllamaConnection(
+  baseUrl?: string,
+  configuredModel?: string,
+): Promise<OllamaConnectionTest> {
+  const url = normalizeOllamaBaseUrl(baseUrl);
+  return probeOllama(url, configuredModel, url !== DEFAULT_OLLAMA_URL);
+}
+
+async function probeOllama(
+  url: string,
+  configuredModel: string | undefined,
+  allowFallback: boolean,
+): Promise<OllamaConnectionTest> {
+  const start = performance.now();
+  try {
+    const response = await fetch(`${url}/api/tags`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(OLLAMA_FETCH_TIMEOUT_MS),
+    });
+    const latencyMs = Math.round(performance.now() - start);
+
+    if (!response.ok) {
+      if (allowFallback) return probeOllama(DEFAULT_OLLAMA_URL, configuredModel, false);
+      return {
+        connected: false,
+        models: [],
+        defaultModel: null,
+        latencyMs,
+        baseUrl: url,
+        error: `Ollama not responding (${response.status})`,
+      };
+    }
+
+    const data = (await response.json()) as { models?: OllamaTagModel[] };
+    const models = data.models ?? [];
+    const names = models.map(m => m.name);
+    const defaultModel =
+      configuredModel && modelNameMatches(names, configuredModel)
+        ? configuredModel
+        : names[0] ?? null;
+
+    return { connected: true, models, defaultModel, latencyMs, baseUrl: url };
+  } catch (err) {
+    if (allowFallback) return probeOllama(DEFAULT_OLLAMA_URL, configuredModel, false);
+    return {
+      connected: false,
+      models: [],
+      defaultModel: null,
+      latencyMs: Math.round(performance.now() - start),
+      baseUrl: url,
+      error: err instanceof Error ? err.message : 'Ollama is not running',
+    };
+  }
 }
 
 /** Open the Ollama desktop app on macOS (no Terminal required). */
@@ -38,8 +128,9 @@ export async function runOllamaTestPrompt(
   baseUrl: string,
   model: string,
 ): Promise<{ ok: boolean; message: string; reply?: string }> {
+  const url = normalizeOllamaBaseUrl(baseUrl);
   try {
-    const response = await fetch(`${baseUrl}/api/generate`, {
+    const response = await fetch(`${url}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

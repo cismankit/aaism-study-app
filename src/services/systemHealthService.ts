@@ -1,7 +1,9 @@
 import {
   checkLLMHealth,
+  formatConnectedBannerMessage,
   getFixSteps,
   getLastHealthReport,
+  onLLMHealthChecked,
   type LLMHealthReport,
 } from './llmHealthService';
 import {
@@ -145,10 +147,11 @@ export interface SystemHealthReport {
 let lastReport: SystemHealthReport | null = null;
 const listeners = new Set<(report: SystemHealthReport) => void>();
 
-export async function checkSystemHealth(): Promise<SystemHealthReport> {
-  const llm = await checkLLMHealth();
+const SYSTEM_HEALTH_POLL_MS = 60_000;
+let systemPollTimer: ReturnType<typeof setInterval> | null = null;
 
-  if (llm?.overallHealthy && llm.activeProvider === 'ollama') {
+function buildSystemReport(llm: LLMHealthReport): SystemHealthReport {
+  if (llm.overallHealthy && llm.activeProvider === 'ollama') {
     clearDismissedIssue('ollama-offline');
   }
 
@@ -157,10 +160,45 @@ export async function checkSystemHealth(): Promise<SystemHealthReport> {
     ...([syncIssue(), paymentIssue()].filter(Boolean) as SystemIssue[]),
   ];
 
+  const meta = getSyncMeta();
+  return {
+    issues: issues.filter(i => !isIssueDismissed(i.id)),
+    llm,
+    supabaseConfigured: isSupabaseConfigured(),
+    paymentsConfigured: hasAnyPaymentConfigured(),
+    lastSyncAt: meta.lastPushAt ?? meta.lastPullAt,
+    checkedAt: new Date().toISOString(),
+  };
+}
+
+function publishSystemReport(report: SystemHealthReport): void {
+  lastReport = report;
+  listeners.forEach(fn => fn(report));
+}
+
+/** Apply a fresh LLM health report to the system banner without re-probing Ollama. */
+export function applyLLMHealthUpdate(llm: LLMHealthReport): void {
+  const prev = lastReport;
+  const report = buildSystemReport(llm);
+  // Preserve supabase issue from last full check until next full check
+  if (prev?.issues.some(i => i.id === 'supabase-unreachable')) {
+    const supa = prev.issues.find(i => i.id === 'supabase-unreachable');
+    if (supa && !report.issues.some(i => i.id === 'supabase-unreachable')) {
+      report.issues.push(supa);
+    }
+  }
+  publishSystemReport(report);
+}
+
+export async function checkSystemHealth(): Promise<SystemHealthReport> {
+  const llm = await checkLLMHealth();
+
+  const report = buildSystemReport(llm);
+
   if (isSupabaseConfigured()) {
     const test = await testSupabaseConnection();
     if (!test.ok) {
-      issues.push({
+      report.issues.push({
         id: 'supabase-unreachable',
         severity: 'warning',
         title: 'Supabase unreachable',
@@ -177,33 +215,47 @@ export async function checkSystemHealth(): Promise<SystemHealthReport> {
     }
   }
 
-  const meta = getSyncMeta();
-  const report: SystemHealthReport = {
-    issues: issues.filter(i => !isIssueDismissed(i.id)),
-    llm,
-    supabaseConfigured: isSupabaseConfigured(),
-    paymentsConfigured: hasAnyPaymentConfigured(),
-    lastSyncAt: meta.lastPushAt ?? meta.lastPullAt,
-    checkedAt: new Date().toISOString(),
-  };
-
-  lastReport = report;
-  listeners.forEach(fn => fn(report));
+  report.issues = report.issues.filter(i => !isIssueDismissed(i.id));
+  publishSystemReport(report);
   return report;
 }
+
+/** Poll system + LLM health every 60s globally. */
+export function startSystemHealthPolling(): () => void {
+  const tick = () => {
+    if (document.visibilityState === 'hidden') return;
+    void checkSystemHealth();
+  };
+
+  void checkSystemHealth();
+  systemPollTimer = setInterval(tick, SYSTEM_HEALTH_POLL_MS);
+
+  const onVisibility = () => {
+    if (document.visibilityState === 'visible') void checkSystemHealth();
+  };
+  document.addEventListener('visibilitychange', onVisibility);
+
+  return () => {
+    if (systemPollTimer) clearInterval(systemPollTimer);
+    systemPollTimer = null;
+    document.removeEventListener('visibilitychange', onVisibility);
+  };
+}
+
+/** Call after /api/tags succeeds (model select, settings save) to clear stale offline banner. */
+export async function notifyOllamaConnected(): Promise<void> {
+  clearDismissedIssue('ollama-offline');
+  await checkSystemHealth();
+}
+
+// Keep banner in sync when LLM health is checked outside checkSystemHealth (e.g. Settings page).
+onLLMHealthChecked(applyLLMHealthUpdate);
 
 export function getLastSystemHealth(): SystemHealthReport | null {
   if (lastReport) return lastReport;
   const llm = getLastHealthReport();
   if (!llm) return null;
-  return {
-    issues: issuesFromLLM(llm),
-    llm,
-    supabaseConfigured: isSupabaseConfigured(),
-    paymentsConfigured: hasAnyPaymentConfigured(),
-    lastSyncAt: getSyncMeta().lastPushAt,
-    checkedAt: new Date().toISOString(),
-  };
+  return buildSystemReport(llm);
 }
 
 export function subscribeSystemHealth(listener: (report: SystemHealthReport) => void): () => void {
@@ -227,4 +279,9 @@ export function getPrimaryBannerIssue(report: SystemHealthReport | null): System
     if (issue) return issue;
   }
   return report.issues[0];
+}
+
+export function getConnectedBannerMessage(report: SystemHealthReport | null): string | null {
+  if (!report?.llm?.overallHealthy) return null;
+  return formatConnectedBannerMessage(report.llm);
 }
