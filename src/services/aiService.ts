@@ -1,6 +1,13 @@
 // AI Service Layer - Supports multiple providers
 // Ollama (local/offline), Groq (free), Claude API, OpenAI API
 
+import {
+  buildAIConfigFromConnectors,
+  resolveAIConfigWithFallback,
+  CONNECTORS_CONFIG_KEY,
+  syncAIConfigToConnectors,
+} from './connectorRegistry';
+
 export type AIProvider = 'ollama' | 'groq' | 'claude' | 'openai';
 
 export type ModelTier = 'small' | 'medium' | 'large';
@@ -919,19 +926,19 @@ export function isAIConfigured(config?: AIConfig): boolean {
   return Boolean(c.apiKey?.trim());
 }
 
-export function loadAIConfig(): AIConfig {
+/** Read legacy aaism-ai-config only — avoids circular call through loadAIConfig */
+export function loadLegacyAIConfig(): AIConfig {
   try {
     const saved = localStorage.getItem(AI_CONFIG_KEY);
     if (saved) {
       const parsed = JSON.parse(saved) as AIConfig;
-      // Migrate legacy default
       if (parsed.provider === 'ollama' && (parsed.model === 'llama3.2' || parsed.model === 'llama3.2:3b')) {
         parsed.model = 'qwen2.5:7b';
       }
       return parsed;
     }
   } catch {
-    // Corrupt or unavailable storage — fall through to defaults
+    /* fall through */
   }
   return {
     provider: 'ollama',
@@ -939,9 +946,35 @@ export function loadAIConfig(): AIConfig {
   } as AIConfig;
 }
 
+export function loadAIConfig(): AIConfig {
+  try {
+    if (localStorage.getItem(CONNECTORS_CONFIG_KEY)) {
+      return buildAIConfigFromConnectors();
+    }
+  } catch {
+    /* fall through to legacy */
+  }
+  return loadLegacyAIConfig();
+}
+
+/** Load AI config with Groq fallback when primary provider lacks credentials */
+export function loadAIConfigWithFallback(): AIConfig {
+  try {
+    if (localStorage.getItem(CONNECTORS_CONFIG_KEY)) {
+      return resolveAIConfigWithFallback().config;
+    }
+  } catch {
+    /* fall through */
+  }
+  return loadAIConfig();
+}
+
 export function saveAIConfig(config: AIConfig): void {
   try {
     localStorage.setItem(AI_CONFIG_KEY, JSON.stringify(config));
+    if (localStorage.getItem(CONNECTORS_CONFIG_KEY)) {
+      syncAIConfigToConnectors(config);
+    }
   } catch {
     // Storage quota or private mode — never log config (may contain API keys)
   }

@@ -181,6 +181,24 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
     status: 'shipped',
   },
   {
+    id: 'connector-registry',
+    title: 'Pluggable connector registry',
+    summary: 'Settings → Connectors tab — enable Ollama, Groq, Anthropic, OpenAI, Supabase, RSS Intel, Stripe, and Razorpay on demand with test connection and localStorage config.',
+    status: 'shipped',
+  },
+  {
+    id: 'local-llm-hub',
+    title: 'Local LLM hub (Ollama)',
+    summary: 'Pull recommended models, health status, installed list, and set default model — localhost API pull or copy commands for browser.',
+    status: 'shipped',
+  },
+  {
+    id: 'unified-provider-picker',
+    title: 'Unified AI provider picker',
+    summary: 'Global primary provider (Ollama | Groq | Anthropic | OpenAI) with Groq fallback chain wired through connector registry.',
+    status: 'shipped',
+  },
+  {
     id: 'sandbox-vms',
     title: 'Live sandbox VMs',
     summary: 'Real isolated lab environments with actual command execution — requires backend infrastructure.',

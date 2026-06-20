@@ -35,6 +35,7 @@ import OllamaModelManager from '../components/OllamaModelManager';
 import GroqApiKeySection from '../components/GroqApiKeySection';
 import SignInSyncSection from '../components/SignInSyncSection';
 import IntegrationsSettings from '../components/IntegrationsSettings';
+import ConnectorsSettings from '../components/ConnectorsSettings';
 import ProTierStrip from '../components/ProTierStrip';
 import {
   getShowAllToolsOverride,
@@ -719,7 +720,7 @@ function ProgressBackupSection() {
 }
 
 // ============ SETTINGS TAB ============
-type SettingsSection = 'ai' | 'integrations' | 'sync' | 'progress' | 'about';
+type SettingsSection = 'ai' | 'connectors' | 'integrations' | 'sync' | 'progress' | 'about';
 
 function ProductTierSettings() {
   const [showAll, setShowAll] = useState(getShowAllToolsOverride);
@@ -805,6 +806,7 @@ function SettingsTab() {
 
   const settingsSections: { id: SettingsSection; label: string; icon: typeof Settings }[] = [
     { id: 'ai', label: 'AI Provider', icon: Sparkles },
+    { id: 'connectors', label: 'Connectors', icon: Link2 },
     { id: 'integrations', label: 'Integrations', icon: Link2 },
     { id: 'sync', label: 'Cloud Sync', icon: Cloud },
     { id: 'progress', label: 'Progress', icon: BarChart3 },
@@ -830,6 +832,13 @@ function SettingsTab() {
           </button>
         ))}
       </div>
+
+      {section === 'connectors' && (
+        <div className="space-y-4">
+          <ProTierStrip />
+          <ConnectorsSettings />
+        </div>
+      )}
 
       {section === 'integrations' && (
         <div className="space-y-4">
