@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect, useRef, type CSSProperties, type MouseEvent, type RefObject } from 'react';
 
-const DOCK_SIGMA = 42;
-const DOCK_MAX_BOOST = 0.55;
-const DOCK_ACTIVE_SCALE = 1.28;
-const DOCK_LIFT_MAX = 8;
+const DOCK_SIGMA = 36;
+const DOCK_MAX_BOOST = 0.32;
+const DOCK_ACTIVE_SCALE = 1.12;
+const DOCK_LIFT_MAX = 4;
 
 function computeDockStyle(
   element: HTMLElement,

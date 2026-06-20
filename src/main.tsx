@@ -4,9 +4,11 @@ import { BrowserRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import { ThemeProvider } from './context/ThemeContext'
+import { initMemory } from './services/memoryService'
 import './index.css'
 
 registerSW({ immediate: true })
+initMemory()
 
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined
 

@@ -5,7 +5,8 @@
 
 import { chat, loadAIConfig } from './aiService';
 import { buildCertTrainingContext, getActiveCertification } from './certContextService';
-import { getOpsAgent } from './opsAgentService';
+import { buildCareerSystemPrompt } from './agentPrompts';
+import { recordCareerIntel } from './memoryService';
 import {
   CAREER_STORAGE_KEY,
   CAREER_ETHICS_BANNER,
@@ -48,6 +49,7 @@ export function saveCompanyProfile(profile: CompanyProfile): void {
   if (idx >= 0) existing[idx] = profile;
   else existing.unshift(profile);
   writeProfiles(existing);
+  recordCareerIntel(existing);
 }
 
 export function deleteCompanyProfile(id: string): void {
@@ -113,12 +115,11 @@ export async function buildCompanyProfile(input: {
     }
   }
 
-  const agent = getOpsAgent('claude-analyst');
   const config = loadAIConfig();
   const response = await chat(config, [
     {
       role: 'system',
-      content: `${agent.systemPrompt}\n\n${certContext}\n\n${CAREER_ETHICS_BANNER}\n\nAnalyze ONLY the pasted public data. Return JSON: { techStack: [{category, label}], hiringThemes: string[], openRolesSummary: string, seniorityMix: string, certAlignment: [{cert, relevance, matchScore}], cultureSignals: string[] }`,
+      content: `${buildCareerSystemPrompt()}\n\n${certContext}\n\n${CAREER_ETHICS_BANNER}\n\nAnalyze ONLY the pasted public data. Return JSON: { techStack: [{category, label}], hiringThemes: string[], openRolesSummary: string, seniorityMix: string, certAlignment: [{cert, relevance, matchScore}], cultureSignals: string[] }`,
     },
     {
       role: 'user',
@@ -190,12 +191,11 @@ export async function analyzeJobPosting(input: {
     throw new Error('Paste job description text or provide a URL we can fetch.');
   }
 
-  const agent = getOpsAgent('hermes');
   const config = loadAIConfig();
   const response = await chat(config, [
     {
       role: 'system',
-      content: `${agent.systemPrompt}\n\n${buildCertTrainingContext(cert)}\n\n${CAREER_ETHICS_BANNER}\n\nReturn JSON: { requiredSkills: string[], niceToHaveSkills: string[], techStack: [{category, label}], teamHints: string[], interviewPrep: string[], certTieIns: string[], questionsForHumans: string[], seniorityLevel: string, title: string }`,
+      content: `${buildCareerSystemPrompt()}\n\n${buildCertTrainingContext(cert)}\n\n${CAREER_ETHICS_BANNER}\n\nReturn JSON: { requiredSkills: string[], niceToHaveSkills: string[], techStack: [{category, label}], teamHints: string[], interviewPrep: string[], certTieIns: string[], questionsForHumans: string[], seniorityLevel: string, title: string }`,
     },
     { role: 'user', content: `Analyze this job posting:\n${text.slice(0, 7000)}` },
   ], { jsonMode: true, temperature: 0.3 });
@@ -234,13 +234,12 @@ export async function buildPeopleMap(input: {
   profileUrls?: string;
 }): Promise<PeopleMapResult> {
   const cert = getActiveCertification();
-  const agent = getOpsAgent('openclaw');
   const config = loadAIConfig();
 
   const response = await chat(config, [
     {
       role: 'system',
-      content: `${agent.systemPrompt}\n\n${buildCertTrainingContext(cert)}\n\n${CAREER_ETHICS_BANNER}\n\nDo NOT scrape LinkedIn. Use role archetypes and public OSINT guidance only. Return JSON: { orgHypothesis: string[], contactsToReach: [{role, why, priority}], outreachDraft: string, publicFootprintTips: string[] }`,
+      content: `${buildCareerSystemPrompt()}\n\n${buildCertTrainingContext(cert)}\n\n${CAREER_ETHICS_BANNER}\n\nDo NOT scrape LinkedIn. Use role archetypes and public OSINT guidance only. Return JSON: { orgHypothesis: string[], contactsToReach: [{role, why, priority}], outreachDraft: string, publicFootprintTips: string[] }`,
     },
     {
       role: 'user',

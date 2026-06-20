@@ -4,7 +4,8 @@
 
 import { chat, loadAIConfig } from './aiService';
 import { buildCertTrainingContext, getActiveCertification } from './certContextService';
-import { getOpsAgent, type OpsAgentId } from './opsAgentService';
+import { buildMissionHandoffPrompt } from './agentPrompts';
+import { type OpsAgentId } from './opsAgentService';
 import { getDomainProgress, getWeakestDomain } from './progressService';
 import { topics, type Topic } from '../data/knowledgeBase';
 import { getLabsForDomain } from './labService';
@@ -214,10 +215,9 @@ async function runAgentStep(
 
   await delay(400);
 
-  const agent = getOpsAgent(agentId);
   const config = loadAIConfig();
   const response = await chat(config, [
-    { role: 'system', content: `${agent.systemPrompt}\n\n${certContext}\nReturn concise JSON or plain text.` },
+    { role: 'system', content: `${buildMissionHandoffPrompt(agentId)}\n\n${certContext}\nReturn concise JSON or plain text.` },
     { role: 'user', content: userPrompt },
   ], { jsonMode: false, temperature: 0.3 });
 

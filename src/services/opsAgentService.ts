@@ -1,4 +1,6 @@
 import { chat, loadAIConfig, type Message } from './aiService';
+import { buildOpsSystemPrompt } from './agentPrompts';
+import { recordAgentSummary } from './memoryService';
 
 export type OpsAgentId = 'openclaw' | 'hermes' | 'claude-analyst';
 
@@ -31,14 +33,6 @@ export interface OpsAnalysisResult {
   error?: string;
 }
 
-const SAFETY_PREAMBLE = `You assist authorized security professionals in lab and enterprise environments only.
-Never provide exploit code, credential attacks, or instructions for unauthorized access.
-Focus on defensive analysis, triage, and remediation recommendations.`;
-
-const MITRE_JSON_HINT = `mitreMapping must be an array of objects: { "id": "T1059.001 or AML.T0051", "label": "brief description", "framework": "ATT&CK"|"ATLAS"|"NIST", "inferred": boolean }.
-Use inferred:true only when the mapping is speculative (no direct evidence in the input). Use inferred:false when clearly evidenced.
-Prefer MITRE ATLAS for AI/ML incidents, MITRE ATT&CK for general cyber, NIST AI RMF for governance/risk gaps.`;
-
 export const OPS_AGENT_PROFILES: OpsAgentProfile[] = [
   {
     id: 'openclaw',
@@ -47,13 +41,7 @@ export const OPS_AGENT_PROFILES: OpsAgentProfile[] = [
     posture: 'Offensive / recon posture',
     description: 'OSINT enrichment, attack surface mapping, and external exposure analysis.',
     accent: 'text-orange-600 dark:text-orange-400',
-    systemPrompt: `${SAFETY_PREAMBLE}
-
-You are OpenClaw — an offensive reconnaissance analyst persona.
-Focus on: attack surface enumeration, OSINT pivots, exposed services, subdomain patterns, and MITRE ATT&CK / ATLAS mapping.
-Return structured JSON with keys: summary, findings (array), nextSteps (array), commands (array of safe recon commands), mitreMapping.
-Commands must be read-only / passive (dig, curl -I, whois, nslookup) — no exploitation.
-${MITRE_JSON_HINT}`,
+    systemPrompt: '',
   },
   {
     id: 'hermes',
@@ -62,13 +50,7 @@ ${MITRE_JSON_HINT}`,
     posture: 'Fast triage',
     description: 'Log triage, IOC extraction, alert correlation, and quick containment recommendations.',
     accent: 'text-cyan-600 dark:text-cyan-400',
-    systemPrompt: `${SAFETY_PREAMBLE}
-
-You are Hermes — a fast tactical SOC analyst.
-Focus on: log parsing, IOC extraction (IPs, domains, hashes), timeline reconstruction, severity scoring.
-Return structured JSON with keys: summary, findings, nextSteps, commands (grep/awk/siem query examples), mitreMapping.
-Be concise and actionable — operators need answers in under 30 seconds of reading.
-${MITRE_JSON_HINT}`,
+    systemPrompt: '',
   },
   {
     id: 'claude-analyst',
@@ -77,18 +59,13 @@ ${MITRE_JSON_HINT}`,
     posture: 'Strategic analysis',
     description: 'Incident reports, risk assessments, root cause analysis, and executive summaries.',
     accent: 'text-violet-600 dark:text-violet-400',
-    systemPrompt: `${SAFETY_PREAMBLE}
-
-You are Claude Analyst — a senior security strategist with deep reasoning capability.
-Focus on: root cause analysis, business impact, risk scoring, compliance implications, and structured incident reports.
-Return structured JSON with keys: summary, findings, nextSteps, commands (investigation commands only), mitreMapping.
-Write for both technical and leadership audiences.
-${MITRE_JSON_HINT}`,
+    systemPrompt: '',
   },
 ];
 
 export function getOpsAgent(id: OpsAgentId): OpsAgentProfile {
-  return OPS_AGENT_PROFILES.find(a => a.id === id) ?? OPS_AGENT_PROFILES[0];
+  const base = OPS_AGENT_PROFILES.find(a => a.id === id) ?? OPS_AGENT_PROFILES[0];
+  return { ...base, systemPrompt: buildOpsSystemPrompt(base.id) };
 }
 
 function resolveMitreUrl(id: string, framework?: string): { url: string; framework: MitreMappingEntry['framework'] } | null {
@@ -216,7 +193,15 @@ export async function analyzeWithOpsAgent(
     };
   }
 
-  return parseAnalysisResponse(response.content);
+  const result = parseAnalysisResponse(response.content);
+  if (!result.error && result.summary) {
+    recordAgentSummary({
+      persona: agentId,
+      summary: result.summary.slice(0, 280),
+      certId: undefined,
+    });
+  }
+  return result;
 }
 
 export async function generateMiniLabFromIncident(

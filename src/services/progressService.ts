@@ -4,6 +4,7 @@ import { initialGamificationState } from '../data/gamificationData';
 import { EXAM_PASS_THRESHOLD } from '../constants/examConfig';
 import { DEFAULT_CERT_ID, getCertification } from '../data/certifications/registry';
 import { getActiveCertId } from './certContextService';
+import { recordMissionComplete } from './memoryService';
 
 export const PROGRESS_STORAGE_KEY = 'aaism-progress';
 
@@ -402,6 +403,7 @@ export function addMissionLogEntry(
   slice.missionLog = [...(slice.missionLog ?? []), record];
   snap.byCert[id] = slice;
   saveProgress(snap);
+  recordMissionComplete(record, id);
   return record;
 }
 

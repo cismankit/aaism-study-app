@@ -23,7 +23,9 @@ import {
 import type { DiscoveryStrategy, CoverageGap } from './agentStore';
 import { getAllQuestions, getDomainsForCert, type ExamQuestion } from '../data/examContent';
 import { getApprovedQuestions } from './agentStore';
-import { getActiveCertification, buildCertTrainingContext } from './certContextService';
+import { getActiveCertification } from './certContextService';
+import { buildDiscoverySystemPrompt, buildCriticSystemPrompt } from './agentPrompts';
+import { recordAgentSummary } from './memoryService';
 
 export type AgentName = 'AnalystAgent' | 'DiscoverAgent' | 'CriticAgent' | 'DedupAgent';
 
@@ -194,8 +196,7 @@ JSON array only.`;
 }
 
 function getDiscoveryContext(): string {
-  const cert = getActiveCertification();
-  return `${buildCertTrainingContext(cert)}\n\nYou generate ${cert.shortName} exam questions. Return ONLY valid JSON arrays.`;
+  return buildDiscoverySystemPrompt();
 }
 
 async function callWithHeartbeat(
@@ -407,7 +408,7 @@ async function runCriticAgentLLM(
   }));
 
   const messages: Message[] = [
-    { role: 'system', content: `${getDiscoveryContext()}\n\nYou validate exam questions. Return ONLY JSON.` },
+    { role: 'system', content: `${buildCriticSystemPrompt()}\n\nReview batch and return ONLY JSON.` },
     { role: 'user', content: `Review these ${reviewPayload.length} questions. Return JSON: {"approved":[0,1,...],"rejected":[2],"notes":"..."}
 Reject questions that are off-topic, have ambiguous answers, or poor distractors.
 
@@ -572,6 +573,12 @@ export async function runMultiAgentDiscovery(
     agentLog(ac.agent, callbacks, 'populate',
       `${ac.agent}: ${ac.itemsProcessed} items, avg confidence ${ac.avgConfidence}%${errSuffix}`, 'info');
   }
+
+  recordAgentSummary({
+    persona: 'discover-pipeline',
+    summary: `Discovery run: ${deduped.length} questions, ${summary.overallConfidence}% confidence, ${topGaps.length} gaps targeted`,
+    certId: getActiveCertification().id,
+  });
 
   return { discovered: deduped, coverage, summary };
 }

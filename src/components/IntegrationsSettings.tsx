@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Cloud, CreditCard, Shield, CheckCircle2, XCircle, Loader2, ExternalLink, Settings,
+  Brain, Download, Upload, Trash2, RefreshCw,
 } from 'lucide-react';
 import {
   loadIntegrationsConfig,
@@ -15,6 +16,15 @@ import {
   type IntegrationsConfig,
 } from '../services/integrationsConfigService';
 import { checkSystemHealth, type SystemHealthReport } from '../services/systemHealthService';
+import {
+  getMemoryStats,
+  exportMemoryJson,
+  importMemoryJson,
+  clearMemory,
+  pushToSupabase,
+  pullFromSupabase,
+  buildMemoryContextForPrompt,
+} from '../services/memoryService';
 
 type SyncStatus = 'connected' | 'not-configured' | 'failed' | 'checking';
 
@@ -44,6 +54,12 @@ export default function IntegrationsSettings() {
   const [razorpayTest, setRazorpayTest] = useState<string | null>(null);
   const [healthIssues, setHealthIssues] = useState<SystemHealthReport | null>(null);
   const [testing, setTesting] = useState(false);
+  const [memoryStats, setMemoryStats] = useState(getMemoryStats);
+  const [memorySyncMsg, setMemorySyncMsg] = useState<string | null>(null);
+  const [memorySyncing, setMemorySyncing] = useState(false);
+  const [memoryImportStatus, setMemoryImportStatus] = useState<string | null>(null);
+
+  const refreshMemoryStats = () => setMemoryStats(getMemoryStats());
 
   useEffect(() => {
     void checkSystemHealth().then(setHealthIssues);
@@ -234,7 +250,144 @@ export default function IntegrationsSettings() {
               {syncMessage}
             </p>
           )}
+          <details className="mt-3 text-xs text-cockpit-muted">
+            <summary className="cursor-pointer text-emerald-700 dark:text-emerald-400 font-medium">
+              Supabase SQL setup (progress + memory tables)
+            </summary>
+            <pre className="mt-2 p-3 rounded-lg bg-cockpit-track overflow-x-auto text-[10px] leading-relaxed font-mono">
+{`create table if not exists public.aegis_user_memory (
+  id uuid primary key default gen_random_uuid(),
+  user_id text not null default 'local',
+  memory jsonb not null,
+  updated_at timestamptz not null default now()
+);
+alter table public.aegis_user_memory enable row level security;
+create policy "anon read" on public.aegis_user_memory for select using (true);
+create policy "anon insert" on public.aegis_user_memory for insert with check (true);
+create policy "anon update" on public.aegis_user_memory for update using (true);`}
+            </pre>
+          </details>
         </div>
+      </div>
+
+      {/* Memory body */}
+      <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <h3 className="font-semibold text-cockpit flex items-center gap-2">
+            <Brain size={18} className="text-violet-500" />
+            Memory body
+          </h3>
+          <StatusBadge
+            status={memoryStats.lastSyncedAt ? 'connected' : 'not-configured'}
+            label={memoryStats.lastSyncedAt ? `Synced ${new Date(memoryStats.lastSyncedAt).toLocaleDateString()}` : 'Local only'}
+          />
+        </div>
+        <p className="text-sm text-cockpit-muted mb-3">
+          Structured cognition stored in <code className="text-[10px]">aegis-memory-v1</code> — profile, weak domains,
+          missions, career intel, and agent summaries. Injected into every agent system prompt.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+          {[
+            { label: 'Weak domains', value: memoryStats.weakDomainCount },
+            { label: 'Last mission', value: memoryStats.missionCount ? 'Yes' : '—' },
+            { label: 'Companies', value: memoryStats.companyCount },
+            { label: 'Agent runs', value: memoryStats.summaryCount },
+          ].map(stat => (
+            <div key={stat.label} className="rounded-lg bg-cockpit-track px-3 py-2 border border-theme">
+              <div className="text-lg font-semibold text-cockpit">{stat.value}</div>
+              <div className="text-[10px] text-cockpit-muted">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+        <details className="mb-4">
+          <summary className="text-xs font-medium text-emerald-700 dark:text-emerald-400 cursor-pointer">
+            Preview prompt context
+          </summary>
+          <pre className="mt-2 p-3 rounded-lg bg-cockpit-track text-[10px] whitespace-pre-wrap max-h-40 overflow-y-auto font-mono text-cockpit-muted">
+            {buildMemoryContextForPrompt(400)}
+          </pre>
+        </details>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={memorySyncing}
+            onClick={async () => {
+              setMemorySyncing(true);
+              const r = await pushToSupabase();
+              setMemorySyncMsg(r.message);
+              refreshMemoryStats();
+              setMemorySyncing(false);
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            {memorySyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+            Push memory
+          </button>
+          <button
+            type="button"
+            disabled={memorySyncing}
+            onClick={async () => {
+              setMemorySyncing(true);
+              const r = await pullFromSupabase();
+              setMemorySyncMsg(r.message);
+              refreshMemoryStats();
+              setMemorySyncing(false);
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-cockpit-track border border-theme hover:bg-theme-muted"
+          >
+            Pull memory
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const blob = new Blob([exportMemoryJson()], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `aegis-memory-${new Date().toISOString().slice(0, 10)}.json`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-cockpit-track border border-theme"
+          >
+            <Download size={14} /> Export
+          </button>
+          <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-cockpit-track border border-theme cursor-pointer">
+            <Upload size={14} /> Import
+            <input
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={e => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                  const r = importMemoryJson(String(reader.result));
+                  setMemoryImportStatus(r.ok ? 'Memory imported.' : r.error ?? 'Import failed');
+                  refreshMemoryStats();
+                };
+                reader.readAsText(file);
+              }}
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm('Clear unified memory and re-merge from legacy stores?')) {
+                clearMemory();
+                refreshMemoryStats();
+                setMemoryImportStatus('Memory cleared and rebuilt from legacy data.');
+              }
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-red-700 dark:text-red-400 border border-red-500/30 hover:bg-red-500/10"
+          >
+            <Trash2 size={14} /> Clear
+          </button>
+        </div>
+        {(memorySyncMsg || memoryImportStatus) && (
+          <p className="mt-2 text-xs text-cockpit-muted">{memorySyncMsg ?? memoryImportStatus}</p>
+        )}
       </div>
 
       {/* Payments */}

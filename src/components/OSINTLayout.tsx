@@ -238,19 +238,28 @@ function Sidebar({
 
   return (
     <aside
-      className={`sidebar-panel sidebar-panel-seamless ${collapsed ? 'w-[52px] sidebar-collapsed' : 'w-56'} fixed lg:sticky inset-y-0 left-0 flex-shrink-0 bg-sidebar flex flex-col h-screen z-50 group/sidebar ${mobileOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 lg:opacity-100'} lg:translate-x-0 ${focusMode ? 'sidebar-focus-mode' : ''}`}
+      className={`sidebar-panel sidebar-panel-seamless ${collapsed ? 'sidebar-collapsed' : 'w-56'} fixed lg:sticky inset-y-0 left-0 flex-shrink-0 bg-sidebar flex flex-col h-screen z-50 group/sidebar ${mobileOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 lg:opacity-100'} lg:translate-x-0 ${focusMode ? 'sidebar-focus-mode' : ''}`}
     >
       {/* Brand + cert track */}
-      <div className={`sidebar-brand-header flex flex-col ${collapsed ? 'items-center px-2 py-3' : 'px-3 py-3'} relative`}>
+      <div className={`sidebar-brand-header flex flex-col ${collapsed ? 'items-center px-1.5 py-3 pb-8' : 'px-3 py-3'} relative shrink-0`}>
         <div className={`flex items-center w-full ${collapsed ? 'justify-center' : 'gap-2.5'}`}>
-          <div
-            className={`${collapsed ? 'w-8 h-8' : 'w-9 h-9'} rounded-lg overflow-hidden flex-shrink-0 shadow-lg transition-all`}
-            style={{ boxShadow: `0 4px 14px ${activeCert.color}22` }}
-          >
-            <Logo size={collapsed ? 32 : 36} className="transition-transform duration-300 group-hover/sidebar:scale-[1.03]" />
-          </div>
-          {!collapsed && (
+          {collapsed ? (
+            <CertSwitcher rail integrated>
+              <div
+                className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 shadow-lg transition-all"
+                style={{ boxShadow: `0 4px 14px ${activeCert.color}22` }}
+              >
+                <Logo size={36} className="transition-transform duration-300 group-hover/sidebar:scale-[1.03]" />
+              </div>
+            </CertSwitcher>
+          ) : (
             <>
+              <div
+                className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 shadow-lg transition-all"
+                style={{ boxShadow: `0 4px 14px ${activeCert.color}22` }}
+              >
+                <Logo size={36} className="transition-transform duration-300 group-hover/sidebar:scale-[1.03]" />
+              </div>
               <div className="sidebar-label overflow-hidden flex-1 min-w-0">
                 <div className="text-sm font-bold text-cockpit leading-tight tracking-[0.08em] font-sans">
                   {PLATFORM_NAME}
@@ -276,19 +285,14 @@ function Sidebar({
           </div>
         )}
         {collapsed && (
-          <>
-            <div className="sidebar-label w-full mt-2 flex justify-center">
-              <CertSwitcher compact integrated />
-            </div>
-            <button
-              onClick={onToggle}
-              className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-sidebar border border-sidebar flex items-center justify-center text-theme-muted hover:text-cockpit dark:hover:text-white hover:bg-theme-muted dark:hover:bg-gray-700 transition-all shadow-md opacity-0 group-hover/sidebar:opacity-100 z-50"
-              title="Expand sidebar"
-              aria-label="Expand sidebar"
-            >
-              <ChevronRight className="w-3 h-3" />
-            </button>
-          </>
+          <button
+            onClick={onToggle}
+            className="sidebar-expand-fab w-5 h-5 rounded-full bg-sidebar border border-sidebar flex items-center justify-center text-theme-muted hover:text-cockpit dark:hover:text-white hover:bg-theme-muted dark:hover:bg-gray-700 transition-all shadow-sm opacity-0 group-hover/sidebar:opacity-100"
+            title="Expand sidebar"
+            aria-label="Expand sidebar"
+          >
+            <ChevronRight className="w-3 h-3" />
+          </button>
         )}
       </div>
 
@@ -307,7 +311,7 @@ function Sidebar({
       )}
 
       {/* Nav sections */}
-      <nav ref={navRef} className="sidebar-dock-nav flex-1 overflow-y-auto py-2 px-1.5 space-y-1" {...dockHandlers}>
+      <nav ref={navRef} className="sidebar-dock-nav flex-1 min-h-0 py-2 px-1 space-y-1" {...dockHandlers}>
         {navSections.map((section, sIdx) => (
           <div
             key={section.id}
@@ -338,7 +342,7 @@ function Sidebar({
                     data-dock-item={collapsed ? item.to : undefined}
                     data-dock-active={collapsed ? String(isActive) : undefined}
                     title={!collapsed ? item.whyOpen : undefined}
-                    className={`sidebar-dock-item relative flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${collapsed ? 'px-0 py-2.5' : 'px-2.5 py-2'} rounded-lg text-sm font-medium group ${
+                    className={`sidebar-dock-item relative flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${collapsed ? '' : 'px-2.5 py-2'} rounded-lg text-sm font-medium group ${
                       isActive
                         ? 'bg-emerald-50/90 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 sidebar-dock-active'
                         : 'text-cockpit-muted hover:text-cockpit dark:hover:text-gray-200 hover:bg-cockpit-track/80 dark:hover:bg-gray-800/80'
@@ -363,12 +367,12 @@ function Sidebar({
                     )}
                     {isNextAction && (
                       <span
-                        className={`${collapsed ? 'absolute top-1.5 right-2' : 'ml-auto'} w-2 h-2 rounded-full bg-emerald-500 sidebar-next-action-dot shrink-0`}
+                        className={`${collapsed ? 'absolute top-1 right-1' : 'ml-auto'} w-2 h-2 rounded-full bg-emerald-500 sidebar-next-action-dot shrink-0`}
                         title={`Suggested next: ${nextAction.label}`}
                       />
                     )}
                     {collapsed && showUpdateDot && (
-                      <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-amber-500" title="New platform updates" />
+                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500" title="New platform updates" />
                     )}
                     {collapsed && (
                       <div className="sidebar-dock-tooltip" role="tooltip">
@@ -390,11 +394,27 @@ function Sidebar({
 
       {/* Session context strip */}
       <div
-        className={`sidebar-session-strip border-t border-sidebar/70 px-2 py-2 ${collapsed ? 'flex justify-center' : ''}`}
+        className={`sidebar-session-strip border-t border-sidebar/70 px-1.5 py-2 shrink-0 ${collapsed ? '' : ''}`}
         title={`Session ${formatSessionTime(sessionMinutes)} · ${focusLabel}`}
       >
         {collapsed ? (
-          <SessionRing progress={sessionProgress} color={activeCert.color} />
+          <div className="sidebar-session-collapsed">
+            <SessionRing progress={sessionProgress} color={activeCert.color} />
+            <button
+              type="button"
+              onClick={toggleFocusMode}
+              className={`p-1 rounded-md transition-colors ${
+                focusMode
+                  ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15'
+                  : 'text-theme-faint hover:text-theme-muted hover:bg-cockpit-track dark:hover:bg-gray-800'
+              }`}
+              title={focusMode ? 'Focus mode on — hover sidebar for Explore' : 'Focus mode — hide Explore until hover'}
+              aria-label="Toggle focus mode"
+              aria-pressed={focusMode}
+            >
+              <Focus className="w-3 h-3" />
+            </button>
+          </div>
         ) : (
           <div className="flex items-center gap-2 px-1">
             <SessionRing progress={sessionProgress} color={activeCert.color} />

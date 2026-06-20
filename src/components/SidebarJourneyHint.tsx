@@ -44,7 +44,7 @@ export default function SidebarJourneyHint({ collapsed }: SidebarJourneyHintProp
 
   return (
     <div
-      className="fixed left-[60px] top-1/2 -translate-y-1/2 z-[55] w-64 animate-fade-in pointer-events-auto hidden lg:block"
+      className="fixed left-16 top-1/2 -translate-y-1/2 z-[55] w-64 animate-fade-in pointer-events-auto hidden lg:block"
       role="dialog"
       aria-label="Learning path guide"
     >

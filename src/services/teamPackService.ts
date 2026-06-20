@@ -1,6 +1,7 @@
 import { chat, loadAIConfig, type AIConfig } from './aiService';
 import { buildCertTrainingContext, getActiveCertification } from './certContextService';
-import { getOpsAgent, type OpsAgentId } from './opsAgentService';
+import { type OpsAgentId } from './opsAgentService';
+import { buildTeamPackPrompt } from './agentPrompts';
 import { OSINT_SOURCES } from '../data/osintSources';
 import {
   getTeamPack,
@@ -59,8 +60,7 @@ function buildOsintContext(certShortName: string): string {
   return `High-value OSINT sources for ${certShortName} prep:\n${sample}`;
 }
 
-function buildSystemPrompt(pack: TeamPack, agentId: OpsAgentId, certContext: string): string {
-  const agent = getOpsAgent(agentId);
+function buildSystemPrompt(pack: TeamPack, _agentId: OpsAgentId, certContext: string): string {
   const outputHints: Record<TeamPack['outputType'], string> = {
     'osint-summary': 'Produce intel brief sections with cited source URLs where applicable.',
     'content': 'Produce content sections ready for Studio export.',
@@ -70,12 +70,10 @@ function buildSystemPrompt(pack: TeamPack, agentId: OpsAgentId, certContext: str
     'career-profile': 'Produce career brief sections from user-pasted public data only.',
   };
 
-  return `${agent.systemPrompt}
+  return `${buildTeamPackPrompt(pack.name, pack.outputType)}
 
 ${certContext}
 
-You are executing the "${pack.name}" team mission step-by-step.
-Mission type: ${pack.outputType}
 ${outputHints[pack.outputType]}
 
 Each step must return verifiable structured output. Include confidence (0-100) reflecting how well the output is grounded in provided sources vs inference.
