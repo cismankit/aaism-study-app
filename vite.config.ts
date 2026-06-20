@@ -32,9 +32,9 @@ export default defineConfig({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.svg', 'logo.svg', 'aaism-logo.svg', 'apple-touch-icon.png', '404.html'],
             manifest: {
-              name: 'AAISM Intelligence',
-              short_name: 'AAISM',
-              description: 'AI Security Manager exam prep — offline study shell with cached content',
+              name: 'Aegis — Cert & Ops Command',
+              short_name: 'Aegis',
+              description: 'Multi-cert study, ops drills, intel feeds, and AI-assisted exam prep',
               theme_color: '#059669',
               background_color: '#111827',
               display: 'standalone',

@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "AAISM Intelligence",
+  "productName": "Aegis",
   "version": "1.0.0",
   "identifier": "com.aaism.intelligence",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "AAISM Intelligence",
+        "title": "Aegis — Cert & Ops Command",
         "width": 1400,
         "height": 900,
         "resizable": true,
@@ -36,6 +36,6 @@
     ],
     "category": "Education",
     "shortDescription": "AI Security Manager exam prep",
-    "longDescription": "AAISM Intelligence Platform — study ops, scenario labs, intel feeds, and timed exam simulation for ISACA AAISM certification prep."
+    "longDescription": "Aegis — multi-cert study, ops drills, intel feeds, and timed exam simulation for cybersecurity and AI certification prep."
   }
 }

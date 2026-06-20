@@ -4,6 +4,7 @@ import {
   Sparkles, Bot, LayoutDashboard, Crosshair, Radar, PenLine,
   Calendar, ChevronRight, ChevronLeft, X, Cloud, Server,
 } from 'lucide-react';
+import { PLATFORM_NAME, PLATFORM_TAGLINE } from '../constants/platformBrand';
 import { useApp } from '../context/AppContext';
 import { loadAIConfig, saveAIConfig, defaultConfigs } from '../services/aiService';
 
@@ -117,10 +118,10 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             <div className="text-center py-4">
               <div className="text-4xl mb-4">🛡️</div>
               <h2 className="text-xl font-bold text-cockpit mb-2">
-                Welcome to AAISM Intelligence Platform
+                Welcome to {PLATFORM_NAME}
               </h2>
               <p className="text-sm text-cockpit-muted leading-relaxed">
-                Your mission control for ISACA AAISM exam prep — AI tutors, intel feeds,
+                {PLATFORM_TAGLINE} — multi-cert study, AI tutors, intel feeds,
                 timed exam sims, and domain readiness tracking. Let&apos;s get you set up in 60 seconds.
               </p>
             </div>

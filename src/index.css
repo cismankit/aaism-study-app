@@ -323,31 +323,96 @@ html.dark body {
   animation: pulse-dot 1.5s ease-in-out infinite;
 }
 
-/* Logo hover — orbital + node pulse */
-@keyframes logo-orbit-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
+/* Logo hover — shield cortex + orbital pulse */
 @keyframes logo-node-pulse {
-  0%, 100% { opacity: 0.7; }
+  0%, 100% { opacity: 0.75; }
   50% { opacity: 1; }
 }
 @keyframes logo-satellite-orbit {
-  0%, 100% { opacity: 0.5; transform: translateX(0); }
-  50% { opacity: 1; transform: translateX(-1px); }
+  0%, 100% { opacity: 0.55; transform: translate(0, 0); }
+  50% { opacity: 1; transform: translate(-0.5px, 0.5px); }
 }
-.aaism-logo:hover .aaism-logo-node {
+@keyframes logo-orbit-idle {
+  0%, 100% { opacity: 0.65; }
+  50% { opacity: 0.9; }
+}
+.aegis-logo .aegis-logo-orbit {
+  animation: logo-orbit-idle 4s ease-in-out infinite;
+}
+.aegis-logo:hover .aegis-logo-node {
   animation: logo-node-pulse 1.6s ease-in-out infinite;
 }
-.aaism-logo:hover .aaism-logo-ring {
+.aegis-logo:hover .aegis-logo-ring {
   opacity: 0.75;
   transition: opacity 0.3s ease;
 }
-.aaism-logo:hover .aaism-logo-orbit {
+.aegis-logo:hover .aegis-logo-orbit {
   opacity: 1;
+  animation: none;
 }
-.aaism-logo:hover .aaism-logo-satellite {
+.aegis-logo:hover .aegis-logo-satellite {
   animation: logo-satellite-orbit 2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aegis-logo .aegis-logo-orbit,
+  .aegis-logo:hover .aegis-logo-node,
+  .aegis-logo:hover .aegis-logo-satellite {
+    animation: none !important;
+  }
+}
+
+/* Sidebar — seamless canvas blend */
+.sidebar-panel-seamless {
+  border-right: none;
+  box-shadow: inset -1px 0 0 rgb(var(--sidebar-border) / 0.35);
+  background: linear-gradient(
+    180deg,
+    rgb(var(--sidebar-bg)) 0%,
+    rgb(var(--sidebar-bg) / 0.98) 100%
+  );
+}
+.dark .sidebar-panel-seamless {
+  box-shadow: inset -1px 0 0 rgb(var(--sidebar-border) / 0.5);
+}
+.sidebar-content-canvas {
+  background: rgb(var(--surface-page));
+}
+.sidebar-brand-header {
+  border-bottom: 1px solid rgb(var(--sidebar-border) / 0.5);
+}
+.sidebar-wayfinding {
+  animation: fade-in 0.25s ease-out;
+}
+.sidebar-session-ring-fill {
+  transition: stroke-dashoffset 0.6s ease-out;
+}
+.sidebar-next-action-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+.sidebar-home-nav.sidebar-dock-active {
+  box-shadow: inset 3px 0 0 rgb(var(--accent-emerald));
+}
+.sidebar-focus-mode .sidebar-nav-secondary {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transition: opacity 300ms ease, max-height 300ms ease;
+}
+.sidebar-focus-mode:hover .sidebar-nav-secondary,
+.sidebar-focus-mode:focus-within .sidebar-nav-secondary {
+  opacity: 1;
+  max-height: 480px;
+  pointer-events: auto;
+}
+.sidebar-dock-tooltip-why {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: rgb(var(--sidebar-text));
+  line-height: 1.35;
+  opacity: 0.72;
+  font-style: normal;
 }
 
 /* Sidebar slide — Apple dock-style */

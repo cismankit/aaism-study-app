@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { X, LayoutDashboard, Crosshair, Zap, Radar, Bot } from 'lucide-react';
+import { PLATFORM_NAME } from '../constants/platformBrand';
 
-const JOURNEY_DISMISSED_KEY = 'aaism-sidebar-journey-dismissed';
+const JOURNEY_DISMISSED_KEY = 'aegis-sidebar-journey-dismissed';
 
 const MISSION_PATH = [
   { label: 'Command', subtitle: 'Orient & plan', icon: LayoutDashboard, color: 'text-emerald-500' },
-  { label: 'Study', subtitle: '312+ questions', icon: Crosshair, color: 'text-cyan-500' },
+  { label: 'Practice', subtitle: '312+ questions', icon: Crosshair, color: 'text-cyan-500' },
   { label: 'Exam', subtitle: '90Q timed sim', icon: Zap, color: 'text-amber-500' },
   { label: 'Intel', subtitle: 'Live OSINT feeds', icon: Radar, color: 'text-violet-500' },
   { label: 'Agent', subtitle: 'AI discovery', icon: Bot, color: 'text-pink-500' },
@@ -50,11 +51,11 @@ export default function SidebarJourneyHint({ collapsed }: SidebarJourneyHintProp
       <div className="ml-2 rounded-xl border border-emerald-500/30 bg-theme-elevated/95 dark:bg-gray-900/95 backdrop-blur-md shadow-xl shadow-emerald-500/10 p-4">
         <div className="flex items-start justify-between gap-2 mb-3">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-              Mission Path
+            <p className="text-[10px] font-medium tracking-wide text-emerald-600 dark:text-emerald-400">
+              {PLATFORM_NAME} path
             </p>
             <p className="text-xs text-theme-muted mt-0.5">
-              Hover icons for details — follow this flow to ace the exam.
+              Hover icons for guidance — follow this flow for exam readiness.
             </p>
           </div>
           <button

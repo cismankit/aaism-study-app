@@ -4,31 +4,31 @@ interface LogoProps {
   showBackground?: boolean;
 }
 
-/** AAISM mark — orbital arc + geometric A monogram (Grok/xAI precision) */
+/** Aegis mark — shield cortex, orbital arc, neural node (16px–48px) */
 export default function Logo({ size = 32, className = '', showBackground = true }: LogoProps) {
-  const uid = `aaism-${size}`;
+  const uid = `aegis-${size}`;
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 48 48"
       width={size}
       height={size}
-      className={`aaism-logo group ${className}`}
+      className={`aegis-logo group ${className}`}
       aria-hidden
     >
       <defs>
         <linearGradient id={`${uid}-bg`} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#070b12" />
-          <stop offset="100%" stopColor="#111827" />
+          <stop offset="0%" stopColor="#060a10" />
+          <stop offset="100%" stopColor="#0f172a" />
         </linearGradient>
         <linearGradient id={`${uid}-stroke`} x1="0%" y1="100%" x2="100%" y2="0%">
           <stop offset="0%" stopColor="#10b981" />
-          <stop offset="50%" stopColor="#2dd4bf" />
+          <stop offset="45%" stopColor="#2dd4bf" />
           <stop offset="100%" stopColor="#38bdf8" />
         </linearGradient>
-        <linearGradient id={`${uid}-mono`} x1="50%" y1="0%" x2="50%" y2="100%">
+        <linearGradient id={`${uid}-core`} x1="50%" y1="0%" x2="50%" y2="100%">
           <stop offset="0%" stopColor="#f8fafc" />
-          <stop offset="100%" stopColor="#e2e8f0" />
+          <stop offset="100%" stopColor="#cbd5e1" />
         </linearGradient>
       </defs>
 
@@ -36,65 +36,73 @@ export default function Logo({ size = 32, className = '', showBackground = true 
         <rect width="48" height="48" rx="10" fill={`url(#${uid}-bg)`} />
       )}
 
-      {/* Orbital arc — partial ring, SpaceX-style trajectory */}
+      {/* Shield cortex — protection + command */}
       <path
-        d="M 8 28 A 20 20 0 0 1 40 28"
+        d="M 24 7 L 38 14.5 V 26.5 C 38 33 31.5 38.5 24 41 C 16.5 38.5 10 33 10 26.5 V 14.5 Z"
         fill="none"
         stroke={`url(#${uid}-stroke)`}
-        strokeWidth="1.25"
-        strokeLinecap="round"
-        className="aaism-logo-orbit transition-all duration-500 group-hover:stroke-[1.5]"
-        opacity={0.92}
-      />
-      <path
-        d="M 40 28 A 20 20 0 0 1 8 28"
-        fill="none"
-        stroke={`url(#${uid}-stroke)`}
-        strokeWidth="0.5"
-        strokeLinecap="round"
-        strokeDasharray="2 4"
-        opacity={0.35}
-        className="aaism-logo-orbit-trail"
-      />
-
-      {/* Geometric A monogram — single-stroke precision */}
-      <path
-        d="M 24 12 L 32 36 M 24 12 L 16 36 M 19.5 27.5 H 28.5"
-        fill="none"
-        stroke={showBackground ? `url(#${uid}-mono)` : 'currentColor'}
-        strokeWidth="2.25"
-        strokeLinecap="round"
+        strokeWidth="1.1"
         strokeLinejoin="round"
-        className="aaism-logo-a"
+        className="aegis-logo-shield"
+        opacity={0.9}
       />
 
-      {/* Neural node at apex */}
+      {/* Inner chevron — forward motion */}
+      <path
+        d="M 24 16 L 30 30 H 27.2 L 25.8 26.5 H 22.2 L 20.8 30 H 18 L 24 16 Z"
+        fill={showBackground ? `url(#${uid}-core)` : 'currentColor'}
+        className="aegis-logo-chevron"
+        opacity={0.96}
+      />
+      <path
+        d="M 22.5 24 H 25.5 L 24 19.5 Z"
+        fill={`url(#${uid}-bg)`}
+        className="aegis-logo-cutout"
+      />
+
+      {/* Neural hub */}
       <circle
         cx="24"
-        cy="12"
-        r="2"
+        cy="19.5"
+        r="1.75"
         fill={`url(#${uid}-stroke)`}
-        className="aaism-logo-node transition-transform duration-500 group-hover:scale-125"
-        style={{ transformOrigin: '24px 12px' }}
+        className="aegis-logo-node"
       />
       <circle
         cx="24"
-        cy="12"
-        r="4.5"
+        cy="19.5"
+        r="4"
         fill="none"
         stroke={`url(#${uid}-stroke)`}
-        strokeWidth="0.6"
-        opacity={0.45}
-        className="aaism-logo-ring"
+        strokeWidth="0.55"
+        opacity={0.4}
+        className="aegis-logo-ring"
       />
 
-      {/* Orbital satellite node */}
+      {/* Orbital trajectory */}
+      <path
+        d="M 34 13 Q 40 20 37 30"
+        fill="none"
+        stroke={`url(#${uid}-stroke)`}
+        strokeWidth="0.85"
+        strokeLinecap="round"
+        className="aegis-logo-orbit"
+        opacity={0.75}
+      />
       <circle
-        cx="38"
-        cy="26"
-        r="1.5"
+        cx="37"
+        cy="30"
+        r="1.35"
         fill="#2dd4bf"
-        className="aaism-logo-satellite"
+        className="aegis-logo-satellite"
+      />
+      <circle
+        cx="34"
+        cy="13"
+        r="0.9"
+        fill="#38bdf8"
+        opacity={0.85}
+        className="aegis-logo-satellite-a"
       />
     </svg>
   );

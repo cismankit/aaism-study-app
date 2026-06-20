@@ -3,13 +3,13 @@ import {
   LayoutDashboard, Radar, Eye, Bot, Zap,
   Sun, Moon, Flame, ChevronRight, Settings, Menu,
   Activity, Map, Crosshair, PanelLeftClose,
-  Terminal, Users, Target, Briefcase,
+  Terminal, Users, Target, Briefcase, Focus,
 } from 'lucide-react';
 import Logo from './Logo';
 import CertSwitcher from './CertSwitcher';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { AppProvider } from '../context/AppContext';
-import { CertProvider } from '../context/CertContext';
+import { CertProvider, useCert } from '../context/CertContext';
 import { GamificationProvider, useGamification } from '../context/GamificationContext';
 import { useTheme } from '../context/ThemeContext';
 import { getLevelFromXP } from '../data/gamificationData';
@@ -31,6 +31,9 @@ import { startLLMHealthPolling } from '../services/llmHealthService';
 import { hasUnseenReleases } from '../data/releaseFeed';
 import SidebarJourneyHint from './SidebarJourneyHint';
 import { useSidebarDock } from '../hooks/useSidebarDock';
+import { useSessionContext } from '../hooks/useSessionContext';
+import { getNextBestAction } from '../services/sidebarJourneyService';
+import { PLATFORM_NAME, PLATFORM_TAGLINE } from '../constants/platformBrand';
 
 interface PerformanceContextType {
   bgColor: MatrixColor;
@@ -61,39 +64,135 @@ interface NavItem {
   icon: typeof LayoutDashboard;
   label: string;
   subtitle: string;
+  whyOpen: string;
   badge?: string;
 }
 
 interface NavSection {
+  id: string;
   label: string;
   items: NavItem[];
+  secondary?: boolean;
 }
 
 const navSections: NavSection[] = [
   {
-    label: 'PRIMARY',
+    id: 'path',
+    label: 'Your path',
     items: [
-      { to: '/', icon: LayoutDashboard, label: 'Command', subtitle: 'Mission overview & daily ops' },
-      { to: '/mission', icon: Target, label: 'Mission', subtitle: 'Unified study loop' },
-      { to: '/study', icon: Crosshair, label: 'Study', subtitle: 'Practice questions by domain' },
-      { to: '/exam', icon: Zap, label: 'Exam', subtitle: 'Timed exam simulation' },
-      { to: '/intel', icon: Radar, label: 'Intel', subtitle: 'Live threat intel & feeds' },
-      { to: '/knowledge', icon: Eye, label: 'Knowledge', subtitle: 'Deep-dive reference docs' },
-      { to: '/agent', icon: Bot, label: 'Agent', subtitle: 'Discovery & Ops Copilot' },
+      {
+        to: '/',
+        icon: LayoutDashboard,
+        label: 'Command',
+        subtitle: 'Mission overview & daily ops',
+        whyOpen: 'Home base — readiness, streak, and what to do next',
+      },
+      {
+        to: '/mission',
+        icon: Target,
+        label: 'Mission',
+        subtitle: 'Unified study loop',
+        whyOpen: 'One focused session — quiz, review, and log progress',
+      },
+      {
+        to: '/study',
+        icon: Crosshair,
+        label: 'Practice',
+        subtitle: 'Questions by domain',
+        whyOpen: 'Build recall where it matters — domain drills',
+      },
+      {
+        to: '/exam',
+        icon: Zap,
+        label: 'Exam',
+        subtitle: 'Timed simulation',
+        whyOpen: 'Test pacing and judgment under exam conditions',
+      },
+      {
+        to: '/intel',
+        icon: Radar,
+        label: 'Intel',
+        subtitle: 'Live threat feeds',
+        whyOpen: 'Stay sharp on traps and real-world context',
+      },
+      {
+        to: '/knowledge',
+        icon: Eye,
+        label: 'Knowledge',
+        subtitle: 'Deep reference docs',
+        whyOpen: 'Fill gaps with guides and frameworks',
+      },
+      {
+        to: '/agent',
+        icon: Bot,
+        label: 'Agent',
+        subtitle: 'Discovery & Ops Copilot',
+        whyOpen: 'Ask, explore, and automate study workflows',
+      },
     ],
   },
   {
-    label: 'TOOLS',
+    id: 'tools',
+    label: 'Explore',
+    secondary: true,
     items: [
-      { to: '/packs', icon: Users, label: 'Team Packs', subtitle: 'Agent missions & workflows' },
-      { to: '/ops', icon: Terminal, label: 'Ops Lab', subtitle: 'Hands-on command & analysis drills' },
-      { to: '/cheatsheet', icon: Map, label: 'Quick Ref', subtitle: 'Cert-aware cheat sheets' },
-      { to: '/career', icon: Briefcase, label: 'Career', subtitle: 'Job seeker OSINT (public data)' },
+      {
+        to: '/packs',
+        icon: Users,
+        label: 'Team Packs',
+        subtitle: 'Agent missions & workflows',
+        whyOpen: 'Multi-agent ops playbooks for cert scenarios',
+      },
+      {
+        to: '/ops',
+        icon: Terminal,
+        label: 'Ops Lab',
+        subtitle: 'Hands-on command drills',
+        whyOpen: 'Practice analysis and response in the lab',
+      },
+      {
+        to: '/cheatsheet',
+        icon: Map,
+        label: 'Quick Ref',
+        subtitle: 'Cert-aware cheat sheets',
+        whyOpen: 'Fast lookup during study or on exam day',
+      },
+      {
+        to: '/career',
+        icon: Briefcase,
+        label: 'Career',
+        subtitle: 'Job seeker OSINT',
+        whyOpen: 'Map skills to roles with public career intel',
+      },
     ],
   },
 ];
 
 const SIDEBAR_SESSION_KEY = 'aaism-sidebar-open';
+
+function SessionRing({ progress, color }: { progress: number; color: string }) {
+  const r = 10;
+  const c = 2 * Math.PI * r;
+  const offset = c * (1 - progress);
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" className="shrink-0" aria-hidden>
+      <circle cx="12" cy="12" r={r} fill="none" stroke="rgb(var(--sidebar-border))" strokeWidth="2" />
+      <circle
+        cx="12"
+        cy="12"
+        r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeDasharray={c}
+        strokeDashoffset={offset}
+        transform="rotate(-90 12 12)"
+        className="sidebar-session-ring-fill"
+      />
+    </svg>
+  );
+}
 
 // ============ SIDEBAR ============
 
@@ -109,9 +208,14 @@ function Sidebar({
   onCloseMobile: () => void;
 }) {
   const { state } = useGamification();
+  const { activeCert, activeCertId } = useCert();
   const currentLevel = getLevelFromXP(state.xp);
   const location = useLocation();
   const [unseenUpdates, setUnseenUpdates] = useState(false);
+  const { sessionMinutes, focusLabel, focusMode, toggleFocusMode, sessionProgress } =
+    useSessionContext(activeCertId);
+
+  const nextAction = getNextBestAction(activeCertId);
 
   useEffect(() => {
     setUnseenUpdates(hasUnseenReleases());
@@ -119,66 +223,102 @@ function Sidebar({
 
   const { getDockStyle, dockHandlers, navRef } = useSidebarDock(collapsed, location.pathname);
 
+  const activeSection = navSections.find(section =>
+    section.items.some(item =>
+      item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to),
+    ),
+  );
+
+  const formatSessionTime = (mins: number) => {
+    if (mins < 60) return `${mins}m`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  };
+
   return (
     <aside
-      className={`sidebar-panel ${collapsed ? 'w-[52px] sidebar-collapsed' : 'w-56'} fixed lg:sticky inset-y-0 left-0 flex-shrink-0 bg-theme-elevated dark:bg-gray-950 border-r border-theme dark:border-gray-800 flex flex-col h-screen z-50 group/sidebar ${mobileOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 lg:opacity-100'} lg:translate-x-0`}
+      className={`sidebar-panel sidebar-panel-seamless ${collapsed ? 'w-[52px] sidebar-collapsed' : 'w-56'} fixed lg:sticky inset-y-0 left-0 flex-shrink-0 bg-sidebar flex flex-col h-screen z-50 group/sidebar ${mobileOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 lg:opacity-100'} lg:translate-x-0 ${focusMode ? 'sidebar-focus-mode' : ''}`}
     >
-      {/* Logo + toggle */}
-      <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3'} px-3 py-3 border-b border-theme dark:border-gray-800 relative`}>
-        <div className={`${collapsed ? 'w-8 h-8' : 'w-10 h-10'} rounded-lg overflow-hidden flex-shrink-0 shadow-lg shadow-emerald-500/15 transition-all group-hover/sidebar:shadow-emerald-500/25`}>
-          <Logo size={collapsed ? 32 : 40} className="transition-transform duration-300 group-hover/sidebar:scale-[1.03]" />
+      {/* Brand + cert track */}
+      <div className={`sidebar-brand-header flex flex-col ${collapsed ? 'items-center px-2 py-3' : 'px-3 py-3'} relative`}>
+        <div className={`flex items-center w-full ${collapsed ? 'justify-center' : 'gap-2.5'}`}>
+          <div
+            className={`${collapsed ? 'w-8 h-8' : 'w-9 h-9'} rounded-lg overflow-hidden flex-shrink-0 shadow-lg transition-all`}
+            style={{ boxShadow: `0 4px 14px ${activeCert.color}22` }}
+          >
+            <Logo size={collapsed ? 32 : 36} className="transition-transform duration-300 group-hover/sidebar:scale-[1.03]" />
+          </div>
+          {!collapsed && (
+            <>
+              <div className="sidebar-label overflow-hidden flex-1 min-w-0">
+                <div className="text-sm font-bold text-cockpit leading-tight tracking-[0.08em] font-sans">
+                  {PLATFORM_NAME}
+                </div>
+                <div className="text-[10px] text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-400 dark:to-cyan-400 leading-tight tracking-wide font-medium truncate">
+                  {PLATFORM_TAGLINE}
+                </div>
+              </div>
+              <button
+                onClick={onToggle}
+                className="p-1 rounded-md text-theme-faint hover:text-theme-secondary dark:hover:text-gray-300 hover:bg-cockpit-track dark:hover:bg-gray-800 transition-colors opacity-0 group-hover/sidebar:opacity-100 shrink-0"
+                title="Collapse sidebar"
+                aria-label="Collapse sidebar"
+              >
+                <PanelLeftClose className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
         {!collapsed && (
+          <div className="sidebar-label mt-2 w-full">
+            <CertSwitcher integrated />
+          </div>
+        )}
+        {collapsed && (
           <>
-            <div className="sidebar-label overflow-hidden flex-1">
-              <div className="text-sm font-bold text-cockpit leading-tight tracking-[0.12em] font-sans">AAISM</div>
-              <div className="text-[10px] text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-cyan-600 dark:from-emerald-400 dark:to-cyan-400 leading-tight tracking-wide font-medium">
-                Intelligence Platform
-              </div>
+            <div className="sidebar-label w-full mt-2 flex justify-center">
+              <CertSwitcher compact integrated />
             </div>
             <button
               onClick={onToggle}
-              className="p-1 rounded-md text-theme-faint hover:text-theme-secondary dark:hover:text-gray-300 hover:bg-cockpit-track dark:hover:bg-gray-800 transition-colors opacity-0 group-hover/sidebar:opacity-100"
-              title="Collapse sidebar"
-            aria-label="Collapse sidebar"
+              className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-sidebar border border-sidebar flex items-center justify-center text-theme-muted hover:text-cockpit dark:hover:text-white hover:bg-theme-muted dark:hover:bg-gray-700 transition-all shadow-md opacity-0 group-hover/sidebar:opacity-100 z-50"
+              title="Expand sidebar"
+              aria-label="Expand sidebar"
             >
-              <PanelLeftClose className="w-4 h-4" />
+              <ChevronRight className="w-3 h-3" />
             </button>
           </>
         )}
-        {collapsed && (
-          <button
-            onClick={onToggle}
-            className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-theme-elevated border border-theme flex items-center justify-center text-theme-muted hover:text-cockpit dark:hover:text-white hover:bg-theme-muted dark:hover:bg-gray-700 transition-all shadow-md opacity-0 group-hover/sidebar:opacity-100 z-50"
-            title="Expand sidebar"
-            aria-label="Expand sidebar"
-          >
-            <ChevronRight className="w-3 h-3" />
-          </button>
-        )}
       </div>
 
-      {/* Cert switcher */}
-      {!collapsed && (
-        <div className="px-2 py-2 border-b border-theme dark:border-gray-800">
-          <CertSwitcher />
-        </div>
-      )}
-      {collapsed && (
-        <div className="px-1 py-2 border-b border-theme dark:border-gray-800 flex justify-center">
-          <CertSwitcher compact />
+      {/* Wayfinding — active section when expanded */}
+      {!collapsed && activeSection && (
+        <div className="sidebar-wayfinding px-3 py-1.5 text-[11px] text-theme-muted border-b border-sidebar/60">
+          <span className="text-theme-faint">You are in</span>{' '}
+          <span className="font-medium text-theme-secondary">{activeSection.label}</span>
+          <span className="text-theme-faint mx-1">·</span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+            {navSections.flatMap(s => s.items).find(item =>
+              item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to),
+            )?.label}
+          </span>
         </div>
       )}
 
       {/* Nav sections */}
       <nav ref={navRef} className="sidebar-dock-nav flex-1 overflow-y-auto py-2 px-1.5 space-y-1" {...dockHandlers}>
         {navSections.map((section, sIdx) => (
-          <div key={section.label}>
+          <div
+            key={section.id}
+            className={`sidebar-nav-section ${section.secondary ? 'sidebar-nav-secondary' : ''}`}
+            data-section={section.id}
+          >
             {sIdx > 0 && collapsed && (
-              <div className="mx-2 my-2 border-t border-theme dark:border-gray-800" />
+              <div className="mx-2 my-2 border-t border-sidebar/80" />
             )}
             {!collapsed && (
-              <div className="sidebar-label text-[10px] font-semibold text-theme-muted tracking-widest px-2.5 mb-1 mt-2">
+              <div className="sidebar-section-label text-[10px] font-medium text-theme-muted tracking-wide px-2.5 mb-1 mt-2">
                 {section.label}
               </div>
             )}
@@ -187,6 +327,7 @@ function Sidebar({
                 const Icon = item.icon;
                 const isActive = item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);
                 const showUpdateDot = item.to === '/' && unseenUpdates && !collapsed;
+                const isNextAction = nextAction.to === item.to && !isActive;
                 const dockStyle = collapsed ? getDockStyle(item.to) : undefined;
                 return (
                   <NavLink
@@ -196,18 +337,18 @@ function Sidebar({
                     end={item.to === '/'}
                     data-dock-item={collapsed ? item.to : undefined}
                     data-dock-active={collapsed ? String(isActive) : undefined}
+                    title={!collapsed ? item.whyOpen : undefined}
                     className={`sidebar-dock-item relative flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${collapsed ? 'px-0 py-2.5' : 'px-2.5 py-2'} rounded-lg text-sm font-medium group ${
                       isActive
-                        ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 sidebar-dock-active'
-                        : 'text-cockpit-muted hover:text-cockpit dark:hover:text-gray-200 hover:bg-cockpit-track dark:hover:bg-gray-800'
-                    }`}
-                    title={undefined}
+                        ? 'bg-emerald-50/90 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 sidebar-dock-active'
+                        : 'text-cockpit-muted hover:text-cockpit dark:hover:text-gray-200 hover:bg-cockpit-track/80 dark:hover:bg-gray-800/80'
+                    } ${item.to === '/' ? 'sidebar-home-nav' : ''}`}
                   >
                     <span
                       className={`sidebar-dock-icon-wrap inline-flex items-center justify-center ${collapsed ? 'origin-bottom' : ''}`}
                       style={dockStyle}
                     >
-                      <Icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-250 ${isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-theme-muted group-hover:text-theme-secondary dark:group-hover:text-gray-300'}`} />
+                      <Icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-300 ${isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-theme-muted group-hover:text-theme-secondary dark:group-hover:text-gray-300'}`} />
                     </span>
                     {!collapsed && (
                       <span className="sidebar-label truncate">{item.label}</span>
@@ -220,6 +361,12 @@ function Sidebar({
                     {!collapsed && showUpdateDot && !item.badge && (
                       <span className="ml-auto w-2 h-2 rounded-full bg-amber-500 shrink-0" title="New platform updates" />
                     )}
+                    {isNextAction && (
+                      <span
+                        className={`${collapsed ? 'absolute top-1.5 right-2' : 'ml-auto'} w-2 h-2 rounded-full bg-emerald-500 sidebar-next-action-dot shrink-0`}
+                        title={`Suggested next: ${nextAction.label}`}
+                      />
+                    )}
                     {collapsed && showUpdateDot && (
                       <span className="absolute top-1.5 right-2 w-2 h-2 rounded-full bg-amber-500" title="New platform updates" />
                     )}
@@ -227,6 +374,7 @@ function Sidebar({
                       <div className="sidebar-dock-tooltip" role="tooltip">
                         <span className="sidebar-dock-tooltip-title">{item.label}</span>
                         <span className="sidebar-dock-tooltip-sub">{item.subtitle}</span>
+                        <span className="sidebar-dock-tooltip-why">{item.whyOpen}</span>
                         {item.badge && (
                           <span className="sidebar-dock-tooltip-badge">{item.badge}</span>
                         )}
@@ -240,23 +388,69 @@ function Sidebar({
         ))}
       </nav>
 
-      {/* User / Level */}
-      <div className={`border-t border-theme dark:border-gray-800 p-2 ${collapsed ? 'flex justify-center' : ''}`}>
+      {/* Session context strip */}
+      <div
+        className={`sidebar-session-strip border-t border-sidebar/70 px-2 py-2 ${collapsed ? 'flex justify-center' : ''}`}
+        title={`Session ${formatSessionTime(sessionMinutes)} · ${focusLabel}`}
+      >
+        {collapsed ? (
+          <SessionRing progress={sessionProgress} color={activeCert.color} />
+        ) : (
+          <div className="flex items-center gap-2 px-1">
+            <SessionRing progress={sessionProgress} color={activeCert.color} />
+            <div className="sidebar-label overflow-hidden flex-1 min-w-0">
+              <div className="text-[10px] font-medium text-theme-secondary truncate">
+                Session {formatSessionTime(sessionMinutes)}
+              </div>
+              <div className="text-[10px] text-theme-muted truncate" style={{ color: activeCert.color }}>
+                {focusLabel}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={toggleFocusMode}
+              className={`p-1 rounded-md transition-colors shrink-0 ${
+                focusMode
+                  ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15'
+                  : 'text-theme-faint hover:text-theme-muted hover:bg-cockpit-track dark:hover:bg-gray-800'
+              }`}
+              title={focusMode ? 'Focus mode on — hover sidebar for Explore' : 'Focus mode — hide Explore until hover'}
+              aria-label="Toggle focus mode"
+              aria-pressed={focusMode}
+            >
+              <Focus className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Footer — streak + XP */}
+      <div
+        className={`sidebar-footer border-t border-sidebar/70 p-2 ${collapsed ? 'flex justify-center' : ''}`}
+        style={{ borderTopColor: `${activeCert.color}33` }}
+      >
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3 px-1'}`}>
           <div
             className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0"
-            style={{ backgroundColor: currentLevel.color }}
+            style={{
+              backgroundColor: currentLevel.color,
+              boxShadow: `0 0 0 2px rgb(var(--sidebar-bg)), 0 0 0 3px ${activeCert.color}66`,
+            }}
             title={`Level ${currentLevel.level}: ${currentLevel.title} · ${state.xp} XP`}
           >
             {currentLevel.level}
           </div>
           {!collapsed && (
-            <div className="overflow-hidden flex-1">
+            <div className="overflow-hidden flex-1 sidebar-label">
               <div className="text-xs font-medium text-theme-secondary truncate">{currentLevel.title}</div>
               <div className="flex items-center gap-2 text-[10px] text-theme-muted">
                 <span>{state.xp.toLocaleString()} XP</span>
-                <span className="flex items-center gap-0.5 text-orange-600 dark:text-orange-400">
-                  <Flame className="w-3 h-3" />{state.currentStreak}
+                <span
+                  className="flex items-center gap-0.5 font-medium"
+                  style={{ color: activeCert.color }}
+                >
+                  <Flame className="w-3 h-3" />
+                  {state.currentStreak}
                 </span>
               </div>
             </div>
@@ -284,11 +478,11 @@ function TopBar({
   const location = useLocation();
 
   const currentPage = navSections.flatMap(s => s.items).find(item =>
-    item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
+    item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to),
   );
 
   return (
-    <header className="h-12 flex items-center justify-between px-4 bg-theme-elevated border-b border-theme flex-shrink-0">
+    <header className="h-12 flex items-center justify-between px-4 bg-theme-elevated/95 backdrop-blur-sm border-b border-theme/80 flex-shrink-0">
       <div className="flex items-center gap-3">
         <button
           onClick={onToggleMobileNav}
@@ -300,7 +494,7 @@ function TopBar({
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-dot" />
           <span className="text-sm font-semibold text-theme-secondary dark:text-gray-200">
-            {currentPage?.label || 'AAISM'}
+            {currentPage?.label || PLATFORM_NAME}
           </span>
         </div>
       </div>
@@ -414,7 +608,6 @@ function SystemIssueBanner({ issue, onDismiss }: { issue: SystemIssue; onDismiss
 function LayoutContent() {
   const { theme } = useTheme();
   const { bgColor } = usePerformance();
-  // Collapsed on every page load / refresh; stays open during SPA navigation once toggled
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [intelOpen, setIntelOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -455,7 +648,7 @@ function LayoutContent() {
       />
       <SidebarJourneyHint collapsed={sidebarCollapsed} />
 
-      <div className="flex-1 flex flex-col min-w-0 relative z-10">
+      <div className="flex-1 flex flex-col min-w-0 relative z-10 sidebar-content-canvas">
         <TopBar
           onToggleIntel={() => setIntelOpen(!intelOpen)}
           intelOpen={intelOpen}
@@ -468,12 +661,10 @@ function LayoutContent() {
         <PwaInstallBanner />
 
         <div className="flex-1 flex overflow-hidden">
-          {/* Main content */}
           <main className="flex-1 overflow-y-auto p-3 sm:p-5">
             <Outlet />
           </main>
 
-          {/* Live Intel Feed sidebar */}
           {intelOpen && (
             <>
               <aside className="hidden xl:block w-80 flex-shrink-0 bg-theme-elevated border-l border-theme overflow-hidden relative z-20 pointer-events-auto">
