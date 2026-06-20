@@ -36,6 +36,7 @@ import GroqApiKeySection from '../components/GroqApiKeySection';
 import SignInSyncSection from '../components/SignInSyncSection';
 import IntegrationsSettings from '../components/IntegrationsSettings';
 import ConnectorsSettings from '../components/ConnectorsSettings';
+import AboutPanel from '../components/AboutPanel';
 import ProTierStrip from '../components/ProTierStrip';
 import {
   getShowAllToolsOverride,
@@ -854,13 +855,7 @@ function SettingsTab() {
 
       {section === 'about' && (
         <>
-          <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
-            <h3 className="font-semibold text-cockpit mb-4">About</h3>
-            <div className="space-y-2 text-sm text-cockpit-muted">
-              <p><strong>AAISM Exam Prep</strong> v1.0.0</p>
-              <p>Prepare for the ISACA AI Security Manager certification exam with AI-powered study tools, flashcards, quizzes, and progress tracking.</p>
-            </div>
-          </div>
+          <AboutPanel />
           <div className="bg-theme-elevated rounded-xl p-6 border border-red-200 dark:border-red-900">
             <h3 className="font-semibold text-red-600 dark:text-red-400 mb-4">Danger Zone</h3>
             <button

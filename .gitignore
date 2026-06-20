@@ -6,6 +6,8 @@ node_modules/
 # Build output
 dist/
 build/
+dist-mac/
+src-tauri/icons-dev/
 src-tauri/target/
 
 # Environment files

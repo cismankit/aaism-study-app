@@ -1,18 +1,23 @@
-# AAISM Intelligence — Mac Desktop App (Tauri)
+# Aegis — Mac Desktop App (Tauri)
 
-Run AAISM as a native macOS `.app` instead of in the browser. Built with [Tauri v2](https://v2.tauri.app/) wrapping the existing Vite + React frontend.
+Run **Aegis** as a native macOS `.app` (single product identity for App Store). Built with [Tauri v2](https://v2.tauri.app/) wrapping the Vite + React frontend.
+
+## Canonical identity
+
+| Field | Value |
+|-------|--------|
+| **Product name** | `Aegis` |
+| **Bundle ID** | `com.aegis.app` |
+| **Version** | Synced from root `package.json` via `npm run sync:tauri` |
+| **Build / CFBundleVersion** | Git short hash (dev) or `YYYYMMDD01` (release) |
+
+Delete legacy **`AAISM Intelligence.app`** from `/Applications` — it used bundle ID `com.aaism.intelligence` and is not the canonical app. See [docs/APP_STORE.md](docs/APP_STORE.md).
 
 ## Prerequisites (macOS)
 
 1. **Node.js** 18+ and npm
-2. **Rust** — install via [rustup](https://rustup.rs/):
-   ```bash
-   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-   source "$HOME/.cargo/env"   # add to ~/.zshrc for new shells
-   ```
-3. **Xcode Command Line Tools** — `xcode-select --install` (verify with `xcode-select -p`)
-
-First `npm run tauri:build` downloads Rust crates and may take several minutes.
+2. **Rust** — [rustup](https://rustup.rs/)
+3. **Xcode Command Line Tools** — `xcode-select --install`
 
 ## Development
 
@@ -21,38 +26,49 @@ npm install
 npm run tauri:dev
 ```
 
-Opens a native window (1400×900) loading the Vite dev server at `http://localhost:5173`.
+Native window loads Vite at `http://localhost:5173`. Window title shows `Aegis · v1.0.0 (build <git-hash>)`.
 
-## Production build
+## Production builds
+
+| Script | Icons | Use |
+|--------|-------|-----|
+| `npm run tauri:build:dev` | Amber **v1.0** badge on icon (`icons-dev/`) | Local / TestFlight-style iterations |
+| `npm run tauri:build:release` | Clean shield (`icons/`) | App Store / notarized release |
+| `npm run tauri:build` | Same as **dev** (default) | Day-to-day desktop builds |
+
+Both scripts sync version, build, and copy **`dist-mac/Aegis.app`** (and `.dmg` when present).
+
+Output from Tauri directly:
+
+- **`.app`:** `src-tauri/target/release/bundle/macos/Aegis.app`
+- **`.dmg`:** `src-tauri/target/release/bundle/dmg/`
 
 ```bash
-npm run tauri:build
+open dist-mac/Aegis.app
 ```
 
-Output:
+Unsigned builds: first launch → **right-click → Open** (Gatekeeper).
 
-- **`.app` bundle:** `src-tauri/target/release/bundle/macos/AAISM Intelligence.app`
-- **`.dmg` installer:** `src-tauri/target/release/bundle/dmg/`
+## Install policy (avoid Launchpad duplicates)
 
-Launch the `.app` from Finder, or:
-
-```bash
-open "src-tauri/target/release/bundle/macos/AAISM Intelligence.app"
-```
-
-Unsigned builds: first launch requires **right-click → Open** (macOS Gatekeeper).
-
-## Notes
-
-- **Base path:** Tauri builds use `/` (not `/aaism-study-app/`). GitHub Pages builds are unchanged (`npm run build:pages`).
-- **Ollama:** Local AI via `http://localhost:11434` works from the desktop app the same as in the browser.
-- **Code signing:** Unsigned builds run locally after right-click → Open. For distribution, configure Apple Developer signing in Xcode or `tauri.conf.json` bundle settings.
-- **iPhone:** Use the PWA (Add to Home Screen in Safari) — no native iOS app without App Store / TestFlight distribution.
+1. **Remove** old copies: `AAISM Intelligence.app`, extra `Aegis.app` from past builds.
+2. **Replace in place:** drag `dist-mac/Aegis.app` → `/Applications` and choose **Replace** — do not keep multiple copies.
+3. Dev builds show an **amber version badge** on the Dock/Launchpad icon; release builds do not.
 
 ## Scripts
 
 | Script | Description |
 |--------|-------------|
+| `npm run sync:tauri` | Sync version + build metadata to `tauri.conf.json` / `Cargo.toml` |
+| `npm run stamp:icons` | Generate dev-stamped icons in `src-tauri/icons-dev/` |
 | `npm run tauri:dev` | Dev window + hot reload |
-| `npm run tauri:build` | Release `.app` / `.dmg` |
-| `npm run build:pages` | GitHub Pages deploy build (unchanged) |
+| `npm run tauri:build:dev` | Dev `.app` with stamped icon → `dist-mac/` |
+| `npm run tauri:build:release` | Release `.app` with clean icon → `dist-mac/` |
+| `npm run build:pages` | GitHub Pages deploy (unchanged) |
+
+## Notes
+
+- **Base path:** Tauri uses `/`; GitHub Pages uses `/aaism-study-app/`.
+- **Ollama:** `http://localhost:11434` works from the desktop app.
+- **Code signing / App Store:** See [docs/APP_STORE.md](docs/APP_STORE.md).
+- **iPhone:** PWA via Safari → Add to Home Screen (manifest name: `Aegis v<version>`).

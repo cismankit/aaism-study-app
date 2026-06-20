@@ -13,6 +13,7 @@ import {
   getStudyRecommendations,
   generateInsights
 } from '../services/testAnalytics';
+import AboutPanel from '../components/AboutPanel';
 import { 
   Trophy, 
   Flame, 
@@ -601,18 +602,7 @@ function SettingsTab() {
       </div>
 
       {/* About */}
-      <div className="bg-white rounded-xl p-6 border border-gray-200">
-        <h3 className="font-semibold text-gray-900 mb-2">About</h3>
-        <div className="flex items-start gap-4">
-          <img src="/logo.svg" alt="AAISM Logo" className="w-16 h-16" />
-          <div>
-            <p className="text-gray-600 text-sm">
-              AAISM Study App helps you prepare for the ISACA AI Security Manager certification exam through gamified learning, practice quizzes, and AI-powered tutoring.
-            </p>
-            <p className="text-gray-400 text-xs mt-2">Version 1.0.0</p>
-          </div>
-        </div>
-      </div>
+      <AboutPanel />
     </div>
   );
 }

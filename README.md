@@ -80,7 +80,7 @@ Check your [Dashboard](progress/00-dashboard.md) for:
 
 ---
 
-## 🖥️ AAISM Intelligence Platform (Web & Desktop)
+## 🖥️ Aegis Platform (Web & Desktop)
 
 The interactive study app (Vite + React) lives in this repo root. Deployed at:
 
@@ -89,7 +89,7 @@ The interactive study app (Vite + React) lives in this repo root. Deployed at:
 | Platform | How to run |
 |----------|------------|
 | **Browser / GitHub Pages** | Open the live URL above |
-| **Mac desktop app** | `npm run tauri:dev` or `npm run tauri:build` — see [TAURI.md](TAURI.md) |
+| **Mac desktop app** | `npm run tauri:build:dev` or `tauri:build:release` — see [TAURI.md](TAURI.md). Install **one** `dist-mac/Aegis.app`; delete legacy **AAISM Intelligence** copies. |
 | **iPhone / iPad** | Safari → Share → **Add to Home Screen** (PWA) |
 
 ---

@@ -8,11 +8,16 @@
     "build": "tsc && vite build",
     "build:pages": "GITHUB_PAGES=true tsc && GITHUB_PAGES=true vite build",
     "preview": "vite preview",
+    "sync:tauri": "node scripts/sync-tauri-version.mjs",
+    "stamp:icons": "node scripts/stamp-icon.mjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "node scripts/prepare-tauri-build.mjs dev",
+    "tauri:build:dev": "node scripts/prepare-tauri-build.mjs dev",
+    "tauri:build:release": "node scripts/prepare-tauri-build.mjs release"
   },
   "dependencies": {
+    "@tauri-apps/plugin-shell": "^2.3.0",
     "lucide-react": "^0.294.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -27,6 +32,7 @@
     "@vitejs/plugin-react": "^4.2.0",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.31",
+    "sharp": "^0.34.2",
     "tailwindcss": "^3.3.5",
     "typescript": "^5.2.2",
     "vite": "^5.0.0",

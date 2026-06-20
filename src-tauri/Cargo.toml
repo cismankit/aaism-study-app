@@ -1,12 +1,12 @@
 [package]
-name = "aaism-intelligence"
+name = "aegis"
 version = "1.0.0"
-description = "AAISM Intelligence Platform — AI Security Manager exam prep"
-authors = ["AAISM"]
+description = "Aegis — multi-cert study, ops drills, and exam prep"
+authors = ["Aegis"]
 edition = "2021"
 
 [lib]
-name = "aaism_intelligence_lib"
+name = "aegis_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]
