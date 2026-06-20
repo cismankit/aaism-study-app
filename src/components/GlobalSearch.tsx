@@ -34,6 +34,8 @@ const PAGE_ITEMS: SearchItem[] = [
   { id: 'p-cheatsheet', type: 'page', title: 'Quick Ref', subtitle: 'Cert-aware cheat sheet', route: '/cheatsheet', keywords: 'cheat sheet quick reference cert' },
   { id: 'p-settings', type: 'page', title: 'Settings', subtitle: 'AI config & progress', route: '/settings', keywords: 'settings dashboard progress ai' },
   { id: 'p-help', type: 'page', title: 'Help & Support', subtitle: 'Documentation', route: '/help', keywords: 'help support documentation' },
+  { id: 'p-donate', type: 'page', title: 'Donate', subtitle: 'Support the project', route: '/donate', keywords: 'donate support contribute payment stripe' },
+  { id: 'p-support', type: 'page', title: 'Bug Reports', subtitle: 'Report issues & feedback', route: '/support', keywords: 'support bug report feedback help' },
 ];
 
 function buildIndex(): SearchItem[] {

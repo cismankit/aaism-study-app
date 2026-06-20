@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, type ReactNode } from 'react';
+import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   LayoutDashboard, Bot, Briefcase, Crosshair,
@@ -57,6 +57,14 @@ const ONBOARDING_ACTIONS: Record<OnboardingHint, NextAction> = {
 
 export default function CommandCenter() {
   const navigate = useNavigate();
+  const goMission = useCallback(
+    () => navigate('/', { state: { fromCommand: true } }),
+    [navigate],
+  );
+  const navigateFromCommand = useCallback(
+    (route: string) => (route === '/' ? goMission() : navigate(route)),
+    [goMission, navigate],
+  );
   const { state } = useApp();
   const { activeCert } = useCert();
   const { state: gameState } = useGamification();
@@ -247,7 +255,7 @@ export default function CommandCenter() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => navigate(nextAction.route)}
+            onClick={() => navigateFromCommand(nextAction.route)}
             className={`text-xs px-4 py-2.5 rounded-lg flex items-center gap-2 font-semibold transition-all ${
               nextAction.primary
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20'
@@ -275,7 +283,7 @@ export default function CommandCenter() {
             description={`25 min on ${activeCert.shortName} — read → quiz → lab → intel`}
             route="/"
             icon={Target}
-            onNavigate={navigate}
+            onNavigate={navigateFromCommand}
             highlight={nextAction.route === '/'}
           />
           <LearnWorkEarnPillar
@@ -284,7 +292,7 @@ export default function CommandCenter() {
             description={`${contentStats.totalQuestions} questions · ${labCount} labs · domain drills`}
             route="/study"
             icon={Crosshair}
-            onNavigate={navigate}
+            onNavigate={navigateFromCommand}
             highlight={nextAction.route === '/study' || nextAction.route === '/ops'}
           />
           <LearnWorkEarnPillar
@@ -295,7 +303,7 @@ export default function CommandCenter() {
               : `${examQuestions} questions · ${passScore}% to pass · timed conditions`}
             route={jobSeekerMode ? '/career' : '/exam'}
             icon={jobSeekerMode ? Briefcase : Zap}
-            onNavigate={navigate}
+            onNavigate={navigateFromCommand}
             highlight={nextAction.route === '/exam' || nextAction.route === '/career'}
           />
         </div>
@@ -360,7 +368,7 @@ export default function CommandCenter() {
           <InstrumentPanel title="Learn · Work · Earn" icon={Zap} accent="emerald">
             <p className="text-[10px] text-cockpit-subtle mb-2">Jump to any phase of today&apos;s loop</p>
             <div className="grid grid-cols-2 gap-2">
-              <ThrottleButton icon={Target} label="Learn" sub="Mission · 25 min" onClick={() => navigate('/')} primary={nextAction.route === '/'} highlight />
+              <ThrottleButton icon={Target} label="Learn" sub="Mission · 25 min" onClick={goMission} primary={nextAction.route === '/'} highlight />
               <ThrottleButton icon={Crosshair} label="Work" sub="Practice · Ops" onClick={() => navigate('/study')} primary={nextAction.route === '/study'} />
               <ThrottleButton icon={Zap} label="Earn" sub={`${examQuestions}Q sim`} onClick={() => navigate('/exam')} />
               <ThrottleButton icon={Terminal} label="Ops Lab" sub="Hands-on drills" onClick={() => navigate('/ops')} />

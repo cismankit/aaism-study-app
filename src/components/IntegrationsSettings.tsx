@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Cloud, CreditCard, Shield, CheckCircle2, XCircle, Loader2, ExternalLink, Settings,
+  Cloud, CreditCard, Shield, CheckCircle2, XCircle, Loader2, ExternalLink, Settings, LayoutDashboard,
   Brain, Download, Upload, Trash2, RefreshCw,
 } from 'lucide-react';
 import {
@@ -512,8 +512,8 @@ create policy "anon update" on public.aegis_user_memory for update using (true);
           Donate
         </Link>{' '}
         to verify checkout links, or use{' '}
-        <Link to="/" className="text-accent-emerald hover:underline inline-flex items-center gap-0.5">
-          <Settings className="w-3 h-3" /> Command Center
+        <Link to="/command" className="text-accent-emerald hover:underline inline-flex items-center gap-0.5">
+          <LayoutDashboard className="w-3 h-3" /> Command Center
         </Link>{' '}
         to confirm system alerts clear.
       </p>

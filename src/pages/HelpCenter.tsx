@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   HelpCircle, ChevronDown, ChevronUp, Rocket, Settings, ClipboardCheck,
   Crosshair, Theater, Bot, Briefcase, Radar, BookOpen, Lightbulb, Globe,
-  Shield, Smartphone,
+  Shield, Smartphone, Target, LayoutDashboard,
 } from 'lucide-react';
 import { GEMMA4_BLOG_URL, AI_CONFIG_STORAGE_KEY } from '../services/aiService';
 import PageHeader from '../components/PageHeader';
@@ -73,6 +73,8 @@ const faqs: FAQItem[] = [
 ];
 
 const appAreas = [
+  { to: '/', icon: Target, label: 'Mission', desc: 'Daily 25-min learn loop — read, quiz, lab, intel' },
+  { to: '/command', icon: LayoutDashboard, label: 'Command Center', desc: 'Readiness HUD, streak, and quick actions' },
   { to: '/study', icon: Crosshair, label: 'Study Ops', desc: 'Domain quizzes, flashcards, and exam mode' },
   { to: '/scenarios', icon: Theater, label: 'Scenario Lab', desc: 'Interactive case studies and pattern drills' },
   { to: '/agent', icon: Bot, label: 'Agent Discovery', desc: 'Review AI-generated question leads' },
@@ -82,11 +84,12 @@ const appAreas = [
 ];
 
 const gettingStartedSteps = [
-  { step: 1, title: 'Take a baseline quiz', body: 'Start in Study Ops → pick a domain and run a short quiz to see where you stand.' },
-  { step: 2, title: 'Explore Scenario Lab', body: 'Work through case studies to connect concepts to real-world AI security decisions.' },
-  { step: 3, title: 'Skim a Playbook', body: 'Pick a starter playbook to understand how exam topics map to enterprise workflows.' },
-  { step: 4, title: 'Enable AI (optional)', body: 'Add your API key in Settings for tutoring and deeper scenario feedback.' },
-  { step: 5, title: 'Use Cram Mode before exam day', body: 'Run 24h Cram Mode for a focused last-minute review pass.' },
+  { step: 1, title: 'Start today\'s mission', body: 'Open Mission (home) and run the guided 25-min loop on your weakest domain.' },
+  { step: 2, title: 'Check Command Center', body: 'Review readiness, streak, and suggested next actions on the Command overview.' },
+  { step: 3, title: 'Explore Scenario Lab', body: 'Work through case studies to connect concepts to real-world AI security decisions.' },
+  { step: 4, title: 'Skim a Playbook', body: 'Pick a starter playbook to understand how exam topics map to enterprise workflows.' },
+  { step: 5, title: 'Enable AI (optional)', body: 'Add your API key in Settings for tutoring and deeper scenario feedback.' },
+  { step: 6, title: 'Use Cram Mode before exam day', body: 'Run 24h Cram Mode for a focused last-minute review pass.' },
 ];
 
 const examChecklist = [
