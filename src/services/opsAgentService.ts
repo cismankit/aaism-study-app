@@ -1,4 +1,4 @@
-import { chat, loadAIConfig, type Message } from './aiService';
+import { chat, resolveAIConfigForRun, type Message } from './aiService';
 import { buildOpsSystemPrompt } from './agentPrompts';
 import { recordAgentSummary } from './memoryService';
 
@@ -168,7 +168,7 @@ export async function analyzeWithOpsAgent(
   context?: string,
 ): Promise<OpsAnalysisResult> {
   const agent = getOpsAgent(agentId);
-  const config = loadAIConfig();
+  const config = await resolveAIConfigForRun();
 
   const messages: Message[] = [
     { role: 'system', content: agent.systemPrompt },
@@ -209,7 +209,7 @@ export async function generateMiniLabFromIncident(
   certId: string,
   domainId: number,
 ): Promise<{ title: string; steps: string[]; type: string } | null> {
-  const config = loadAIConfig();
+  const config = await resolveAIConfigForRun();
   const response = await chat(config, [
     {
       role: 'system',

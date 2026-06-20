@@ -2,7 +2,7 @@
  * Unified study mission orchestrator — Hermes → Claude Analyst → OpenClaw handoff.
  */
 
-import { chat, loadAIConfig } from './aiService';
+import { chat, resolveAIConfigForRun } from './aiService';
 import { buildCertTrainingContext, getActiveCertification } from './certContextService';
 import { buildMissionHandoffPrompt } from './agentPrompts';
 import { type OpsAgentId } from './opsAgentService';
@@ -215,15 +215,27 @@ async function runAgentStep(
 
   await delay(400);
 
-  const config = loadAIConfig();
+  const config = await resolveAIConfigForRun();
   const response = await chat(config, [
     { role: 'system', content: `${buildMissionHandoffPrompt(agentId)}\n\n${certContext}\nReturn concise JSON or plain text.` },
     { role: 'user', content: userPrompt },
   ], { jsonMode: false, temperature: 0.3 });
 
-  const message = response.error
-    ? `Fallback analysis complete for ${phase}.`
-    : response.content.slice(0, 300);
+  if (response.error) {
+    const errMsg = `${agentId} ${phase}: ${response.error}`;
+    callbacks.onError(errMsg);
+    if (idx >= 0) {
+      handoffs[idx] = {
+        ...handoffs[idx],
+        status: 'done',
+        message: `⚠ ${response.error.slice(0, 200)}`,
+      };
+      callbacks.onHandoffUpdate([...handoffs]);
+    }
+    throw new Error(response.error);
+  }
+
+  const message = response.content.slice(0, 300);
 
   if (idx >= 0) {
     handoffs[idx] = { ...handoffs[idx], status: 'done', message };
@@ -231,6 +243,53 @@ async function runAgentStep(
   }
 
   return message;
+}
+
+/** Single Hermes handoff step for Settings smoke tests. */
+export async function smokeTestMissionHandoff(): Promise<{
+  ok: boolean;
+  summary: string;
+  error?: string;
+}> {
+  const cert = getActiveCertification();
+  const certContext = buildCertTrainingContext(cert);
+  const handoffs: AgentHandoff[] = [
+    {
+      agent: 'hermes',
+      agentName: 'Hermes',
+      phase: 'assess',
+      message: 'Smoke test…',
+      status: 'pending',
+    },
+  ];
+  let capturedError = '';
+
+  try {
+    const summary = await runAgentStep(
+      'hermes',
+      'assess',
+      `Smoke test: summarize one priority for ${cert.shortName} Domain 1 in one sentence.`,
+      certContext,
+      handoffs,
+      {
+        onHandoffUpdate: () => {},
+        onPlanReady: () => {},
+        onError: err => {
+          capturedError = err;
+        },
+      },
+    );
+    if (capturedError) {
+      return { ok: false, summary: '', error: capturedError };
+    }
+    if (!summary.trim() || summary.length < 5) {
+      return { ok: false, summary: '', error: 'Empty mission handoff response' };
+    }
+    return { ok: true, summary };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, summary: '', error: capturedError || msg };
+  }
 }
 
 export async function orchestrateStudyMission(

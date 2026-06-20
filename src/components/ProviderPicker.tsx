@@ -1,21 +1,18 @@
 import { useState, useEffect } from 'react';
 import {
+  syncPrimaryProvider,
   getPrimaryAiProvider,
-  setPrimaryAiProvider,
   getAiConnectors,
   getConnectorState,
-  saveConnectorsConfig,
-  loadConnectorsConfig,
-  buildAIConfigFromConnectors,
-  PROVIDER_TO_CONNECTOR,
   type ConnectorRuntime,
   type ConnectorId,
 } from '../services/connectorRegistry';
 import {
   type AIProvider,
-  defaultConfigs,
-  saveAIConfig,
+  type AIConfig,
+  subscribeAIConfig,
 } from '../services/aiService';
+import { checkLLMHealth } from '../services/llmHealthService';
 import { Server, Sparkles, Zap, Cloud, Check, AlertCircle } from 'lucide-react';
 
 const PROVIDER_OPTIONS: {
@@ -44,18 +41,16 @@ export default function ProviderPicker({ onChange, compact = false }: ProviderPi
     setConnectors(getAiConnectors());
   }, [primary]);
 
+  useEffect(() => {
+    return subscribeAIConfig((cfg: AIConfig) => setPrimary(cfg.provider));
+  }, []);
+
   const handleSelect = (provider: AIProvider) => {
     setPrimary(provider);
-    setPrimaryAiProvider(provider);
-
-    const cid = PROVIDER_TO_CONNECTOR[provider];
-    const config = loadConnectorsConfig();
-    const existing = config.connectors[cid] ?? { enabled: true, fields: {} };
-    config.connectors[cid] = { ...existing, enabled: true };
-    saveConnectorsConfig(config);
-
-    const aiConfig = buildAIConfigFromConnectors(config);
-    saveAIConfig({ ...aiConfig, provider, ...defaultConfigs[provider] });
+    syncPrimaryProvider(provider);
+    if (provider === 'ollama') {
+      void checkLLMHealth();
+    }
     onChange?.(provider);
     setConnectors(getAiConnectors());
   };

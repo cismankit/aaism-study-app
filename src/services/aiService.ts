@@ -93,7 +93,7 @@ export const defaultConfigs: Record<AIProvider, Partial<AIConfig>> = {
 /** localStorage key for AI provider config (API keys stored here — browser only, never sent to AAISM servers) */
 export const AI_CONFIG_STORAGE_KEY = 'aaism-ai-config';
 
-export const AI_CONFIG_CHANGED_EVENT = 'aaism-ai-config-changed';
+export const AI_CONFIG_CHANGED_EVENT = 'aegis-ai-config-changed';
 
 type AIConfigListener = (config: AIConfig) => void;
 const aiConfigListeners = new Set<AIConfigListener>();
@@ -107,7 +107,7 @@ export function subscribeAIConfig(listener: AIConfigListener): () => void {
 export function initAIConfigSync(): void {
   if (typeof window === 'undefined') return;
   window.addEventListener(AI_CONFIG_CHANGED_EVENT, () => {
-    const config = loadLegacyAIConfig();
+    const config = loadAIConfigFromStorage();
     aiConfigListeners.forEach(l => l(config));
   });
 }

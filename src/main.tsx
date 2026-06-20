@@ -5,11 +5,13 @@ import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import { ThemeProvider } from './context/ThemeContext'
 import { initMemory } from './services/memoryService'
+import { initAIConfigSync } from './services/aiService'
 import { ensureFirstVisitRecorded } from './services/productTierService'
 import './index.css'
 
 registerSW({ immediate: true })
 initMemory()
+initAIConfigSync()
 ensureFirstVisitRecorded()
 
 const basename = import.meta.env.BASE_URL.replace(/\/$/, '') || undefined

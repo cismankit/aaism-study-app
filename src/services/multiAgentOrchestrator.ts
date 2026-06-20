@@ -5,8 +5,7 @@
 
 import {
   chatJson,
-  loadAIConfig,
-  resolveAgentConfig,
+  resolveAIConfigForRun,
   resolveOllamaModel,
   defaultConfigs,
   getModelCapability,
@@ -527,7 +526,7 @@ export async function runMultiAgentDiscovery(
   coverage: ReturnType<typeof analyzeCoverage>;
   summary: OrchestratorRunSummary;
 }> {
-  const baseConfig = config || await resolveAgentConfig(loadAIConfig());
+  const baseConfig = config || await resolveAIConfigForRun();
   const ensemble = loadEnsembleConfig();
   const discoverConfig = ensemble.enabled ? buildEnsembleDiscoverConfig(baseConfig) : baseConfig;
   const ctx: OrchestratorContext = { strategy, config: discoverConfig, callbacks, signal };

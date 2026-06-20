@@ -1,4 +1,4 @@
-import { loadAIConfig, getModelCapability, getRecommendedFallbackModel, resolveAgentConfig, type AIConfig } from './aiService';
+import { getModelCapability, getRecommendedFallbackModel, resolveAIConfigForRun, type AIConfig } from './aiService';
 import { runMultiAgentDiscovery, type ParsedQuestion } from './multiAgentOrchestrator';
 import { getAllQuestions, ALL_DOMAINS, getDomainsForCert } from '../data/examContent';
 import { getActiveCertId } from './certContextService';
@@ -133,7 +133,7 @@ export async function runDiscoveryAgent(
   callbacks: AgentCallbacks,
   config?: AIConfig,
 ): Promise<AgentRun> {
-  const aiConfig = config || await resolveAgentConfig(loadAIConfig());
+  const aiConfig = config || await resolveAIConfigForRun();
   const run = startRun(strategy);
 
   try {

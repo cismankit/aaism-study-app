@@ -9,12 +9,13 @@ import { AAISM_DOMAIN_GUIDES } from '../data/aaismDomainGuide';
 import { topics } from '../data/knowledgeBase';
 import {
   chat,
-  loadAIConfig,
+  resolveAIConfigForRun,
   resolveOllamaModel,
   type AIConfig,
   type AIProvider,
 } from './aiService';
 import { checkLLMHealth, type LLMHealthReport } from './llmHealthService';
+import { resolveAIConfigWithFallback } from './connectorRegistry';
 
 export type ContentSourceType = 'domain-topic' | 'knowledge-topic' | 'intel-headline' | 'custom';
 
@@ -122,7 +123,7 @@ export function resolveSourceFromParams(params: URLSearchParams): ContentSource 
 }
 
 export async function resolveContentProvider(health?: LLMHealthReport | null): Promise<ContentProviderStatus> {
-  const config = loadAIConfig();
+  const { config, fallbackUsed, message } = await resolveAIConfigWithFallback();
   const report = health ?? await checkLLMHealth();
 
   if (config.provider === 'ollama') {
@@ -145,8 +146,13 @@ export async function resolveContentProvider(health?: LLMHealthReport | null): P
 
   if (config.provider === 'groq') {
     const groq = report.providers.groq;
-    if (groq?.healthy) {
-      return { provider: 'groq', label: 'Groq (free tier)', configured: true, message: groq.message };
+    if (groq?.healthy || config.apiKey?.trim()) {
+      return {
+        provider: 'groq',
+        label: fallbackUsed ? 'Groq (fallback)' : 'Groq (free tier)',
+        configured: true,
+        message: message ?? groq?.message,
+      };
     }
     return {
       provider: 'none',
@@ -237,7 +243,7 @@ export async function generateContent(
   const context = buildSourceContext(source);
   const report = health ?? await checkLLMHealth();
   const providerStatus = await resolveContentProvider(report);
-  const aiConfig = config ?? loadAIConfig();
+  const aiConfig = config ?? await resolveAIConfigForRun();
 
   const canUseLlm = report.overallHealthy && providerStatus.configured;
 

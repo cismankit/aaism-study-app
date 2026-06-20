@@ -3,7 +3,7 @@
  * Public pasted data only — no LinkedIn scraping or private profile access.
  */
 
-import { chat, loadAIConfig } from './aiService';
+import { chat, resolveAIConfigForRun } from './aiService';
 import { buildCertTrainingContext, getActiveCertification } from './certContextService';
 import { buildCareerSystemPrompt } from './agentPrompts';
 import { recordCareerIntel } from './memoryService';
@@ -115,7 +115,7 @@ export async function buildCompanyProfile(input: {
     }
   }
 
-  const config = loadAIConfig();
+  const config = await resolveAIConfigForRun();
   const response = await chat(config, [
     {
       role: 'system',
@@ -191,7 +191,7 @@ export async function analyzeJobPosting(input: {
     throw new Error('Paste job description text or provide a URL we can fetch.');
   }
 
-  const config = loadAIConfig();
+  const config = await resolveAIConfigForRun();
   const response = await chat(config, [
     {
       role: 'system',
@@ -234,7 +234,7 @@ export async function buildPeopleMap(input: {
   profileUrls?: string;
 }): Promise<PeopleMapResult> {
   const cert = getActiveCertification();
-  const config = loadAIConfig();
+  const config = await resolveAIConfigForRun();
 
   const response = await chat(config, [
     {

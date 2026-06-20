@@ -1,4 +1,4 @@
-import { chat, loadAIConfig, AAISM_CONTEXT, type AIConfig, type Message } from './aiService';
+import { chat, resolveAIConfigForRun, AAISM_CONTEXT, type AIConfig, type Message } from './aiService';
 import { getAllQuestions, type ExamQuestion } from '../data/examContent';
 import {
   QUESTION_PATTERNS,
@@ -170,7 +170,7 @@ export async function researchExamPatterns(
   focus?: string,
   config?: AIConfig,
 ): Promise<IntelligenceInsight> {
-  const aiConfig = config || loadAIConfig();
+  const aiConfig = config || await resolveAIConfigForRun();
   callbacks.onProgress('research', 'Synthesizing community exam pattern knowledge...');
   callbacks.onLog('Starting exam pattern research via LLM', 'info');
 
@@ -238,7 +238,7 @@ export async function discoverTrapPatterns(
   domain?: number,
   config?: AIConfig,
 ): Promise<IntelligenceInsight> {
-  const aiConfig = config || loadAIConfig();
+  const aiConfig = config || await resolveAIConfigForRun();
   const domainLabel = domain ? `Domain ${domain}` : 'all domains';
   callbacks.onProgress('traps', `Discovering exam traps for ${domainLabel}...`);
   callbacks.onLog(`Starting trap discovery for ${domainLabel}`, 'info');
@@ -301,7 +301,7 @@ export async function buildScenarioContext(
   domain: number,
   config?: AIConfig,
 ): Promise<ScenarioTemplate> {
-  const aiConfig = config || loadAIConfig();
+  const aiConfig = config || await resolveAIConfigForRun();
   callbacks.onProgress('scenario', `Building scenario for "${topic}"...`);
   callbacks.onLog(`Generating interactive scenario for "${topic}" (Domain ${domain})`, 'info');
 
@@ -420,7 +420,7 @@ export async function generatePatternDrillQuestions(
   domain?: number,
   config?: AIConfig,
 ): Promise<ExamQuestion[]> {
-  const aiConfig = config || loadAIConfig();
+  const aiConfig = config || await resolveAIConfigForRun();
   callbacks.onProgress('drill', `Generating ${pattern.name} drill questions...`);
   callbacks.onLog(`Creating ${count} "${pattern.keyword}" pattern questions`, 'info');
 
@@ -525,7 +525,7 @@ export async function generatePatternInsights(
   quizHistory: Array<{ domain: number; score: number; pattern?: string }>,
   config?: AIConfig,
 ): Promise<IntelligenceInsight> {
-  const aiConfig = config || loadAIConfig();
+  const aiConfig = config || await resolveAIConfigForRun();
   callbacks.onProgress('insights', 'Cross-referencing performance with community data...');
   callbacks.onLog('Analyzing quiz performance against community intelligence', 'info');
 

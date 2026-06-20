@@ -32,10 +32,13 @@ import {
   AAISM_OFFLINE_MODELS,
 } from '../services/aiService';
 import OllamaModelManager from '../components/OllamaModelManager';
+import AISmokeTestPanel from '../components/AISmokeTestPanel';
 import GroqApiKeySection from '../components/GroqApiKeySection';
 import SignInSyncSection from '../components/SignInSyncSection';
 import IntegrationsSettings from '../components/IntegrationsSettings';
 import ConnectorsSettings from '../components/ConnectorsSettings';
+import AIConnectionStatusPill from '../components/AIConnectionStatusPill';
+import { useSettingsHealthPoll } from '../hooks/useSettingsHealthPoll';
 import AboutPanel from '../components/AboutPanel';
 import ProTierStrip from '../components/ProTierStrip';
 import {
@@ -758,6 +761,7 @@ function ProductTierSettings() {
 
 function SettingsTab() {
   const [section, setSection] = useState<SettingsSection>('ai');
+  useSettingsHealthPoll(true);
   const { defaultCertId, setDefaultCert, activeCert } = useCert();
   const [config, setConfig] = useState<AIConfig>(loadAIConfig);
   const [saved, setSaved] = useState(false);
@@ -875,6 +879,8 @@ function SettingsTab() {
 
       {section === 'ai' && (
       <>
+      <AIConnectionStatusPill className="mb-4" />
+
       <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
         <h3 className="font-semibold text-cockpit mb-2">Default certification track</h3>
         <p className="text-sm text-cockpit-muted mb-4">
@@ -1041,6 +1047,8 @@ function SettingsTab() {
           </button>
         </div>
       </div>
+
+      <AISmokeTestPanel />
       </>
       )}
     </div>

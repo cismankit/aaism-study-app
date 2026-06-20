@@ -1,4 +1,4 @@
-import { chat, loadAIConfig, type AIConfig } from './aiService';
+import { chat, resolveAIConfigForRun, type AIConfig } from './aiService';
 import { buildCertTrainingContext, getActiveCertification } from './certContextService';
 import { type OpsAgentId } from './opsAgentService';
 import { buildTeamPackPrompt } from './agentPrompts';
@@ -240,7 +240,7 @@ export async function runTeamPackMission(
   const cert = getActiveCertification();
   const certContext = buildCertTrainingContext(cert);
   const agent = agentId ?? pack.defaultAgent;
-  const config = loadAIConfig();
+  const config = await resolveAIConfigForRun();
 
   const stepStatuses: StepStatus[] = pack.steps.map(s => ({
     id: s.id,

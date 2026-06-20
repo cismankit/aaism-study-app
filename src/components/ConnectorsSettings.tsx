@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   getAllConnectors,
   setConnectorState,
@@ -11,6 +11,7 @@ import {
 import ProviderPicker from './ProviderPicker';
 import LocalLLMHub from './LocalLLMHub';
 import GroqApiKeySection from './GroqApiKeySection';
+import AIConnectionStatusPill from './AIConnectionStatusPill';
 import { loadAIConfig, saveAIConfig, type AIConfig } from '../services/aiService';
 import {
   Plug, Loader2, Check, X, ExternalLink, ChevronDown, ChevronUp, TestTube2,
@@ -23,16 +24,35 @@ const CATEGORY_LABELS: Record<string, string> = {
   payments: 'Payments',
 };
 
-function StatusBadge({ status }: { status: ConnectorRuntime['status'] }) {
+function StatusBadge({
+  status,
+  checking,
+  lastMessage,
+}: {
+  status: ConnectorRuntime['status'];
+  checking?: boolean;
+  lastMessage?: string;
+}) {
   const styles = {
     connected: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
     disconnected: 'bg-cockpit-track text-cockpit-muted border-theme',
     error: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30',
+    checking: 'bg-cockpit-track text-cockpit-muted border-theme',
   };
-  const labels = { connected: 'Connected', disconnected: 'Off', error: 'Error' };
+  const labels = {
+    connected: 'Connected',
+    disconnected: 'Off',
+    error: 'Error',
+    checking: 'Checking…',
+  };
+  const effectiveStatus = checking ? 'checking' : status;
   return (
-    <span className={`text-[10px] px-2 py-0.5 rounded-full border font-medium ${styles[status]}`}>
-      {labels[status]}
+    <span
+      className={`text-[10px] px-2 py-0.5 rounded-full border font-medium inline-flex items-center gap-1 ${styles[effectiveStatus]}`}
+      title={lastMessage}
+    >
+      {checking && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
+      {labels[effectiveStatus]}
     </span>
   );
 }
@@ -42,11 +62,13 @@ function ConnectorCard({
   expanded,
   onToggle,
   onUpdate,
+  liveChecking,
 }: {
   connector: ConnectorRuntime;
   expanded: boolean;
   onToggle: () => void;
   onUpdate: () => void;
+  liveChecking?: boolean;
 }) {
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -99,7 +121,11 @@ function ConnectorCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-cockpit text-sm">{connector.name}</span>
-            <StatusBadge status={connector.enabled ? connector.status : 'disconnected'} />
+            <StatusBadge
+              status={connector.enabled ? connector.status : 'disconnected'}
+              checking={liveChecking && connector.enabled}
+              lastMessage={connector.lastMessage}
+            />
             <span className="text-[10px] text-cockpit-muted uppercase tracking-wide">
               {connector.category}
             </span>
@@ -250,10 +276,25 @@ function GroqWrapper({
 export default function ConnectorsSettings() {
   const [connectors, setConnectors] = useState<ConnectorRuntime[]>(() => getAllConnectors());
   const [expandedId, setExpandedId] = useState<ConnectorId | null>('ollama');
+  const [liveChecking, setLiveChecking] = useState(false);
 
   const refresh = useCallback(() => {
     setConnectors(getAllConnectors());
   }, []);
+
+  useEffect(() => {
+    const onPollStart = () => setLiveChecking(true);
+    const onPollDone = () => {
+      refresh();
+      setLiveChecking(false);
+    };
+    window.addEventListener('aaism-connectors-poll-start', onPollStart);
+    window.addEventListener('aaism-connectors-refreshed', onPollDone);
+    return () => {
+      window.removeEventListener('aaism-connectors-poll-start', onPollStart);
+      window.removeEventListener('aaism-connectors-refreshed', onPollDone);
+    };
+  }, [refresh]);
 
   const grouped = connectors.reduce<Record<string, ConnectorRuntime[]>>((acc, c) => {
     (acc[c.category] ??= []).push(c);
@@ -262,6 +303,8 @@ export default function ConnectorsSettings() {
 
   return (
     <div className="space-y-6">
+      <AIConnectionStatusPill />
+
       <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
         <h3 className="font-semibold text-cockpit flex items-center gap-2 mb-1">
           <Plug className="w-4 h-4 text-emerald-500" />
@@ -290,6 +333,7 @@ export default function ConnectorsSettings() {
                 expanded={expandedId === c.id}
                 onToggle={() => setExpandedId(expandedId === c.id ? null : c.id)}
                 onUpdate={refresh}
+                liveChecking={liveChecking}
               />
             ))}
           </div>

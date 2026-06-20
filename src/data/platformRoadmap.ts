@@ -199,6 +199,12 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
     status: 'shipped',
   },
   {
+    id: 'continuous-connection-monitoring',
+    title: 'Continuous connection monitoring',
+    summary: 'Live AI status pill, periodic Ollama/Groq health polling, connection verification service, and smoke-test panel in Settings.',
+    status: 'shipped',
+  },
+  {
     id: 'sandbox-vms',
     title: 'Live sandbox VMs',
     summary: 'Real isolated lab environments with actual command execution — requires backend infrastructure.',

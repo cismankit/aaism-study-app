@@ -5,8 +5,7 @@
 
 import {
   chatJson,
-  loadAIConfig,
-  resolveAgentConfig,
+  resolveAIConfigForRun,
   AAISM_CONTEXT,
   type AIConfig,
 } from './aiService';
@@ -140,7 +139,7 @@ export async function generateQuestionsFromIntel(
   item: IntelFeedItem,
   config?: AIConfig,
 ): Promise<IntelQuestionResult> {
-  const aiConfig = config ?? await resolveAgentConfig(loadAIConfig());
+  const aiConfig = config ?? await resolveAIConfigForRun();
 
   const messages = [
     { role: 'system' as const, content: `${AAISM_CONTEXT}\n\nReturn ONLY a valid JSON array of exam questions.` },

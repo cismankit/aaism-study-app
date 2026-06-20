@@ -19,6 +19,8 @@ import {
   testConnection as testAIConnection,
   loadLegacyAIConfig,
   saveAIConfig as saveLegacyAIConfig,
+  resolveOllamaModel,
+  dispatchAIConfigChanged,
 } from './aiService';
 import {
   INTEGRATIONS_CONFIG_KEY,
@@ -199,6 +201,43 @@ export function syncAIConfigToConnectors(config: AIConfig): void {
 export function saveConnectorsConfig(config: ConnectorsConfig): void {
   writeJson(CONNECTORS_CONFIG_KEY, config);
   syncToLegacyStores(config);
+  dispatchAIConfigChanged(buildAIConfigFromConnectors(config));
+}
+
+/** Atomically enable Ollama, set model, sync aaism-ai-config + aegis-connectors-config */
+export function syncOllamaSelection(
+  model: string,
+  options?: { enabled?: boolean; baseUrl?: string; setPrimary?: boolean },
+): AIConfig {
+  const config = loadConnectorsConfig();
+  if (options?.setPrimary !== false) {
+    config.primaryAiProvider = 'ollama';
+  }
+  const existing = config.connectors.ollama ?? defaultConnectorState('ollama', true);
+  config.connectors.ollama = {
+    ...existing,
+    enabled: options?.enabled ?? true,
+    fields: {
+      ...existing.fields,
+      baseUrl: options?.baseUrl ?? existing.fields.baseUrl ?? defaultConfigs.ollama.baseUrl ?? 'http://localhost:11434',
+      model,
+    },
+  };
+  saveConnectorsConfig(config);
+  return buildAIConfigFromConnectors(config);
+}
+
+/** Atomically set primary provider and mirror to legacy AI config */
+export function syncPrimaryProvider(provider: AIProvider): AIConfig {
+  const config = loadConnectorsConfig();
+  config.primaryAiProvider = provider;
+  const cid = PROVIDER_TO_CONNECTOR[provider];
+  if (cid) {
+    const existing = config.connectors[cid] ?? defaultConnectorState(cid, true);
+    config.connectors[cid] = { ...existing, enabled: true };
+  }
+  saveConnectorsConfig(config);
+  return buildAIConfigFromConnectors(config);
 }
 
 function syncToLegacyStores(config: ConnectorsConfig): void {
@@ -229,20 +268,21 @@ export function getConnectorState(id: ConnectorId): ConnectorState {
 }
 
 export function setConnectorState(id: ConnectorId, state: ConnectorState): void {
+  if (id === 'ollama' && state.fields.model) {
+    syncOllamaSelection(state.fields.model, {
+      enabled: state.enabled,
+      baseUrl: state.fields.baseUrl,
+      setPrimary: state.enabled && getPrimaryAiProvider() === 'ollama',
+    });
+    return;
+  }
   const config = loadConnectorsConfig();
   config.connectors[id] = state;
   saveConnectorsConfig(config);
 }
 
 export function setPrimaryAiProvider(provider: AIProvider): void {
-  const config = loadConnectorsConfig();
-  config.primaryAiProvider = provider;
-  const cid = PROVIDER_TO_CONNECTOR[provider];
-  if (cid) {
-    const existing = config.connectors[cid] ?? defaultConnectorState(cid, true);
-    config.connectors[cid] = { ...existing, enabled: true };
-  }
-  saveConnectorsConfig(config);
+  syncPrimaryProvider(provider);
 }
 
 export function getPrimaryAiProvider(): AIProvider {
@@ -276,13 +316,47 @@ export function buildAIConfigFromConnectors(config?: ConnectorsConfig): AIConfig
   };
 }
 
-/** Resolve AI config with fallback: primary → Groq (if key) → error hint */
-export function resolveAIConfigWithFallback(): { config: AIConfig; fallbackUsed: boolean; message?: string } {
+/** Resolve AI config with fallback: primary → Groq only when Ollama fails or primary lacks key */
+export async function resolveAIConfigWithFallback(): Promise<{ config: AIConfig; fallbackUsed: boolean; message?: string }> {
   const cfg = loadConnectorsConfig();
   const primary = buildAIConfigFromConnectors(cfg);
 
   if (primary.provider === 'ollama') {
-    return { config: primary, fallbackUsed: false };
+    const status = await checkOllamaStatus(primary.baseUrl);
+    if (status.running && status.models.length > 0) {
+      const resolved = await resolveOllamaModel(primary);
+      if (!resolved.error) {
+        const config = { ...primary, model: resolved.model };
+        if (resolved.fallbackUsed && resolved.model !== primary.model) {
+          syncOllamaSelection(resolved.model, { baseUrl: primary.baseUrl, setPrimary: true });
+        }
+        return { config, fallbackUsed: resolved.fallbackUsed };
+      }
+    }
+
+    const groqState = cfg.connectors.groq;
+    if (groqState?.enabled && groqState.fields.apiKey?.trim()) {
+      return {
+        config: {
+          provider: 'groq',
+          apiKey: groqState.fields.apiKey,
+          baseUrl: defaultConfigs.groq.baseUrl,
+          model: groqState.fields.model || defaultConfigs.groq.model!,
+        },
+        fallbackUsed: true,
+        message: status.running
+          ? 'Ollama model unavailable — using Groq fallback'
+          : 'Ollama not running — using Groq fallback',
+      };
+    }
+
+    return {
+      config: primary,
+      fallbackUsed: false,
+      message: status.running
+        ? 'Ollama running but configured model unavailable'
+        : 'Ollama not running — open Settings → AI Provider',
+    };
   }
 
   if (primary.apiKey?.trim()) {
@@ -435,6 +509,31 @@ export function getConnectorRuntime(id: ConnectorId): ConnectorRuntime {
 
 export function getAllConnectors(): ConnectorRuntime[] {
   return CONNECTOR_DEFINITIONS.map(d => getConnectorRuntime(d.id));
+}
+
+/** Live health check for one connector; persists status to localStorage. */
+export async function refreshConnectorStatus(id: ConnectorId): Promise<ConnectorRuntime> {
+  const state = getConnectorState(id);
+  if (!state.enabled) {
+    return getConnectorRuntime(id);
+  }
+  const result = await testConnectorConnection(id, state.fields);
+  const config = loadConnectorsConfig();
+  config.connectors[id] = {
+    ...state,
+    lastStatus: result.ok ? 'connected' : 'error',
+    lastMessage: result.message,
+    lastChecked: new Date().toISOString(),
+  };
+  saveConnectorsConfig(config);
+  return getConnectorRuntime(id);
+}
+
+/** Refresh all enabled connectors (used by Settings 30s poll). */
+export async function refreshEnabledConnectorStatuses(): Promise<void> {
+  const config = loadConnectorsConfig();
+  const enabled = CONNECTOR_DEFINITIONS.filter(d => config.connectors[d.id]?.enabled);
+  await Promise.all(enabled.map(d => refreshConnectorStatus(d.id)));
 }
 
 export function getAiConnectors(): ConnectorRuntime[] {
