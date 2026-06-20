@@ -58,15 +58,31 @@ export function computeIconBadge({ release = false } = {}) {
   return `dev+${gitHash}`;
 }
 
-/**
- * Shorter badge for small PNG sizes (hash or date when full label won't fit).
- */
-export function iconBadgeForIconSize(fullBadge, pixelSize) {
-  if (pixelSize >= 128) return fullBadge;
+/** Git hash from badge strings like `dev+abc1234` or `v1.0+abc1234`. */
+export function iconStampHash(fullBadge) {
   const hashMatch = fullBadge.match(/\+([a-f0-9]+)$/i);
   if (hashMatch) return hashMatch[1];
-  if (fullBadge.length <= 7) return fullBadge;
-  return buildDateBadgeString();
+  return fullBadge.replace(/^(dev|v[\d.]+)\+?/i, '');
+}
+
+/**
+ * Dock/Finder stamp label — hash only, no `dev+` prefix.
+ * @returns {{ mode: 'dot' | 'text'; label?: string }}
+ */
+export function iconStampLabel(fullBadge, pixelSize) {
+  const hash = iconStampHash(fullBadge);
+  if (pixelSize <= 32) return { mode: 'dot' };
+  if (pixelSize <= 64) return { mode: 'text', label: hash.slice(-3) };
+  if (pixelSize <= 128) return { mode: 'text', label: hash.slice(-5) };
+  if (pixelSize <= 255) return { mode: 'text', label: hash.slice(-6) };
+  return { mode: 'text', label: hash.slice(0, 7) };
+}
+
+/** @deprecated Use iconStampLabel — kept for callers expecting a plain string. */
+export function iconBadgeForIconSize(fullBadge, pixelSize) {
+  const stamp = iconStampLabel(fullBadge, pixelSize);
+  if (stamp.mode === 'dot') return '';
+  return stamp.label ?? '';
 }
 
 /**
