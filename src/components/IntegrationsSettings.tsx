@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  Cloud, CreditCard, Shield, CheckCircle2, XCircle, Loader2, ExternalLink, Settings, LayoutDashboard,
+  Cloud, CreditCard, Shield, CheckCircle2, XCircle, Loader2, ExternalLink, LayoutDashboard,
   Brain, Download, Upload, Trash2, RefreshCw,
 } from 'lucide-react';
 import {
