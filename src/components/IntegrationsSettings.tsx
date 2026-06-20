@@ -91,6 +91,26 @@ export default function IntegrationsSettings() {
 
   return (
     <div className="space-y-4">
+      {/* Profile / job seeker */}
+      <div className="bg-theme-elevated rounded-xl p-6 border border-theme">
+        <h3 className="font-semibold text-cockpit mb-2">Profile preferences</h3>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={config.jobSeekerMode === true}
+            onChange={e => setConfig({ ...config, jobSeekerMode: e.target.checked })}
+            className="mt-1 rounded border-theme text-emerald-600 focus:ring-emerald-500"
+          />
+          <div>
+            <span className="text-sm font-medium text-cockpit">Job seeker mode</span>
+            <p className="text-xs text-cockpit-muted mt-0.5">
+              Show Career Intel on Command Center and suggest study missions aligned with target roles.
+              Career research uses public pasted data only — no automated profile scraping.
+            </p>
+          </div>
+        </label>
+      </div>
+
       {/* Security callout */}
       <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4">
         <div className="flex items-start gap-3">

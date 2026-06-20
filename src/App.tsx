@@ -3,6 +3,8 @@ import { Routes, Route } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import OSINTLayout from './components/OSINTLayout'
 import CommandCenter from './pages/CommandCenter'
+import StudyMission from './pages/StudyMission'
+import CareerIntel from './pages/CareerIntel'
 import Study from './pages/Study'
 import CheatSheet from './pages/CheatSheet'
 import CramMode from './pages/CramMode'
@@ -41,6 +43,8 @@ function App() {
     <Routes>
       <Route path="/" element={<OSINTLayout />}>
         <Route index element={<CommandCenter />} />
+        <Route path="mission" element={<StudyMission />} />
+        <Route path="career" element={<CareerIntel />} />
         <Route path="study" element={<Study />} />
         <Route path="exam" element={<Suspense fallback={<RouteFallback />}><Exam /></Suspense>} />
         <Route path="intel" element={<IntelHub />} />

@@ -98,8 +98,23 @@ export function mergeProgress(local: ProgressSnapshot, remote: ProgressSnapshot)
       totalQuizzesTaken: Math.max(a?.totalQuizzesTaken ?? 0, b?.totalQuizzesTaken ?? 0),
       perfectQuizzes: Math.max(a?.perfectQuizzes ?? 0, b?.perfectQuizzes ?? 0),
       labProgress: mergeLabProgress(a?.labProgress, b?.labProgress),
+      missionLog: mergeMissionLog(a?.missionLog, b?.missionLog),
     };
   };
+
+  function mergeMissionLog(
+    a: CertProgressSlice['missionLog'] | undefined,
+    b: CertProgressSlice['missionLog'] | undefined,
+  ): CertProgressSlice['missionLog'] {
+    const combined = [...(a ?? []), ...(b ?? [])];
+    const byId = new Map<string, CertProgressSlice['missionLog'][number]>();
+    for (const rec of combined) {
+      byId.set(rec.id, rec);
+    }
+    return Array.from(byId.values()).sort(
+      (x, y) => new Date(x.completedAt).getTime() - new Date(y.completedAt).getTime(),
+    );
+  }
 
   function mergeLabProgress(
     a: CertProgressSlice['labProgress'] | undefined,

@@ -53,6 +53,7 @@ function buildSystemPrompt(pack: TeamPack, agentId: OpsAgentId, certContext: str
     'playbook': 'Return JSON: { summary, content (markdown checklist with phases), title }',
     'cram-plan': 'Return JSON: { summary, content (hour-by-hour markdown schedule + high-yield bullets), domains: string[] }',
     'support-draft': 'Return JSON: { summary, content (formatted submission text), route: help|support|feature-request|donate|my-updates }',
+    'career-profile': 'Return JSON: { summary, content (markdown career brief), companyName, navigateTo: /career }',
   };
 
   return `${agent.systemPrompt}
@@ -93,6 +94,9 @@ function parseMissionResult(
           sessionStorage.setItem(STUDIO_PREFILL_KEY, JSON.stringify({ content, title: parsed.title }));
         } catch { /* ignore */ }
         actions.push({ label: 'Open in Studio', type: 'navigate', value: `/studio?prompt=${encodeURIComponent(prompt.slice(0, 500))}` });
+      } else if (pack.outputType === 'career-profile') {
+        navigateTo = '/career';
+        actions.push({ label: 'Open Career Intel', type: 'navigate', value: '/career' });
       } else if (pack.outputType === 'support-draft') {
         const route = String(parsed.route ?? 'support');
         const routeMap: Record<string, string> = {

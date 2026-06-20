@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Users, Play, CheckCircle, Loader2, Copy, Check, ArrowRight,
   Radar, PenLine, Briefcase, Zap, LifeBuoy, Sparkles, Bot,
-  ExternalLink, StopCircle,
+  ExternalLink, StopCircle, Globe,
 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
@@ -23,6 +23,7 @@ const PACK_ICONS: Record<TeamPack['icon'], typeof Radar> = {
   briefcase: Briefcase,
   zap: Zap,
   'life-buoy': LifeBuoy,
+  globe: Globe,
 };
 
 const PHASE_LABELS: Record<TeamPackPhase, string> = {

@@ -16,6 +16,8 @@ interface SearchItem {
 
 const PAGE_ITEMS: SearchItem[] = [
   { id: 'p-home', type: 'page', title: 'Command Center', subtitle: 'Mission dashboard', route: '/', keywords: 'command center home dashboard readiness' },
+  { id: 'p-mission', type: 'page', title: 'Study Mission', subtitle: 'Unified study loop', route: '/mission', keywords: 'mission study loop quiz lab intel agents' },
+  { id: 'p-career', type: 'page', title: 'Career Intel', subtitle: 'Job seeker OSINT', route: '/career', keywords: 'career job company profile hiring osint' },
   { id: 'p-study', type: 'page', title: 'Study Ops', subtitle: 'Quiz, flashcards, tutor', route: '/study', keywords: 'study quiz flashcards tutor notes' },
   { id: 'p-exam', type: 'page', title: 'Timed Exam', subtitle: '90Q / 150min simulation', route: '/exam', keywords: 'exam timed simulation test' },
   { id: 'p-intel', type: 'page', title: 'Intel Hub', subtitle: 'Threat intel & patterns', route: '/intel', keywords: 'intel threat patterns community' },

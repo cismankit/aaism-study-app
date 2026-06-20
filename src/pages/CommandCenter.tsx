@@ -26,7 +26,8 @@ import { consumeOnboardingHint, type OnboardingHint } from '../components/Onboar
 import DomainMicroQuizModal, { WEAK_THRESHOLD } from '../components/DomainMicroQuizModal';
 import { PLATFORM_ROADMAP, ROADMAP_STATUS_LABEL } from '../data/platformRoadmap';
 import { OSINT_SOURCES } from '../data/osintSources';
-import { getReadinessScore, getDomainProgress } from '../services/progressService';
+import { getReadinessScore, getDomainProgress, getMissionLog } from '../services/progressService';
+import { isJobSeekerModeEnabled } from '../services/integrationsConfigService';
 import {
   buildWeeklyIntelDigest,
   cacheDigest,
@@ -121,8 +122,17 @@ export default function CommandCenter() {
       entries.push({ id: d.id, time: d.time, tag: d.tag, message: d.message });
     }
 
+    getMissionLog(activeCert.id).slice(-2).reverse().forEach(m => {
+      entries.push({
+        id: m.id,
+        time: new Date(m.completedAt).toLocaleDateString(),
+        tag: 'MISSION',
+        message: `${m.goalLabel} — +${m.xpEarned} XP`,
+      });
+    });
+
     return entries.slice(0, 8);
-  }, [state.quizAttempts, stats, risingTopics]);
+  }, [state.quizAttempts, stats, risingTopics, activeCert.id]);
 
   const digestStudioUrl = loadCachedDigest() ? getDigestStudioUrl(loadCachedDigest()!) : getDigestStudioUrl();
 
@@ -133,6 +143,7 @@ export default function CommandCenter() {
   const [showRoadmap, setShowRoadmap] = useState(false);
   const [microQuizDomain, setMicroQuizDomain] = useState<{ id: number; name: string } | null>(null);
   const [onboardingHint] = useState<OnboardingHint | null>(() => consumeOnboardingHint());
+  const jobSeekerMode = isJobSeekerModeEnabled();
 
   useEffect(() => {
     const lastSeen = localStorage.getItem(LAST_SEEN_RELEASE_KEY);
@@ -399,11 +410,33 @@ export default function CommandCenter() {
 
           {/* Secondary quick actions row */}
           <div className="grid grid-cols-2 gap-2 mt-3">
-            <button onClick={() => navigate('/ops')} className="cockpit-throttle rounded-xl p-3 text-left">
-              <Terminal className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mb-1" />
-              <div className="text-xs font-bold text-cockpit">Ops Lab</div>
-              <div className="text-[10px] text-cockpit-subtle">Hands-on drills</div>
+            <button onClick={() => navigate('/mission')} className="cockpit-throttle rounded-xl p-3 text-left ring-1 ring-emerald-400/30">
+              <Target className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mb-1" />
+              <div className="text-xs font-bold text-cockpit">Today&apos;s Mission</div>
+              <div className="text-[10px] text-cockpit-subtle">Study · quiz · lab · intel</div>
             </button>
+            {jobSeekerMode ? (
+              <button onClick={() => navigate('/career')} className="cockpit-throttle rounded-xl p-3 text-left">
+                <Briefcase className="w-4 h-4 text-violet-600 dark:text-violet-400 mb-1" />
+                <div className="text-xs font-bold text-cockpit">Career Intel</div>
+                <div className="text-[10px] text-cockpit-subtle">Company & job OSINT</div>
+              </button>
+            ) : (
+              <button onClick={() => navigate('/ops')} className="cockpit-throttle rounded-xl p-3 text-left">
+                <Terminal className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mb-1" />
+                <div className="text-xs font-bold text-cockpit">Ops Lab</div>
+                <div className="text-[10px] text-cockpit-subtle">Hands-on drills</div>
+              </button>
+            )}
+          </div>
+          <div className={`grid gap-2 mt-2 ${jobSeekerMode ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {jobSeekerMode && (
+              <button onClick={() => navigate('/ops')} className="cockpit-throttle rounded-xl p-3 text-left">
+                <Terminal className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mb-1" />
+                <div className="text-xs font-bold text-cockpit">Ops Lab</div>
+                <div className="text-[10px] text-cockpit-subtle">Hands-on drills</div>
+              </button>
+            )}
             <button onClick={() => navigate('/playbooks')} className="cockpit-throttle rounded-xl p-3 text-left">
               <Briefcase className="w-4 h-4 text-blue-600 dark:text-blue-400 mb-1" />
               <div className="text-xs font-bold text-cockpit">Playbooks</div>
@@ -519,6 +552,7 @@ export default function CommandCenter() {
                 <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                   entry.tag === 'INTEL' ? 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400' :
                   entry.tag === 'DIGEST' ? 'bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-400' :
+                  entry.tag === 'MISSION' ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400' :
                   entry.tag === 'AGENT' ? 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-800 dark:text-cyan-400' :
                   entry.tag === 'RELEASE' ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400' :
                   'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400'

@@ -9,6 +9,8 @@ export interface IntegrationsConfig {
   razorpayPaymentLink?: string;
   /** Razorpay publishable key_id only — never key_secret */
   razorpayKeyId?: string;
+  /** Show Career Intel cards and suggest career-focused missions */
+  jobSeekerMode?: boolean;
 }
 
 function readJson<T>(key: string): T | null {
@@ -85,6 +87,10 @@ export function sanitizeIntegrationsConfig(raw: IntegrationsConfig): {
     } else {
       config.razorpayKeyId = keyId;
     }
+  }
+
+  if (raw.jobSeekerMode === true) {
+    config.jobSeekerMode = true;
   }
 
   return { config, rejected };
@@ -196,4 +202,13 @@ export async function testSupabaseConnection(
 
 export function hasAnyPaymentConfigured(): boolean {
   return Boolean(getEffectiveStripeUrl() || getEffectiveRazorpayUrl());
+}
+
+export function isJobSeekerModeEnabled(): boolean {
+  return loadIntegrationsConfig().jobSeekerMode === true;
+}
+
+export function setJobSeekerMode(enabled: boolean): void {
+  const config = loadIntegrationsConfig();
+  saveIntegrationsConfig({ ...config, jobSeekerMode: enabled });
 }

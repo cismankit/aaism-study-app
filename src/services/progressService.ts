@@ -37,6 +37,18 @@ export interface LabProgressRecord {
   score: number;
 }
 
+export interface MissionLogEntry {
+  id: string;
+  completedAt: string;
+  goalType: 'domain-focus' | 'weak-drill' | 'daily-30min';
+  goalLabel: string;
+  domainId: number;
+  xpEarned: number;
+  quizScore?: number;
+  tasksCompleted: string[];
+  tomorrowSuggestion?: string;
+}
+
 export interface CertProgressSlice {
   domainScores: Record<number, number[]>;
   quizHistory: QuizAttempt[];
@@ -46,6 +58,7 @@ export interface CertProgressSlice {
   totalQuizzesTaken: number;
   perfectQuizzes: number;
   labProgress: LabProgressRecord[];
+  missionLog: MissionLogEntry[];
 }
 
 /** @deprecated v1 flat snapshot — migrated to v2 on load */
@@ -93,6 +106,7 @@ function defaultCertSlice(): CertProgressSlice {
     totalQuizzesTaken: 0,
     perfectQuizzes: 0,
     labProgress: [],
+    missionLog: [],
   };
 }
 
@@ -128,6 +142,7 @@ function migrateFromLegacy(): ProgressSnapshot {
   aaism.totalQuizzesTaken = game.totalQuizzesTaken ?? 0;
   aaism.perfectQuizzes = game.perfectQuizzes ?? 0;
   aaism.labProgress = [];
+  aaism.missionLog = [];
 
   snap.byCert[DEFAULT_CERT_ID] = aaism;
   snap.streak = {
@@ -153,6 +168,7 @@ function migrateV1ToV2(v1: ProgressSnapshotV1): ProgressSnapshot {
     totalQuizzesTaken: v1.totalQuizzesTaken ?? 0,
     perfectQuizzes: v1.perfectQuizzes ?? 0,
     labProgress: [],
+    missionLog: [],
   };
   snap.streak = v1.streak ?? snap.streak;
   snap.xp = v1.xp ?? 0;
@@ -172,6 +188,10 @@ export function getCertSlice(certId?: string): CertProgressSlice {
   const slice = snap.byCert[id];
   if (!slice.labProgress) {
     slice.labProgress = [];
+    saveProgress(snap);
+  }
+  if (!slice.missionLog) {
+    slice.missionLog = [];
     saveProgress(snap);
   }
   return slice;
@@ -365,4 +385,29 @@ export function updateProgressFields(
 export function getLatestExamAttempt(certId?: string): ExamAttemptRecord | null {
   const attempts = getExamAttempts(certId);
   return attempts.length > 0 ? attempts[attempts.length - 1] : null;
+}
+
+export function getMissionLog(certId?: string): MissionLogEntry[] {
+  return getCertSlice(certId).missionLog ?? [];
+}
+
+export function addMissionLogEntry(
+  entry: Omit<MissionLogEntry, 'id'>,
+  certId?: string,
+): MissionLogEntry {
+  const id = certId ?? getActiveCertId();
+  const snap = loadProgress();
+  const slice = snap.byCert[id] ?? defaultCertSlice();
+  const record: MissionLogEntry = { ...entry, id: crypto.randomUUID() };
+  slice.missionLog = [...(slice.missionLog ?? []), record];
+  snap.byCert[id] = slice;
+  saveProgress(snap);
+  return record;
+}
+
+export function getWeakestDomain(certId?: string): { domainId: number; avg: number } | null {
+  const progress = getDomainProgress(certId).filter(d => d.count > 0);
+  if (progress.length === 0) return null;
+  const weakest = progress.reduce((a, b) => (a.avg < b.avg ? a : b));
+  return { domainId: weakest.domainId, avg: weakest.avg };
 }

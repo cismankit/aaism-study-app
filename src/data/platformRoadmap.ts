@@ -141,7 +141,7 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
   {
     id: 'nav-cleanup',
     title: 'Navigation cleanup',
-    summary: 'Primary rail (Command, Study, Exam, Intel, Knowledge, Agent) with Team Packs, Ops Lab, and Quick Ref in Tools section.',
+    summary: 'Primary rail (Command, Mission, Study, Exam, Intel, Knowledge, Agent) with Team Packs, Ops Lab, Quick Ref, and Career in Tools.',
     status: 'shipped',
   },
   {
@@ -160,6 +160,18 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
     id: 'learning-loop',
     title: 'Learning loop connections',
     summary: 'Quiz remediation → Ops Lab links; KB domain pages → hands-on lab; weak domains → Ops Lab; lab completion → XP.',
+    status: 'shipped',
+  },
+  {
+    id: 'study-mission',
+    title: 'Unified Study Mission',
+    summary: 'Single-page mission flow at /mission — Hermes assesses weak domains, Claude picks KB topics + lab, OpenClaw pulls intel; inline quiz, lab step, and mission log.',
+    status: 'shipped',
+  },
+  {
+    id: 'career-intel',
+    title: 'Career Intel Pack',
+    summary: 'Ethical job seeker OSINT — company profiles, job posting reverse engineer, people map from pasted public data; saved to localStorage; Career Pack in Team Packs.',
     status: 'shipped',
   },
   {

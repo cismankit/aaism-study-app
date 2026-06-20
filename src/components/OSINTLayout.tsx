@@ -3,7 +3,7 @@ import {
   LayoutDashboard, Radar, Eye, Bot, Zap,
   Sun, Moon, Flame, ChevronRight, Settings, Menu,
   Activity, Map, Crosshair, PanelLeftClose,
-  Terminal, Users,
+  Terminal, Users, Target, Briefcase,
 } from 'lucide-react';
 import Logo from './Logo';
 import CertSwitcher from './CertSwitcher';
@@ -74,6 +74,7 @@ const navSections: NavSection[] = [
     label: 'PRIMARY',
     items: [
       { to: '/', icon: LayoutDashboard, label: 'Command', subtitle: 'Mission overview & daily ops' },
+      { to: '/mission', icon: Target, label: 'Mission', subtitle: 'Unified study loop' },
       { to: '/study', icon: Crosshair, label: 'Study', subtitle: 'Practice questions by domain' },
       { to: '/exam', icon: Zap, label: 'Exam', subtitle: 'Timed exam simulation' },
       { to: '/intel', icon: Radar, label: 'Intel', subtitle: 'Live threat intel & feeds' },
@@ -87,6 +88,7 @@ const navSections: NavSection[] = [
       { to: '/packs', icon: Users, label: 'Team Packs', subtitle: 'Agent missions & workflows' },
       { to: '/ops', icon: Terminal, label: 'Ops Lab', subtitle: 'Hands-on command & analysis drills' },
       { to: '/cheatsheet', icon: Map, label: 'Quick Ref', subtitle: 'Cert-aware cheat sheets' },
+      { to: '/career', icon: Briefcase, label: 'Career', subtitle: 'Job seeker OSINT (public data)' },
     ],
   },
 ];

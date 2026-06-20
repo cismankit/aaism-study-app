@@ -14,7 +14,7 @@ export interface TeamPackRoute {
 export interface TeamPack {
   id: string;
   name: string;
-  icon: 'radar' | 'pen-line' | 'briefcase' | 'zap' | 'life-buoy';
+  icon: 'radar' | 'pen-line' | 'briefcase' | 'zap' | 'life-buoy' | 'globe';
   description: string;
   linkedRoutes: TeamPackRoute[];
   defaultAgent: OpsAgentId;
@@ -23,7 +23,7 @@ export interface TeamPack {
   /** Route to open when mission completes */
   completeRoute?: string;
   /** Mission output type for service layer */
-  outputType: 'osint-summary' | 'content' | 'playbook' | 'cram-plan' | 'support-draft';
+  outputType: 'osint-summary' | 'content' | 'playbook' | 'cram-plan' | 'support-draft' | 'career-profile';
 }
 
 export const AGENT_TEAM_PACKS: TeamPack[] = [
@@ -137,6 +137,26 @@ export const AGENT_TEAM_PACKS: TeamPack[] = [
       { id: 'route', label: 'Route to channel', description: 'Suggesting the right support path' },
     ],
     outputType: 'support-draft',
+  },
+  {
+    id: 'career-pack',
+    name: 'Career Pack',
+    icon: 'globe',
+    description: 'Career intel for job seekers — company profiles, job posting analysis, and people map from public pasted data only.',
+    linkedRoutes: [{ path: '/career', label: 'Career Intel' }],
+    defaultAgent: 'claude-analyst',
+    samplePrompts: [
+      'Build a company profile from this job posting I pasted',
+      'Reverse-engineer required skills from a security engineer job description',
+      'Map who to connect with for a CISO team role (public OSINT only)',
+    ],
+    steps: [
+      { id: 'parse', label: 'Parse pasted data', description: 'Extract tech stack and hiring signals from user-provided text' },
+      { id: 'align', label: 'Cert alignment', description: 'Map requirements to active certification domains' },
+      { id: 'connect', label: 'Connection plan', description: 'Suggest human outreach angles and public footprint tips' },
+    ],
+    completeRoute: '/career',
+    outputType: 'career-profile',
   },
 ];
 
