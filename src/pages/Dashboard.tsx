@@ -35,6 +35,13 @@ import OllamaModelManager from '../components/OllamaModelManager';
 import GroqApiKeySection from '../components/GroqApiKeySection';
 import SignInSyncSection from '../components/SignInSyncSection';
 import IntegrationsSettings from '../components/IntegrationsSettings';
+import ProTierStrip from '../components/ProTierStrip';
+import {
+  getShowAllToolsOverride,
+  setShowAllToolsOverride,
+  getUnlockProgress,
+  isFullCatalogUnlocked,
+} from '../services/productTierService';
 import { useCert } from '../context/CertContext';
 import { CERTIFICATIONS } from '../data/certifications';
 import { 
@@ -714,6 +721,39 @@ function ProgressBackupSection() {
 // ============ SETTINGS TAB ============
 type SettingsSection = 'ai' | 'integrations' | 'sync' | 'progress' | 'about';
 
+function ProductTierSettings() {
+  const [showAll, setShowAll] = useState(getShowAllToolsOverride);
+  const progress = getUnlockProgress();
+  const unlocked = isFullCatalogUnlocked();
+
+  return (
+    <div className="bg-theme-elevated rounded-xl p-5 border border-theme">
+      <h3 className="font-semibold text-cockpit mb-2">Explore tools</h3>
+      <p className="text-sm text-cockpit-muted mb-3">
+        Team Packs, Content Studio, OSINT Arsenal, and more unlock after{' '}
+        {progress.missionsNeeded} missions or {progress.daysNeeded} days.
+        {unlocked && !showAll && ' You qualify — tools are available.'}
+      </p>
+      <p className="text-xs text-theme-faint mb-3">
+        Progress: {progress.missions}/{progress.missionsNeeded} missions · day {progress.days + 1}/{progress.daysNeeded}
+      </p>
+      <label className="flex items-center gap-2 text-sm text-cockpit cursor-pointer">
+        <input
+          type="checkbox"
+          checked={showAll}
+          onChange={e => {
+            setShowAll(e.target.checked);
+            setShowAllToolsOverride(e.target.checked);
+            window.location.reload();
+          }}
+          className="rounded border-gray-300"
+        />
+        Show all tools (skip unlock gate)
+      </label>
+    </div>
+  );
+}
+
 function SettingsTab() {
   const [section, setSection] = useState<SettingsSection>('ai');
   const { defaultCertId, setDefaultCert, activeCert } = useCert();
@@ -791,7 +831,13 @@ function SettingsTab() {
         ))}
       </div>
 
-      {section === 'integrations' && <IntegrationsSettings />}
+      {section === 'integrations' && (
+        <div className="space-y-4">
+          <ProTierStrip />
+          <ProductTierSettings />
+          <IntegrationsSettings />
+        </div>
+      )}
 
       {section === 'sync' && <SignInSyncSection />}
 

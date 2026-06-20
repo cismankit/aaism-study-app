@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { getSessionFocusLabel } from '../services/sidebarJourneyService';
+import { isFullCatalogUnlocked } from '../services/productTierService';
 
 const SESSION_START_KEY = 'aegis-session-start';
 const FOCUS_MODE_KEY = 'aegis-sidebar-focus-mode';
 
 export function getFocusModeEnabled(): boolean {
-  return sessionStorage.getItem(FOCUS_MODE_KEY) === 'true';
+  const stored = sessionStorage.getItem(FOCUS_MODE_KEY);
+  if (stored !== null) return stored === 'true';
+  return !isFullCatalogUnlocked();
 }
 
 export function setFocusModeEnabled(enabled: boolean): void {

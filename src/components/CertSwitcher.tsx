@@ -5,7 +5,18 @@ import {
   CERT_CATEGORIES,
   type CertCategory,
 } from '../data/certifications';
+import { getContentStats } from '../data/examContent';
+import { getLabsForCert } from '../data/labs';
 import { useCert } from '../context/CertContext';
+
+function getCertDepthLabel(certId: string): { label: string; detail: string } {
+  const stats = getContentStats(certId);
+  const labCount = getLabsForCert(certId).length;
+  const q = stats.totalQuestions;
+  const detail = `${q} Q · ${labCount} labs`;
+  if (q < 100) return { label: 'Deepening', detail };
+  return { label: detail, detail };
+}
 
 const CATEGORY_ICONS: Record<CertCategory, typeof Shield> = {
   cybersecurity: Shield,
@@ -50,6 +61,7 @@ function CertDropdown({
             </div>
             {certs.map(cert => {
               const selected = cert.id === activeCertId;
+              const depth = getCertDepthLabel(cert.id);
               return (
                 <button
                   key={cert.id}
@@ -73,6 +85,13 @@ function CertDropdown({
                     </div>
                     <div className="text-[10px] text-theme-muted truncate">{cert.vendor}</div>
                   </div>
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full shrink-0 font-medium ${
+                    depth.label === 'Deepening'
+                      ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400'
+                      : 'bg-cockpit-track text-theme-muted'
+                  }`}>
+                    {depth.label}
+                  </span>
                   {selected && <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
                 </button>
               );
@@ -161,6 +180,11 @@ export default function CertSwitcher({ compact, integrated, rail, children }: Ce
         {!compact && !rail && (
           <span className="text-[11px] font-medium text-cockpit truncate flex-1 text-left">
             {activeCert.shortName}
+          </span>
+        )}
+        {!compact && !rail && (
+          <span className="text-[10px] text-theme-muted shrink-0">
+            {getCertDepthLabel(activeCert.id).detail}
           </span>
         )}
         {!compact && !rail && (

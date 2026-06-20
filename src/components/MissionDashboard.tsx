@@ -21,7 +21,7 @@ import {
 interface MissionDashboardProps {
   plan: StudyMissionPlan;
   handoffs: AgentHandoff[];
-  onComplete: (xpEarned: number) => void;
+  onComplete: (summary: { xpEarned: number; domainGain: number; durationMin: number }) => void;
 }
 
 type TaskId = 'read' | 'quiz' | 'lab' | 'intel';
@@ -169,7 +169,8 @@ export default function MissionDashboard({ plan, handoffs, onComplete }: Mission
       tasksCompleted: Array.from(completed),
       tomorrowSuggestion: plan.tomorrowSuggestion,
     });
-    onComplete(xpEarned);
+    const domainGain = Math.max(2, Math.round(quizScore / 25));
+    onComplete({ xpEarned, domainGain, durationMin: 25 });
   }, [finishing, quizScore, addXP, plan, completed, onComplete]);
 
   const canFinishReading = readTopicsViewed.size >= plan.topics.length;

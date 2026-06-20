@@ -4,6 +4,7 @@ import { Search, FileText, BookOpen, Globe, Briefcase, Command } from 'lucide-re
 import { topics } from '../data/knowledgeBase';
 import { OSINT_SOURCES } from '../data/osintSources';
 import { PLAYBOOKS } from '../data/playbooks';
+import { isRouteGated } from '../services/productTierService';
 
 interface SearchItem {
   id: string;
@@ -45,7 +46,10 @@ function buildIndex(): SearchItem[] {
     keywords: `${t.title} ${t.description} ${t.relatedTerms.join(' ')} ${t.keyPoints.join(' ')}`.toLowerCase(),
   }));
 
-  const osintItems: SearchItem[] = OSINT_SOURCES.slice(0, 200).map(s => ({
+  const visiblePages = PAGE_ITEMS.filter(p => !isRouteGated(p.route));
+  const osintItems: SearchItem[] = isRouteGated('/osint')
+    ? []
+    : OSINT_SOURCES.slice(0, 200).map(s => ({
     id: `osint-${s.id}`,
     type: 'osint',
     title: s.name,
@@ -63,7 +67,7 @@ function buildIndex(): SearchItem[] {
     keywords: `${p.title} ${p.overview} ${p.category}`.toLowerCase(),
   }));
 
-  return [...PAGE_ITEMS, ...topicItems, ...osintItems, ...playbookItems];
+  return [...visiblePages, ...topicItems, ...osintItems, ...playbookItems];
 }
 
 const TYPE_ICONS = {

@@ -34,6 +34,8 @@ import { useSidebarDock } from '../hooks/useSidebarDock';
 import { useSessionContext } from '../hooks/useSessionContext';
 import { getNextBestAction } from '../services/sidebarJourneyService';
 import { PLATFORM_NAME, PLATFORM_TAGLINE } from '../constants/platformBrand';
+import { isFeatureUnlocked, type GatedFeatureId } from '../services/productTierService';
+import { isJobSeekerModeEnabled } from '../services/integrationsConfigService';
 
 interface PerformanceContextType {
   bgColor: MatrixColor;
@@ -66,6 +68,8 @@ interface NavItem {
   subtitle: string;
   whyOpen: string;
   badge?: string;
+  gatedFeature?: GatedFeatureId;
+  jobSeekerOnly?: boolean;
 }
 
 interface NavSection {
@@ -84,15 +88,16 @@ const navSections: NavSection[] = [
         to: '/',
         icon: LayoutDashboard,
         label: 'Command',
-        subtitle: 'Mission overview & daily ops',
-        whyOpen: 'Home base — readiness, streak, and what to do next',
+        subtitle: '25 min/day · pass faster',
+        whyOpen: 'Readiness, streak, and your next move',
       },
       {
         to: '/mission',
         icon: Target,
         label: 'Mission',
-        subtitle: 'Unified study loop',
-        whyOpen: 'One focused session — quiz, review, and log progress',
+        subtitle: 'Your daily 25-min loop',
+        whyOpen: 'Read → quiz → lab → intel in one flow',
+        badge: 'Start here',
       },
       {
         to: '/study',
@@ -142,6 +147,7 @@ const navSections: NavSection[] = [
         label: 'Team Packs',
         subtitle: 'Agent missions & workflows',
         whyOpen: 'Multi-agent ops playbooks for cert scenarios',
+        gatedFeature: 'team-packs',
       },
       {
         to: '/ops',
@@ -163,6 +169,7 @@ const navSections: NavSection[] = [
         label: 'Career',
         subtitle: 'Job seeker OSINT',
         whyOpen: 'Map skills to roles with public career intel',
+        jobSeekerOnly: true,
       },
     ],
   },
@@ -216,6 +223,16 @@ function Sidebar({
     useSessionContext(activeCertId);
 
   const nextAction = getNextBestAction(activeCertId);
+  const jobSeekerMode = isJobSeekerModeEnabled();
+
+  const visibleSections = navSections.map(section => ({
+    ...section,
+    items: section.items.filter(item => {
+      if (item.jobSeekerOnly && !jobSeekerMode) return false;
+      if (item.gatedFeature && !isFeatureUnlocked(item.gatedFeature)) return false;
+      return true;
+    }),
+  })).filter(section => section.items.length > 0);
 
   useEffect(() => {
     setUnseenUpdates(hasUnseenReleases());
@@ -223,7 +240,7 @@ function Sidebar({
 
   const { getDockStyle, dockHandlers, navRef } = useSidebarDock(collapsed, location.pathname);
 
-  const activeSection = navSections.find(section =>
+  const activeSection = visibleSections.find(section =>
     section.items.some(item =>
       item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to),
     ),
@@ -312,7 +329,7 @@ function Sidebar({
 
       {/* Nav sections */}
       <nav ref={navRef} className="sidebar-dock-nav flex-1 min-h-0 py-2 px-1 space-y-1" {...dockHandlers}>
-        {navSections.map((section, sIdx) => (
+        {visibleSections.map((section, sIdx) => (
           <div
             key={section.id}
             className={`sidebar-nav-section ${section.secondary ? 'sidebar-nav-secondary' : ''}`}
@@ -496,6 +513,11 @@ function TopBar({
 }) {
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
+  const [hasUnseen, setHasUnseen] = useState(false);
+
+  useEffect(() => {
+    setHasUnseen(hasUnseenReleases());
+  }, [location.pathname]);
 
   const currentPage = navSections.flatMap(s => s.items).find(item =>
     item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to),
@@ -512,7 +534,7 @@ function TopBar({
           <Menu className="w-4 h-4" />
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-dot" />
+          <div className={`w-2 h-2 rounded-full bg-emerald-500 ${hasUnseen ? 'animate-pulse-dot' : ''}`} />
           <span className="text-sm font-semibold text-theme-secondary dark:text-gray-200">
             {currentPage?.label || PLATFORM_NAME}
           </span>

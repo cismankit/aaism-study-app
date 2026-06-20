@@ -45,6 +45,7 @@ import { isEnsembleEnabled } from '../services/ensembleConfig';
 import PageHeader from '../components/PageHeader';
 import OpsCopilotPanel from '../components/OpsCopilotPanel';
 import { useCert } from '../context/CertContext';
+import { getMemoryStats, loadMemory } from '../services/memoryService';
 
 type ViewTab = 'pipeline' | 'leads' | 'analytics' | 'history' | 'copilot';
 type LeadFilter = 'all' | 'pending_review' | 'approved' | 'auto_approved' | 'rejected';
@@ -314,13 +315,17 @@ export default function AgentDiscovery() {
     rejected: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
   };
 
+  const memoryStats = getMemoryStats();
+  const memorySessions = loadMemory().profile.sessionCount;
+  const hasMemory = memoryStats.summaryCount > 0 || memoryStats.missionCount > 0 || memoryStats.weakDomainCount > 0;
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <PageHeader
         icon={Bot}
         iconClassName="text-violet-500"
         title="Agent Discovery"
-        subtitle={`Multi-agent pipeline discovers ${activeCert.shortName} exam questions — gap analysis uses active cert domains.`}
+        subtitle={`${activeCert.shortName} gap analysis · Remembers weak domains · Saves ~2h/week vs manual review`}
         action={
           <div className="flex items-center gap-2 text-xs text-theme-muted">
             <Settings size={12} />
@@ -335,6 +340,16 @@ export default function AgentDiscovery() {
           </div>
         }
       />
+
+      {hasMemory && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-violet-500/25 bg-violet-500/5 text-xs text-violet-800 dark:text-violet-300">
+          <Database className="w-3.5 h-3.5 shrink-0" />
+          Using your memory body ({memorySessions} session{memorySessions === 1 ? '' : 's'})
+          {memoryStats.weakDomainCount > 0 && (
+            <span className="text-theme-muted"> · {memoryStats.weakDomainCount} weak-domain signal{memoryStats.weakDomainCount === 1 ? '' : 's'}</span>
+          )}
+        </div>
+      )}
 
       {showSmallModelBanner && (
         <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import OSINTLayout from './components/OSINTLayout'
+import FeatureGate from './components/FeatureGate'
 import CommandCenter from './pages/CommandCenter'
 import StudyMission from './pages/StudyMission'
 import CareerIntel from './pages/CareerIntel'
@@ -38,6 +39,10 @@ function RouteFallback() {
   )
 }
 
+function Gated({ children }: { children: React.ReactNode }) {
+  return <FeatureGate>{children}</FeatureGate>
+}
+
 function App() {
   return (
     <Routes>
@@ -48,10 +53,10 @@ function App() {
         <Route path="study" element={<Study />} />
         <Route path="exam" element={<Suspense fallback={<RouteFallback />}><Exam /></Suspense>} />
         <Route path="intel" element={<IntelHub />} />
-        <Route path="osint" element={<OSINTArsenal />} />
-        <Route path="scenarios" element={<ScenarioLab />} />
+        <Route path="osint" element={<Gated><OSINTArsenal /></Gated>} />
+        <Route path="scenarios" element={<Gated><ScenarioLab /></Gated>} />
         <Route path="ops" element={<OpsLab />} />
-        <Route path="packs" element={<Suspense fallback={<RouteFallback />}><AgentTeamPacks /></Suspense>} />
+        <Route path="packs" element={<Suspense fallback={<RouteFallback />}><Gated><AgentTeamPacks /></Gated></Suspense>} />
         <Route path="agent" element={<Suspense fallback={<RouteFallback />}><AgentDiscovery /></Suspense>} />
         <Route path="playbooks" element={<Playbooks />} />
         <Route path="knowledge" element={<KnowledgeBase />} />
@@ -61,13 +66,13 @@ function App() {
         <Route path="settings" element={<Dashboard />} />
         <Route path="help" element={<HelpCenter />} />
         <Route path="privacy" element={<Privacy />} />
-        <Route path="support" element={<Support />} />
-        <Route path="donate" element={<Donate />} />
-        <Route path="donate/success" element={<DonateSuccess />} />
-        <Route path="donate/cancel" element={<DonateCancel />} />
-        <Route path="feature-request" element={<FeatureRequest />} />
-        <Route path="my-updates" element={<MyUpdates />} />
-        <Route path="studio" element={<Suspense fallback={<RouteFallback />}><ContentStudio /></Suspense>} />
+        <Route path="support" element={<Gated><Support /></Gated>} />
+        <Route path="donate" element={<Gated><Donate /></Gated>} />
+        <Route path="donate/success" element={<Gated><DonateSuccess /></Gated>} />
+        <Route path="donate/cancel" element={<Gated><DonateCancel /></Gated>} />
+        <Route path="feature-request" element={<Gated><FeatureRequest /></Gated>} />
+        <Route path="my-updates" element={<Gated><MyUpdates /></Gated>} />
+        <Route path="studio" element={<Suspense fallback={<RouteFallback />}><Gated><ContentStudio /></Gated></Suspense>} />
       </Route>
     </Routes>
   )
