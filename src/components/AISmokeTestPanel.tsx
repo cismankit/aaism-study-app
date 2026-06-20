@@ -30,7 +30,7 @@ export default function AISmokeTestPanel() {
           </h3>
           <p className="text-sm text-cockpit-muted mt-1">
             Runs chat, Ops Copilot, mission orchestrator, and Agent Discovery against Ollama
-            (gemma4:latest). Each test fails within 15s if Ollama is down.
+            (gemma4:latest). Fails within 15s when Ollama is down; allows up to 45s per LLM call when up.
           </p>
         </div>
         <button

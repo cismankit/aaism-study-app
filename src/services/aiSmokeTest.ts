@@ -15,6 +15,8 @@ import { analyzeWithOpsAgent } from './opsAgentService';
 import { smokeTestMissionHandoff } from './missionOrchestrator';
 
 export const SMOKE_TEST_TIMEOUT_MS = 15_000;
+/** LLM round-trips when Ollama is up (JSON tests can be slow on first load). */
+export const SMOKE_TEST_LLM_TIMEOUT_MS = 45_000;
 
 export type SmokeTestId = 'chat' | 'ops-copilot' | 'mission-orchestrator' | 'agent-discovery';
 
@@ -64,10 +66,11 @@ async function runTimed(
   id: SmokeTestId,
   label: string,
   fn: () => Promise<{ message: string; passed: boolean }>,
+  timeoutMs = SMOKE_TEST_LLM_TIMEOUT_MS,
 ): Promise<SmokeTestResult> {
   const start = Date.now();
   try {
-    const { message, passed } = await withTimeout(fn(), SMOKE_TEST_TIMEOUT_MS, label);
+    const { message, passed } = await withTimeout(fn(), timeoutMs, label);
     return { id, label, passed, durationMs: Date.now() - start, message };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -81,16 +84,26 @@ async function runTimed(
   }
 }
 
+async function ensureOllamaUp(config: AIConfig): Promise<string | null> {
+  const status = await withTimeout(
+    checkOllamaStatus(config.baseUrl),
+    SMOKE_TEST_TIMEOUT_MS,
+    'Ollama status check',
+  );
+  if (!status.running) {
+    return status.error ?? 'Ollama not running';
+  }
+  return null;
+}
+
 async function testChatBasic(): Promise<{ message: string; passed: boolean }> {
   const config = smokeOllamaConfig();
-  const status = await checkOllamaStatus(config.baseUrl);
-  if (!status.running) {
-    return { passed: false, message: status.error ?? 'Ollama not running' };
-  }
+  const down = await ensureOllamaUp(config);
+  if (down) return { passed: false, message: down };
 
   const response = await chat(config, [
     { role: 'user', content: 'Reply with exactly the word OK and nothing else.' },
-  ]);
+  ], { numPredict: 32, timeoutMs: SMOKE_TEST_LLM_TIMEOUT_MS });
 
   if (response.error) {
     return { passed: false, message: response.error };
@@ -161,7 +174,7 @@ async function testAgentDiscoveryJson(): Promise<{ message: string; passed: bool
         'Return a JSON array with one object: domain (1-4), question, options (4 strings), ' +
         'correctAnswer (0-3), explanation, difficulty, topic, confidence.',
     },
-  ]);
+  ], { numPredict: 900, timeoutMs: SMOKE_TEST_LLM_TIMEOUT_MS });
 
   if (response.error) {
     return { passed: false, message: response.error };
@@ -179,6 +192,29 @@ async function testAgentDiscoveryJson(): Promise<{ message: string; passed: bool
 export async function runAllSmokeTests(): Promise<SmokeTestRunSummary> {
   const config = smokeOllamaConfig();
   const results: SmokeTestResult[] = [];
+
+  const down = await ensureOllamaUp(config);
+  if (down) {
+    const fail = (id: SmokeTestId, label: string): SmokeTestResult => ({
+      id,
+      label,
+      passed: false,
+      durationMs: 0,
+      message: down,
+    });
+    return {
+      results: [
+        fail('chat', 'Chat (Ollama)'),
+        fail('ops-copilot', 'Ops Copilot (Hermes)'),
+        fail('mission-orchestrator', 'Mission Orchestrator'),
+        fail('agent-discovery', 'Agent Discovery (JSON)'),
+      ],
+      allPassed: false,
+      ranAt: new Date().toISOString(),
+      provider: config.provider,
+      model: config.model,
+    };
+  }
 
   results.push(
     await runTimed('chat', 'Chat (Ollama)', testChatBasic),

@@ -68,6 +68,10 @@ export interface AIResponse {
 export interface ChatOptions {
   jsonMode?: boolean;
   temperature?: number;
+  /** Override Ollama num_predict (default 4096) */
+  numPredict?: number;
+  /** Request timeout in ms (Ollama/Groq/OpenAI fetch) */
+  timeoutMs?: number;
 }
 
 // Default configurations for each provider
@@ -626,6 +630,8 @@ async function callOllama(config: AIConfig, messages: Message[], options?: ChatO
 
     const model = resolved.model;
     const temperature = options?.temperature ?? (options?.jsonMode ? 0.1 : 0.7);
+    const numPredict = options?.numPredict ?? 4096;
+    const timeoutMs = options?.timeoutMs ?? 120_000;
     const body: Record<string, unknown> = {
       model,
       messages: options?.jsonMode
@@ -638,7 +644,7 @@ async function callOllama(config: AIConfig, messages: Message[], options?: ChatO
       stream: false,
       options: {
         temperature,
-        num_predict: 4096,
+        num_predict: numPredict,
       },
     };
 
@@ -651,7 +657,7 @@ async function callOllama(config: AIConfig, messages: Message[], options?: ChatO
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-      signal: AbortSignal.timeout(120_000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
 
     if (!response.ok) {
@@ -818,8 +824,12 @@ export async function chat(config: AIConfig, messages: Message[], options?: Chat
   }
 }
 
-export async function chatJson(config: AIConfig, messages: Message[]): Promise<AIResponse> {
-  return chat(config, messages, { jsonMode: true, temperature: 0.1 });
+export async function chatJson(
+  config: AIConfig,
+  messages: Message[],
+  options?: Omit<ChatOptions, 'jsonMode'>,
+): Promise<AIResponse> {
+  return chat(config, messages, { ...options, jsonMode: true, temperature: options?.temperature ?? 0.1 });
 }
 
 export async function generateQuestions(
