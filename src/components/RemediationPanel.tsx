@@ -1,7 +1,9 @@
-import { useNavigate } from 'react-router-dom';
-import { BookOpen, Briefcase, RotateCcw, AlertCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { BookOpen, Briefcase, RotateCcw, AlertCircle, Terminal } from 'lucide-react';
 import { ExamQuestion, getQuestionsByDomain } from '../data/examContent';
 import { PLAYBOOKS } from '../data/playbooks';
+import { findLabForTopic } from '../services/labService';
+import { useCert } from '../context/CertContext';
 
 interface WrongAnswer {
   question: ExamQuestion;
@@ -21,6 +23,7 @@ function findPlaybookForDomain(domainId: number) {
 
 export default function RemediationPanel({ wrongAnswers, onPracticeSimilar, compact }: RemediationPanelProps) {
   const navigate = useNavigate();
+  const { activeCert } = useCert();
 
   if (wrongAnswers.length === 0) return null;
 
@@ -44,6 +47,7 @@ export default function RemediationPanel({ wrongAnswers, onPracticeSimilar, comp
       <div className="space-y-3 max-h-96 overflow-y-auto">
         {wrongAnswers.map(({ question }, i) => {
           const playbook = findPlaybookForDomain(question.domain);
+          const lab = findLabForTopic(activeCert.id, question.domain, question.topic);
           return (
             <div
               key={question.id ?? i}
@@ -75,6 +79,15 @@ export default function RemediationPanel({ wrongAnswers, onPracticeSimilar, comp
                     <Briefcase className="w-3 h-3" />
                     {playbook.title.split(' ').slice(0, 3).join(' ')}…
                   </button>
+                )}
+                {lab && (
+                  <Link
+                    to={`/ops?lab=${lab.id}`}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-200 dark:hover:bg-cyan-900/50 transition-colors"
+                  >
+                    <Terminal className="w-3 h-3" />
+                    Practice in Ops Lab
+                  </Link>
                 )}
                 <button
                   onClick={() => handleSimilar(question)}

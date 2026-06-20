@@ -6,6 +6,7 @@ import {
   loadProgress,
   saveProgress,
   type ProgressSnapshot,
+  type CertProgressSlice,
   PROGRESS_STORAGE_KEY,
 } from './progressService';
 
@@ -96,8 +97,24 @@ export function mergeProgress(local: ProgressSnapshot, remote: ProgressSnapshot)
       passThreshold: useRemote ? (b?.passThreshold ?? a?.passThreshold ?? 65) : (a?.passThreshold ?? b?.passThreshold ?? 65),
       totalQuizzesTaken: Math.max(a?.totalQuizzesTaken ?? 0, b?.totalQuizzesTaken ?? 0),
       perfectQuizzes: Math.max(a?.perfectQuizzes ?? 0, b?.perfectQuizzes ?? 0),
+      labProgress: mergeLabProgress(a?.labProgress, b?.labProgress),
     };
   };
+
+  function mergeLabProgress(
+    a: CertProgressSlice['labProgress'] | undefined,
+    b: CertProgressSlice['labProgress'] | undefined,
+  ): CertProgressSlice['labProgress'] {
+    const combined = [...(a ?? []), ...(b ?? [])];
+    const byId = new Map<string, CertProgressSlice['labProgress'][number]>();
+    for (const rec of combined) {
+      const existing = byId.get(rec.labId);
+      if (!existing || new Date(rec.completedAt) > new Date(existing.completedAt)) {
+        byId.set(rec.labId, rec);
+      }
+    }
+    return Array.from(byId.values());
+  }
 
   const certIds = new Set([
     ...Object.keys(local.byCert ?? {}),

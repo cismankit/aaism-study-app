@@ -11,6 +11,7 @@ import KnowledgeBase from './pages/KnowledgeBase'
 import IntelHub from './pages/IntelHub'
 import OSINTArsenal from './pages/OSINTArsenal'
 import ScenarioLab from './pages/ScenarioLab'
+import OpsLab from './pages/OpsLab'
 import Playbooks from './pages/Playbooks'
 import Dashboard from './pages/Dashboard'
 import HelpCenter from './pages/HelpCenter'
@@ -44,6 +45,7 @@ function App() {
         <Route path="intel" element={<IntelHub />} />
         <Route path="osint" element={<OSINTArsenal />} />
         <Route path="scenarios" element={<ScenarioLab />} />
+        <Route path="ops" element={<OpsLab />} />
         <Route path="agent" element={<Suspense fallback={<RouteFallback />}><AgentDiscovery /></Suspense>} />
         <Route path="playbooks" element={<Playbooks />} />
         <Route path="knowledge" element={<KnowledgeBase />} />

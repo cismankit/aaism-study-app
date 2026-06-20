@@ -127,10 +127,34 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
     status: 'shipped',
   },
   {
-    id: 'question-bank-300',
-    title: '300+ question bank',
-    summary: 'Expanded exam-realistic questions across D1–D4 with varied difficulty in bulk question bank.',
+    id: 'ops-lab',
+    title: 'Ops Lab — hands-on practice',
+    summary: 'Cert-aware command, analysis, and decision drills with progress tracking, AI output validation, and domain XP bumps.',
     status: 'shipped',
+  },
+  {
+    id: 'ops-copilot',
+    title: 'Ops Copilot multi-agent assist',
+    summary: 'OpenClaw, Hermes, and Claude Analyst personas for log triage, recon analysis, and incident reports — wired to Settings AI keys.',
+    status: 'shipped',
+  },
+  {
+    id: 'nav-cleanup',
+    title: 'Navigation cleanup',
+    summary: 'Primary rail (Command, Study, Exam, Intel, Knowledge, Agent) with Studio/Playbooks/OSINT/Cram/Support collapsed under More.',
+    status: 'shipped',
+  },
+  {
+    id: 'learning-loop',
+    title: 'Learning loop connections',
+    summary: 'Quiz remediation → Ops Lab links; KB domain pages → hands-on lab; weak domains → Ops Lab; lab completion → XP.',
+    status: 'shipped',
+  },
+  {
+    id: 'sandbox-vms',
+    title: 'Live sandbox VMs',
+    summary: 'Real isolated lab environments with actual command execution — requires backend infrastructure.',
+    status: 'exploring',
   },
 ];
 

@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, type ReactNode } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
-  LayoutDashboard, Theater, Bot, Briefcase, Crosshair,
+  LayoutDashboard, Bot, Briefcase, Crosshair,
   Flame, TrendingUp, Target, ChevronRight, ChevronDown,
   Shield, BarChart3, Play, Lightbulb, Sparkles, X, Radar, Globe, PenLine,
-  Radio, Zap,
+  Radio, Zap, Terminal,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
@@ -399,10 +399,10 @@ export default function CommandCenter() {
 
           {/* Secondary quick actions row */}
           <div className="grid grid-cols-2 gap-2 mt-3">
-            <button onClick={() => navigate('/scenarios')} className="cockpit-throttle rounded-xl p-3 text-left">
-              <Theater className="w-4 h-4 text-indigo-600 dark:text-indigo-400 mb-1" />
-              <div className="text-xs font-bold text-cockpit">Scenario Lab</div>
-              <div className="text-[10px] text-cockpit-subtle">Pattern drills</div>
+            <button onClick={() => navigate('/ops')} className="cockpit-throttle rounded-xl p-3 text-left">
+              <Terminal className="w-4 h-4 text-emerald-600 dark:text-emerald-400 mb-1" />
+              <div className="text-xs font-bold text-cockpit">Ops Lab</div>
+              <div className="text-[10px] text-cockpit-subtle">Hands-on drills</div>
             </button>
             <button onClick={() => navigate('/playbooks')} className="cockpit-throttle rounded-xl p-3 text-left">
               <Briefcase className="w-4 h-4 text-blue-600 dark:text-blue-400 mb-1" />
@@ -423,13 +423,13 @@ export default function CommandCenter() {
                   key={certDomain.id}
                   onClick={() => {
                     if (avg > 0 && avg < WEAK_THRESHOLD) {
-                      setMicroQuizDomain({ id: certDomain.id, name: certDomain.name });
+                      navigate(`/ops?domain=${certDomain.id}`);
                     } else {
                       navigate('/study', { state: { startQuiz: true, domainId: certDomain.id } });
                     }
                   }}
                   className="w-full mb-2 group last:mb-0"
-                  title={avg > 0 && avg < WEAK_THRESHOLD ? '3-question micro-drill for weak domain' : undefined}
+                  title={avg > 0 && avg < WEAK_THRESHOLD ? 'Practice in Ops Lab' : undefined}
                 >
                   <div className="flex items-center justify-between text-[10px] mb-1">
                     <span className="truncate text-cockpit-muted">D{certDomain.id}: {certDomain.shortName}</span>
@@ -542,7 +542,7 @@ export default function CommandCenter() {
 
         {showMore && (
           <div className="grid gap-4 mt-4 lg:grid-cols-3">
-            <SecondaryCard title="Quick Scenarios" icon={Theater} iconColor="text-indigo-600 dark:text-indigo-400">
+            <SecondaryCard title="Quick Scenarios" icon={Shield} iconColor="text-indigo-600 dark:text-indigo-400">
               <div className="space-y-2">
                 {QUESTION_PATTERNS.filter(p => ['best', 'most', 'first'].includes(p.id)).map(p => (
                   <button

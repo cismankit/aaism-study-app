@@ -43,9 +43,10 @@ import {
 } from '../services/leadVotesService';
 import { isEnsembleEnabled } from '../services/ensembleConfig';
 import PageHeader from '../components/PageHeader';
+import OpsCopilotPanel from '../components/OpsCopilotPanel';
 import { useCert } from '../context/CertContext';
 
-type ViewTab = 'pipeline' | 'leads' | 'analytics' | 'history';
+type ViewTab = 'pipeline' | 'leads' | 'analytics' | 'history' | 'copilot';
 type LeadFilter = 'all' | 'pending_review' | 'approved' | 'auto_approved' | 'rejected';
 type WorkflowStep = 'configure' | 'discover' | 'review' | 'export';
 
@@ -573,6 +574,7 @@ export default function AgentDiscovery() {
       <div className="flex gap-1 bg-cockpit-track dark:bg-gray-800 p-1 rounded-lg">
         {([
           { id: 'pipeline' as ViewTab, label: 'Pipeline', icon: Zap },
+          { id: 'copilot' as ViewTab, label: 'Ops Copilot', icon: Shield },
           { id: 'leads' as ViewTab, label: 'Leads', icon: Database },
           { id: 'analytics' as ViewTab, label: 'Analytics', icon: BarChart3 },
           { id: 'history' as ViewTab, label: 'History', icon: Activity },
@@ -593,6 +595,10 @@ export default function AgentDiscovery() {
       </div>
 
       {/* Tab Content */}
+      {activeTab === 'copilot' && (
+        <OpsCopilotPanel />
+      )}
+
       {activeTab === 'pipeline' && (
         <PipelineTab
           isRunning={isRunning}

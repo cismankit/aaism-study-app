@@ -1,9 +1,10 @@
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Radar, Theater, Eye, Bot, Zap,
+  LayoutDashboard, Radar, Eye, Bot, Zap,
   Sun, Moon, Flame, ChevronRight, Settings, Menu,
   Activity, Map, Crosshair, Radio, Briefcase, PanelLeftClose,
   HelpCircle, LifeBuoy, Heart, Sparkles, ChevronDown, Globe, PenLine,
+  Terminal, Shield,
 } from 'lucide-react';
 import Logo from './Logo';
 import CertSwitcher from './CertSwitcher';
@@ -72,42 +73,33 @@ interface NavSection {
 
 const navSections: NavSection[] = [
   {
-    label: 'COMMAND',
+    label: 'PRIMARY',
     items: [
-      { to: '/', icon: LayoutDashboard, label: 'Command Center', subtitle: 'Mission overview & daily ops' },
+      { to: '/', icon: LayoutDashboard, label: 'Command', subtitle: 'Mission overview & daily ops' },
+      { to: '/study', icon: Crosshair, label: 'Study', subtitle: 'Practice questions by domain' },
+      { to: '/exam', icon: Zap, label: 'Exam', subtitle: 'Timed exam simulation' },
+      { to: '/intel', icon: Radar, label: 'Intel', subtitle: 'Live threat intel & feeds' },
+      { to: '/knowledge', icon: Eye, label: 'Knowledge', subtitle: 'Deep-dive reference docs' },
+      { to: '/agent', icon: Bot, label: 'Agent', subtitle: 'Discovery & Ops Copilot' },
     ],
   },
   {
-    label: 'INTELLIGENCE',
+    label: 'MORE',
     items: [
-      { to: '/intel', icon: Radar, label: 'Intel Hub', subtitle: 'Live threat intel & feeds' },
-      { to: '/osint', icon: Globe, label: 'OSINT Arsenal', subtitle: 'Open-source tool library' },
-      { to: '/scenarios', icon: Theater, label: 'Scenario Lab', subtitle: 'Hands-on practice scenarios' },
-      { to: '/agent', icon: Bot, label: 'Agent Discovery', subtitle: 'AI-powered OSINT assistant' },
-      { to: '/studio', icon: PenLine, label: 'Content Studio', subtitle: 'Create & refine study materials', badge: 'NEW' },
-      { to: '/playbooks', icon: Briefcase, label: 'Playbooks', subtitle: 'Step-by-step workflows' },
-    ],
-  },
-  {
-    label: 'OPERATIONS',
-    items: [
-      { to: '/study', icon: Crosshair, label: 'Study Ops', subtitle: 'Practice 312+ questions' },
-      { to: '/exam', icon: Zap, label: 'Timed Exam', subtitle: '90Q timed exam simulation', badge: 'NEW' },
-      { to: '/knowledge', icon: Eye, label: 'Knowledge Base', subtitle: 'Deep-dive reference docs' },
+      { to: '/ops', icon: Terminal, label: 'Ops Lab', subtitle: 'Hands-on command & analysis drills' },
       { to: '/cheatsheet', icon: Map, label: 'Quick Ref', subtitle: 'Cheat sheets & mnemonics' },
-      { to: '/cram', icon: Zap, label: '24h Cram Mode', subtitle: 'Last-minute review sprint' },
-    ],
-  },
-  {
-    label: 'SUPPORT',
-    items: [
-      { to: '/help', icon: HelpCircle, label: 'Help & Support', subtitle: 'Guides, FAQs & troubleshooting' },
-      { to: '/feature-request', icon: Sparkles, label: 'Feature Request', subtitle: 'Shape the platform' },
-      { to: '/donate', icon: Heart, label: 'Donate', subtitle: 'Support development' },
     ],
     moreItems: [
-      { to: '/support', icon: LifeBuoy, label: 'Bug Reports', subtitle: 'Report issues & feedback' },
-      { to: '/my-updates', icon: Radio, label: 'My Updates', subtitle: 'Release notes & changelog' },
+      { to: '/studio', icon: PenLine, label: 'Content Studio', subtitle: 'Create study materials' },
+      { to: '/playbooks', icon: Briefcase, label: 'Playbooks', subtitle: 'Step-by-step workflows' },
+      { to: '/osint', icon: Globe, label: 'OSINT Arsenal', subtitle: 'Open-source tool library' },
+      { to: '/cram', icon: Zap, label: '24h Cram Mode', subtitle: 'Last-minute review sprint' },
+      { to: '/scenarios', icon: Shield, label: 'Scenario Lab', subtitle: 'AI-generated scenarios' },
+      { to: '/help', icon: HelpCircle, label: 'Help & Support', subtitle: 'Guides & FAQs' },
+      { to: '/support', icon: LifeBuoy, label: 'Bug Reports', subtitle: 'Report issues' },
+      { to: '/feature-request', icon: Sparkles, label: 'Feature Request', subtitle: 'Shape the platform' },
+      { to: '/donate', icon: Heart, label: 'Donate', subtitle: 'Support development' },
+      { to: '/my-updates', icon: Radio, label: 'My Updates', subtitle: 'Release notes' },
     ],
   },
 ];
@@ -130,15 +122,15 @@ function Sidebar({
   const { state } = useGamification();
   const currentLevel = getLevelFromXP(state.xp);
   const location = useLocation();
-  const [supportExpanded, setSupportExpanded] = useState(false);
+  const [moreExpanded, setMoreExpanded] = useState(false);
   const [unseenUpdates, setUnseenUpdates] = useState(false);
 
   useEffect(() => {
     setUnseenUpdates(hasUnseenReleases());
   }, [location.pathname]);
 
-  const isSupportMoreActive = navSections
-    .find(s => s.label === 'SUPPORT')
+  const isMoreActive = navSections
+    .find(s => s.label === 'MORE')
     ?.moreItems?.some(item => location.pathname.startsWith(item.to)) ?? false;
 
   const { getDockStyle, dockHandlers, navRef } = useSidebarDock(collapsed, location.pathname);
@@ -210,7 +202,7 @@ function Sidebar({
               {section.items.map(item => {
                 const Icon = item.icon;
                 const isActive = item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);
-                const showUpdateDot = item.to === '/' && unseenUpdates;
+                const showUpdateDot = item.to === '/' && unseenUpdates && !collapsed;
                 const dockStyle = collapsed ? getDockStyle(item.to) : undefined;
                 return (
                   <NavLink
@@ -262,15 +254,15 @@ function Sidebar({
               {section.moreItems && !collapsed && (
                 <>
                   <button
-                    onClick={() => setSupportExpanded(!supportExpanded)}
+                    onClick={() => setMoreExpanded(!moreExpanded)}
                     className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm font-medium transition-all ${
-                      isSupportMoreActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-theme-muted hover:text-theme-secondary dark:hover:text-gray-300 hover:bg-cockpit-track dark:hover:bg-gray-800'
+                      isMoreActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-theme-muted hover:text-theme-secondary dark:hover:text-gray-300 hover:bg-cockpit-track dark:hover:bg-gray-800'
                     }`}
                   >
-                    <ChevronDown className={`w-[18px] h-[18px] transition-transform ${supportExpanded || isSupportMoreActive ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`w-[18px] h-[18px] transition-transform ${moreExpanded || isMoreActive ? 'rotate-180' : ''}`} />
                     <span className="truncate text-xs">More</span>
                   </button>
-                  {(supportExpanded || isSupportMoreActive) && section.moreItems.map(item => {
+                  {(moreExpanded || isMoreActive) && section.moreItems.map(item => {
                     const Icon = item.icon;
                     const isActive = location.pathname.startsWith(item.to);
                     return (
@@ -381,7 +373,6 @@ function TopBar({
         >
           <Activity className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Live Feed</span>
-          <Radio className="w-3 h-3 animate-pulse-dot text-emerald-500" />
         </button>
 
         <NavLink

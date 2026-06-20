@@ -149,6 +149,20 @@ function DomainGuidePanel({ guide }: { guide: DomainGuide }) {
         <p className="text-sm text-cockpit-muted mt-2"><strong>Org action:</strong> {guide.applyIt.orgAction}</p>
       </section>
 
+      <section className="p-4 rounded-xl bg-gradient-to-br from-cyan-500/10 to-emerald-500/10 border border-cyan-500/20">
+        <h3 className="text-sm font-semibold flex items-center gap-2 mb-2 text-cockpit">
+          <Target className="w-4 h-4 text-cyan-500" />
+          Hands-On Practice
+        </h3>
+        <p className="text-sm text-theme-secondary mb-3">Apply domain concepts with command, analysis, and decision drills.</p>
+        <Link
+          to={`/ops?domain=${guide.id}`}
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 transition-colors"
+        >
+          Start hands-on lab →
+        </Link>
+      </section>
+
       <section>
         <h3 className="text-sm font-semibold mb-3 text-cockpit">Related Platform Features</h3>
         <div className="grid gap-2 sm:grid-cols-2">

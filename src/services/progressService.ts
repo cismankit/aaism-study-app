@@ -30,6 +30,13 @@ export interface ExamAttemptRecord {
   pausedCount: number;
 }
 
+export interface LabProgressRecord {
+  labId: string;
+  completedAt: string;
+  stepsCompleted: string[];
+  score: number;
+}
+
 export interface CertProgressSlice {
   domainScores: Record<number, number[]>;
   quizHistory: QuizAttempt[];
@@ -38,6 +45,7 @@ export interface CertProgressSlice {
   passThreshold: number;
   totalQuizzesTaken: number;
   perfectQuizzes: number;
+  labProgress: LabProgressRecord[];
 }
 
 /** @deprecated v1 flat snapshot — migrated to v2 on load */
@@ -84,6 +92,7 @@ function defaultCertSlice(): CertProgressSlice {
     passThreshold: EXAM_PASS_THRESHOLD,
     totalQuizzesTaken: 0,
     perfectQuizzes: 0,
+    labProgress: [],
   };
 }
 
@@ -118,6 +127,7 @@ function migrateFromLegacy(): ProgressSnapshot {
   aaism.domainScores = game.domainScores ?? {};
   aaism.totalQuizzesTaken = game.totalQuizzesTaken ?? 0;
   aaism.perfectQuizzes = game.perfectQuizzes ?? 0;
+  aaism.labProgress = [];
 
   snap.byCert[DEFAULT_CERT_ID] = aaism;
   snap.streak = {
@@ -142,6 +152,7 @@ function migrateV1ToV2(v1: ProgressSnapshotV1): ProgressSnapshot {
     passThreshold: v1.passThreshold ?? EXAM_PASS_THRESHOLD,
     totalQuizzesTaken: v1.totalQuizzesTaken ?? 0,
     perfectQuizzes: v1.perfectQuizzes ?? 0,
+    labProgress: [],
   };
   snap.streak = v1.streak ?? snap.streak;
   snap.xp = v1.xp ?? 0;
@@ -158,7 +169,12 @@ export function getCertSlice(certId?: string): CertProgressSlice {
     snap.byCert[id] = defaultCertSlice();
     saveProgress(snap);
   }
-  return snap.byCert[id];
+  const slice = snap.byCert[id];
+  if (!slice.labProgress) {
+    slice.labProgress = [];
+    saveProgress(snap);
+  }
+  return slice;
 }
 
 export function loadProgress(): ProgressSnapshot {
