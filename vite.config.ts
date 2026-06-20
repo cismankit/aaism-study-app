@@ -1,19 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
-import { readFileSync } from 'node:fs'
-import { execSync } from 'node:child_process'
+import { computeVersionInfo } from './scripts/lib/version-info.mjs'
 
-const pkg = JSON.parse(readFileSync('./package.json', 'utf8'))
-function gitBuild() {
-  try {
-    return execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim()
-  } catch {
-    return 'dev'
-  }
-}
-const appVersion = pkg.version
-const appBuild = gitBuild()
+const release = process.env.TAURI_RELEASE === '1' || process.env.RELEASE === '1'
+const versionInfo = computeVersionInfo({ release })
 
 // GitHub Pages: /aaism-study-app/ · Tauri/local dev: /
 const base = process.env.GITHUB_PAGES === 'true' ? '/aaism-study-app/' : '/'
@@ -37,8 +28,9 @@ function tauriPwaStub() {
 export default defineConfig({
   base,
   define: {
-    'import.meta.env.VITE_APP_VERSION': JSON.stringify(appVersion),
-    'import.meta.env.VITE_APP_BUILD': JSON.stringify(appBuild),
+    'import.meta.env.VITE_APP_VERSION': JSON.stringify(versionInfo.displayVersion),
+    'import.meta.env.VITE_APP_BUILD': JSON.stringify(versionInfo.gitHash),
+    'import.meta.env.VITE_APP_BUILD_DATE': JSON.stringify(versionInfo.buildDate),
     'import.meta.env.VITE_BUNDLE_ID': JSON.stringify('com.aegis.app'),
   },
   plugins: [
@@ -50,8 +42,8 @@ export default defineConfig({
             registerType: 'autoUpdate',
             includeAssets: ['favicon.svg', 'logo.svg', 'aaism-logo.svg', 'apple-touch-icon.png', '404.html'],
             manifest: {
-              name: `Aegis v${appVersion}`,
-              short_name: `Aegis v${appVersion}`,
+              name: versionInfo.pwaName,
+              short_name: versionInfo.pwaName,
               description: 'Multi-cert study, ops drills, intel feeds, and AI-assisted exam prep',
               theme_color: '#059669',
               background_color: '#111827',

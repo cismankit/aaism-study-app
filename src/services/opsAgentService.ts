@@ -212,7 +212,7 @@ export async function analyzeWithOpsAgent(
   const response = await chat(config, messages, {
     jsonMode: true,
     temperature: 0.3,
-    numPredict: 1500,
+    numPredict: 2048,
     timeoutMs: getAgentTimeoutMs(agentId),
     signal: runSignal,
   });

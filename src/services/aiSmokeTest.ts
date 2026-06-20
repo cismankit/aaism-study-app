@@ -16,7 +16,8 @@ import { smokeTestMissionHandoff } from './missionOrchestrator';
 
 export const SMOKE_TEST_TIMEOUT_MS = 15_000;
 /** LLM round-trips when Ollama is up (JSON tests can be slow on first load). */
-export const SMOKE_TEST_LLM_TIMEOUT_MS = 90_000;
+export const SMOKE_TEST_LLM_TIMEOUT_MS = 120_000;
+export const SMOKE_TEST_HEAVY_TIMEOUT_MS = 180_000;
 
 export type SmokeTestId = 'chat' | 'ops-copilot' | 'mission-orchestrator' | 'agent-discovery';
 
@@ -220,13 +221,13 @@ export async function runAllSmokeTests(): Promise<SmokeTestRunSummary> {
     await runTimed('chat', 'Chat (Ollama)', testChatBasic),
   );
   results.push(
-    await runTimed('ops-copilot', 'Ops Copilot (Hermes)', testOpsCopilotHermes, 90_000),
+    await runTimed('ops-copilot', 'Ops Copilot (Hermes)', testOpsCopilotHermes, SMOKE_TEST_HEAVY_TIMEOUT_MS),
   );
   results.push(
-    await runTimed('mission-orchestrator', 'Mission Orchestrator', testMissionOrchestrator),
+    await runTimed('mission-orchestrator', 'Mission Orchestrator', testMissionOrchestrator, SMOKE_TEST_HEAVY_TIMEOUT_MS),
   );
   results.push(
-    await runTimed('agent-discovery', 'Agent Discovery (JSON)', testAgentDiscoveryJson, 150_000),
+    await runTimed('agent-discovery', 'Agent Discovery (JSON)', testAgentDiscoveryJson, SMOKE_TEST_HEAVY_TIMEOUT_MS),
   );
 
   return {

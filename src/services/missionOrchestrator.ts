@@ -225,7 +225,7 @@ async function runAgentStep(
   const response = await chat(config, [
     { role: 'system', content: `${buildMissionHandoffPrompt(agentId)}\n\n${certContext}\nReturn concise JSON or plain text.` },
     { role: 'user', content: userPrompt },
-  ], { jsonMode: false, temperature: 0.3, numPredict: 384, timeoutMs: 60_000, signal });
+  ], { jsonMode: false, temperature: 0.3, numPredict: 2048, timeoutMs: 90_000, signal });
 
   if (response.error) {
     const errMsg = `${agentId} ${phase}: ${response.error}`;

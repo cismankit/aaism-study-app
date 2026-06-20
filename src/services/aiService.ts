@@ -715,8 +715,14 @@ async function callOllama(config: AIConfig, messages: Message[], options?: ChatO
     const data = await response.json();
     const msg = data.message ?? {};
     let content = (msg.content ?? '').trim();
-    if (!content && !options?.jsonMode && msg.thinking) {
-      content = String(msg.thinking).trim();
+    if (!content && msg.thinking) {
+      const thinking = String(msg.thinking).trim();
+      if (options?.jsonMode) {
+        const jsonMatch = thinking.match(/\{[\s\S]*\}/) ?? thinking.match(/\[[\s\S]*\]/);
+        content = (jsonMatch?.[0] ?? thinking).trim();
+      } else {
+        content = thinking;
+      }
     }
     if (!content) {
       return { content: '', error: 'Ollama returned empty response — try a different model or increase num_predict' };

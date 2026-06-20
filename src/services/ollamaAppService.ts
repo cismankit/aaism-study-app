@@ -22,11 +22,11 @@ export interface OllamaConnectionTest {
 
 type OllamaFetchInit = RequestInit & { timeout?: number };
 
-let tauriFetchPromise: Promise<typeof fetch> | null = null;
+let tauriFetchPromise: Promise<(url: string, init?: OllamaFetchInit) => Promise<Response>> | null = null;
 
-async function getTauriFetch(): Promise<typeof fetch> {
+async function getTauriFetch(): Promise<(url: string, init?: OllamaFetchInit) => Promise<Response>> {
   if (!tauriFetchPromise) {
-    tauriFetchPromise = import('@tauri-apps/plugin-http').then(m => m.fetch as typeof fetch);
+    tauriFetchPromise = import('@tauri-apps/plugin-http').then(m => m.fetch);
   }
   return tauriFetchPromise;
 }
