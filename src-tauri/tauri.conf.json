@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Aegis · v1.0.0 (build ed981d1)",
+        "title": "Aegis · v1.0.0 (build dc02da5)",
         "width": 1400,
         "height": 900,
         "resizable": true,
@@ -35,7 +35,7 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "bundleVersion": "ed981d1"
+      "bundleVersion": "dc02da5"
     },
     "category": "Education",
     "shortDescription": "AI Security Manager exam prep",
