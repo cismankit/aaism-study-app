@@ -25,6 +25,7 @@ import MyUpdates from './pages/MyUpdates'
 
 const Exam = lazy(() => import('./pages/Exam'))
 const ContentStudio = lazy(() => import('./pages/ContentStudio'))
+const AgentTeamPacks = lazy(() => import('./pages/AgentTeamPacks'))
 const AgentDiscovery = lazy(() => import('./pages/AgentDiscovery'))
 
 function RouteFallback() {
@@ -46,6 +47,7 @@ function App() {
         <Route path="osint" element={<OSINTArsenal />} />
         <Route path="scenarios" element={<ScenarioLab />} />
         <Route path="ops" element={<OpsLab />} />
+        <Route path="packs" element={<Suspense fallback={<RouteFallback />}><AgentTeamPacks /></Suspense>} />
         <Route path="agent" element={<Suspense fallback={<RouteFallback />}><AgentDiscovery /></Suspense>} />
         <Route path="playbooks" element={<Playbooks />} />
         <Route path="knowledge" element={<KnowledgeBase />} />

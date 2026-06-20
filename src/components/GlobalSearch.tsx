@@ -27,7 +27,8 @@ const PAGE_ITEMS: SearchItem[] = [
   { id: 'p-ops', type: 'page', title: 'Ops Lab', subtitle: 'Hands-on drills', route: '/ops', keywords: 'ops lab hands-on command analysis' },
   { id: 'p-scenarios', type: 'page', title: 'Scenario Lab', subtitle: 'AI pattern drills', route: '/scenarios', keywords: 'scenario lab drills patterns' },
   { id: 'p-cram', type: 'page', title: '24h Cram Mode', subtitle: 'High-yield review', route: '/cram', keywords: 'cram mode rapid review' },
-  { id: 'p-cheatsheet', type: 'page', title: 'Quick Ref', subtitle: 'Cheat sheet', route: '/cheatsheet', keywords: 'cheat sheet quick reference' },
+  { id: 'p-packs', type: 'page', title: 'Team Packs', subtitle: 'Agent mission workflows', route: '/packs', keywords: 'team packs agent missions content studio playbooks osint cram support' },
+  { id: 'p-cheatsheet', type: 'page', title: 'Quick Ref', subtitle: 'Cert-aware cheat sheet', route: '/cheatsheet', keywords: 'cheat sheet quick reference cert' },
   { id: 'p-settings', type: 'page', title: 'Settings', subtitle: 'AI config & progress', route: '/settings', keywords: 'settings dashboard progress ai' },
   { id: 'p-help', type: 'page', title: 'Help & Support', subtitle: 'Documentation', route: '/help', keywords: 'help support documentation' },
 ];

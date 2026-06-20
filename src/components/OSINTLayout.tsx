@@ -2,9 +2,8 @@ import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Radar, Eye, Bot, Zap,
   Sun, Moon, Flame, ChevronRight, Settings, Menu,
-  Activity, Map, Crosshair, Radio, Briefcase, PanelLeftClose,
-  HelpCircle, LifeBuoy, Heart, Sparkles, ChevronDown, Globe, PenLine,
-  Terminal, Shield,
+  Activity, Map, Crosshair, PanelLeftClose,
+  Terminal, Users,
 } from 'lucide-react';
 import Logo from './Logo';
 import CertSwitcher from './CertSwitcher';
@@ -68,7 +67,6 @@ interface NavItem {
 interface NavSection {
   label: string;
   items: NavItem[];
-  moreItems?: Array<{ to: string; icon: typeof LayoutDashboard; label: string; subtitle: string }>;
 }
 
 const navSections: NavSection[] = [
@@ -84,22 +82,11 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    label: 'MORE',
+    label: 'TOOLS',
     items: [
+      { to: '/packs', icon: Users, label: 'Team Packs', subtitle: 'Agent missions & workflows' },
       { to: '/ops', icon: Terminal, label: 'Ops Lab', subtitle: 'Hands-on command & analysis drills' },
-      { to: '/cheatsheet', icon: Map, label: 'Quick Ref', subtitle: 'Cheat sheets & mnemonics' },
-    ],
-    moreItems: [
-      { to: '/studio', icon: PenLine, label: 'Content Studio', subtitle: 'Create study materials' },
-      { to: '/playbooks', icon: Briefcase, label: 'Playbooks', subtitle: 'Step-by-step workflows' },
-      { to: '/osint', icon: Globe, label: 'OSINT Arsenal', subtitle: 'Open-source tool library' },
-      { to: '/cram', icon: Zap, label: '24h Cram Mode', subtitle: 'Last-minute review sprint' },
-      { to: '/scenarios', icon: Shield, label: 'Scenario Lab', subtitle: 'AI-generated scenarios' },
-      { to: '/help', icon: HelpCircle, label: 'Help & Support', subtitle: 'Guides & FAQs' },
-      { to: '/support', icon: LifeBuoy, label: 'Bug Reports', subtitle: 'Report issues' },
-      { to: '/feature-request', icon: Sparkles, label: 'Feature Request', subtitle: 'Shape the platform' },
-      { to: '/donate', icon: Heart, label: 'Donate', subtitle: 'Support development' },
-      { to: '/my-updates', icon: Radio, label: 'My Updates', subtitle: 'Release notes' },
+      { to: '/cheatsheet', icon: Map, label: 'Quick Ref', subtitle: 'Cert-aware cheat sheets' },
     ],
   },
 ];
@@ -122,16 +109,11 @@ function Sidebar({
   const { state } = useGamification();
   const currentLevel = getLevelFromXP(state.xp);
   const location = useLocation();
-  const [moreExpanded, setMoreExpanded] = useState(false);
   const [unseenUpdates, setUnseenUpdates] = useState(false);
 
   useEffect(() => {
     setUnseenUpdates(hasUnseenReleases());
   }, [location.pathname]);
-
-  const isMoreActive = navSections
-    .find(s => s.label === 'MORE')
-    ?.moreItems?.some(item => location.pathname.startsWith(item.to)) ?? false;
 
   const { getDockStyle, dockHandlers, navRef } = useSidebarDock(collapsed, location.pathname);
 
@@ -251,38 +233,6 @@ function Sidebar({
                   </NavLink>
                 );
               })}
-              {section.moreItems && !collapsed && (
-                <>
-                  <button
-                    onClick={() => setMoreExpanded(!moreExpanded)}
-                    className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-lg text-sm font-medium transition-all ${
-                      isMoreActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-theme-muted hover:text-theme-secondary dark:hover:text-gray-300 hover:bg-cockpit-track dark:hover:bg-gray-800'
-                    }`}
-                  >
-                    <ChevronDown className={`w-[18px] h-[18px] transition-transform ${moreExpanded || isMoreActive ? 'rotate-180' : ''}`} />
-                    <span className="truncate text-xs">More</span>
-                  </button>
-                  {(moreExpanded || isMoreActive) && section.moreItems.map(item => {
-                    const Icon = item.icon;
-                    const isActive = location.pathname.startsWith(item.to);
-                    return (
-                      <NavLink
-                        key={item.to}
-                        to={item.to}
-                        onClick={onCloseMobile}
-                        className={`flex items-center gap-3 pl-8 pr-2.5 py-1.5 rounded-lg text-xs font-medium transition-all group ${
-                          isActive
-                            ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
-                            : 'text-theme-muted hover:text-theme-secondary dark:hover:text-gray-300 hover:bg-cockpit-track dark:hover:bg-gray-800'
-                        }`}
-                      >
-                        <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-theme-faint group-hover:text-cockpit-muted dark:group-hover:text-gray-300'}`} />
-                        <span className="truncate">{item.label}</span>
-                      </NavLink>
-                    );
-                  })}
-                </>
-              )}
             </div>
           </div>
         ))}
@@ -331,7 +281,7 @@ function TopBar({
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
 
-  const currentPage = navSections.flatMap(s => [...s.items, ...(s.moreItems ?? [])]).find(item =>
+  const currentPage = navSections.flatMap(s => s.items).find(item =>
     item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to)
   );
 

@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import { 
-  BookOpen, Shield, Cpu, AlertTriangle, Scale, Eye, 
+import {
+  BookOpen, Shield, Cpu, AlertTriangle, Scale, Eye,
   ChevronDown, ChevronUp, Star, Zap, Target, FileText,
-  Lock, Globe, Layers, Brain, CheckCircle, ExternalLink
+  Lock, Globe, Layers, Brain, CheckCircle, ExternalLink, Map,
 } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
+import CertQuickRef from '../components/CertQuickRef';
+import { useCert } from '../context/CertContext';
+import { getQuickRefMeta, getQuickRefTabs } from '../data/certifications/quickRef';
 
 type CheatTab = 'frameworks' | 'domain1' | 'domain2' | 'domain3' | 'isaca-tips' | 'supporting-tasks' | 'youtube';
 
@@ -60,6 +64,28 @@ function BulletList({ items, color = 'blue' }: { items: string[]; color?: string
 }
 
 export default function CheatSheet() {
+  const { activeCert } = useCert();
+
+  if (activeCert.id !== 'aaism') {
+    const meta = getQuickRefMeta(activeCert);
+    const tabs = getQuickRefTabs(activeCert);
+    return (
+      <div className="space-y-4">
+        <PageHeader
+          title={meta.title}
+          subtitle={`${meta.subtitle} · ${activeCert.vendor} track`}
+          icon={Map}
+          iconClassName="text-yellow-500"
+        />
+        <CertQuickRef cert={activeCert} meta={meta} tabs={tabs} />
+      </div>
+    );
+  }
+
+  return <AAISMCheatSheet />;
+}
+
+function AAISMCheatSheet() {
   const [activeTab, setActiveTab] = useState<CheatTab>('frameworks');
 
   const tabs = [
@@ -77,10 +103,10 @@ export default function CheatSheet() {
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-500 to-orange-500 bg-clip-text text-transparent">
-          AAISM Exam Cheat Sheet
+          AAISM Exam Quick Ref
         </h1>
         <p className="text-theme-muted mt-1">
-          Everything you MUST know — 90 questions, 150 minutes, pass = 450/800
+          Everything you MUST know — 90 questions · 150 minutes · pass ≈ 65%
         </p>
         <div className="flex justify-center gap-4 mt-3">
           <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full font-medium">D1: 31%</span>

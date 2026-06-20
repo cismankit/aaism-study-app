@@ -141,7 +141,19 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
   {
     id: 'nav-cleanup',
     title: 'Navigation cleanup',
-    summary: 'Primary rail (Command, Study, Exam, Intel, Knowledge, Agent) with Studio/Playbooks/OSINT/Cram/Support collapsed under More.',
+    summary: 'Primary rail (Command, Study, Exam, Intel, Knowledge, Agent) with Team Packs, Ops Lab, and Quick Ref in Tools section.',
+    status: 'shipped',
+  },
+  {
+    id: 'cert-quick-ref',
+    title: 'Cert-aware Quick Ref',
+    summary: 'Quick Ref reads active cert — dynamic title, exam format, domain tabs, and framework content from domain guides for all tracks.',
+    status: 'shipped',
+  },
+  {
+    id: 'agent-team-packs',
+    title: 'Agentic Team Packs',
+    summary: 'Five mission packs (Intel, Content, Ops, Cram, Support) with multi-step agent UI, cert-aware prompts, and deep-links to Studio/Intel/Playbooks.',
     status: 'shipped',
   },
   {
