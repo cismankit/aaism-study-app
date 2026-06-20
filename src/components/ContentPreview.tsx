@@ -25,7 +25,16 @@ function renderMarkdownBasic(text: string): string {
 }
 
 export default function ContentPreview({ formatId, content }: PreviewProps) {
-  const safeContent = content.trim() || 'Preview will appear here after generation…';
+  const hasContent = content.trim().length > 0;
+  const safeContent = hasContent ? content.trim() : '';
+
+  if (!hasContent) {
+    return (
+      <div className="bg-theme-muted/50 rounded-lg border border-dashed border-theme p-8 text-center text-sm text-theme-muted">
+        Generate content to see a formatted preview here.
+      </div>
+    );
+  }
 
   if (formatId === 'linkedin') {
     return (

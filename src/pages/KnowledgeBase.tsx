@@ -15,6 +15,9 @@ import { getContentStats } from '../data/examContent';
 import { useGamification } from '../context/GamificationContext';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
+import ConfidenceBadge from '../components/ConfidenceBadge';
+import { getFrameworkDoc } from '../data/frameworkDocs';
+import { buildFrameworkConfidence } from '../services/confidenceService';
 
 type MainTab = 'domains' | 'topics' | 'glossary' | 'owasp' | 'platform' | 'search';
 
@@ -83,13 +86,38 @@ function DomainGuidePanel({ guide }: { guide: DomainGuide }) {
                 <th className="text-left py-2 px-3 text-gray-500">Framework</th>
                 <th className="text-left py-2 px-3 text-gray-500">Relevance</th>
                 <th className="text-left py-2 px-3 text-gray-500">Exam Weight</th>
+                <th className="text-left py-2 px-3 text-gray-500">Source</th>
               </tr>
             </thead>
             <tbody>
-              {guide.frameworks.map((fw, i) => (
+              {guide.frameworks.map((fw, i) => {
+                const doc = getFrameworkDoc(fw.name);
+                const { linked, summary } = buildFrameworkConfidence({
+                  name: fw.name,
+                  docUrl: doc?.url,
+                  publisher: doc?.publisher,
+                });
+                return (
                 <tr key={i} className="border-b border-gray-100 dark:border-gray-800">
-                  <td className="py-2 px-3 font-medium text-cockpit">{fw.name}</td>
-                  <td className="py-2 px-3 text-cockpit-muted">{fw.relevance}</td>
+                  <td className="py-2 px-3 font-medium text-cockpit">
+                    {doc?.url ? (
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline"
+                      >
+                        {fw.name}
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    ) : (
+                      fw.name
+                    )}
+                  </td>
+                  <td className="py-2 px-3 text-cockpit-muted">
+                    <span className="block">{fw.relevance}</span>
+                    <ConfidenceBadge confidence={summary} compact className="mt-1" />
+                  </td>
                   <td className="py-2 px-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
                       fw.examWeight === 'high' ? 'bg-red-500/20 text-red-400' :
@@ -99,8 +127,12 @@ function DomainGuidePanel({ guide }: { guide: DomainGuide }) {
                       {fw.examWeight}
                     </span>
                   </td>
+                  <td className="py-2 px-3">
+                    <ConfidenceBadge confidence={linked} compact />
+                  </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>
@@ -212,6 +244,17 @@ export default function KnowledgeBase() {
     const d = parseInt(searchParams.get('domain') || '', 10);
     if (d >= 1 && d <= maxDomain) setActiveDomain(d);
   }, [searchParams, maxDomain]);
+
+  useEffect(() => {
+    const topicId = searchParams.get('topic');
+    if (!topicId) return;
+    const match = topics.find(t => t.id === topicId);
+    if (match) {
+      setActiveDomain(match.domain);
+      setMainTab('topics');
+      setSelectedTopic(match);
+    }
+  }, [searchParams]);
 
   const certGuides = activeCert.domainGuides ?? [];
   const activeGuide = certGuides.find(g => g.id === activeDomain);

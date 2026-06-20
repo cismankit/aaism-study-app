@@ -8,7 +8,7 @@ import {
   StopCircle,
   ThumbsUp, ThumbsDown,
   Copy, Download, FileJson, FileText, HelpCircle, BookOpen,
-  RotateCcw, GitCompare, ListPlus, Radar,
+  RotateCcw, GitCompare, ListPlus, Radar, ExternalLink,
 } from 'lucide-react';
 import {
   runDiscoveryAgent,
@@ -125,6 +125,7 @@ export default function AgentDiscovery() {
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [showStrategyPicker, setShowStrategyPicker] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [runFailed, setRunFailed] = useState(false);
   const [voteTick, setVoteTick] = useState(0);
   const [studyQueueTick, setStudyQueueTick] = useState(0);
   const [lastStrategy, setLastStrategy] = useState<DiscoveryStrategy | null>(null);
@@ -195,11 +196,13 @@ export default function AgentDiscovery() {
       setCurrentPhase('');
       setPhaseMessage('');
       setRunStartTime(null);
+      setRunFailed(false);
       refreshState();
     },
     onError: (err) => {
       setIsRunning(false);
       setRunStartTime(null);
+      setRunFailed(true);
       setError(err);
       refreshState();
     },
@@ -207,6 +210,7 @@ export default function AgentDiscovery() {
 
   const handleRunStrategy = async (strategy: DiscoveryStrategy) => {
     setError(null);
+    setRunFailed(false);
     setLiveLogs([]);
     setElapsed(0);
     setRunStartTime(Date.now());
@@ -384,7 +388,11 @@ export default function AgentDiscovery() {
           <div className="px-4 py-2.5 bg-gray-800 dark:bg-gray-900 border-b border-gray-700 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex gap-1.5">
-                <div className={`w-3 h-3 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : liveLogs.some(l => l.type === 'warning') ? 'bg-red-500' : 'bg-green-500'}`} />
+                <div className={`w-3 h-3 rounded-full ${
+                  isRunning ? 'bg-green-500 animate-pulse' :
+                  runFailed || error ? 'bg-red-500' :
+                  liveLogs.some(l => l.type === 'warning') ? 'bg-yellow-500' : 'bg-green-500'
+                }`} />
                 <div className="w-3 h-3 rounded-full bg-yellow-500" />
                 <div className="w-3 h-3 rounded-full bg-gray-600" />
               </div>
@@ -410,17 +418,20 @@ export default function AgentDiscovery() {
               <div className="flex gap-1 items-center">
                 {['analyze', 'discover', 'deduplicate', 'score', 'populate'].map((phase, i) => {
                   const phaseIdx = ['analyze', 'discover', 'deduplicate', 'score', 'populate'].indexOf(currentPhase);
+                  const failed = runFailed || !!error;
                   return (
                     <div key={phase} className="flex items-center gap-1">
                       <div
                         className={`w-1.5 h-1.5 rounded-full transition-all ${
-                          phase === currentPhase
-                            ? 'bg-green-400 scale-150'
-                            : phaseIdx > i
-                              ? 'bg-green-500'
-                              : !isRunning && liveLogs.length > 0
+                          failed && !isRunning
+                            ? 'bg-red-500'
+                            : phase === currentPhase
+                              ? 'bg-green-400 scale-150'
+                              : phaseIdx > i
                                 ? 'bg-green-500'
-                                : 'bg-gray-600'
+                                : !isRunning && liveLogs.length > 0
+                                  ? 'bg-green-500'
+                                  : 'bg-gray-600'
                         }`}
                         title={phase}
                       />
@@ -553,6 +564,14 @@ export default function AgentDiscovery() {
             <p className="text-sm text-red-700 dark:text-red-400 flex-1">{error}</p>
             <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600"><X size={14} /></button>
           </div>
+          <button
+            onClick={() => void handleQuickDiscover()}
+            disabled={isRunning}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs hover:bg-red-700 disabled:opacity-50"
+          >
+            <RefreshCw size={12} />
+            Retry discovery
+          </button>
           {aiConfig.provider === 'ollama' && error.includes('parse') && (
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-2">
               <div className="flex items-center gap-2 mb-1">
@@ -988,6 +1007,9 @@ function LeadsTab({
                       <Filter size={10} className="text-purple-500" />
                       <span className="text-[10px] text-theme-muted">Similarity: {lead.similarityScore}%</span>
                     </div>
+                    <span className="text-[10px] text-theme-faint truncate max-w-[140px]" title={lead.sourceMethod}>
+                      {lead.sourceType === 'rss-intel' ? 'RSS' : 'Gap analysis'}
+                    </span>
                     <div className="text-[10px] text-theme-faint">{lead.question.topic}</div>
                   </div>
                 </div>
@@ -1086,6 +1108,23 @@ function LeadsTab({
                   <div>
                     <div className="text-[10px] font-medium text-theme-muted uppercase tracking-wide mb-1">Explanation</div>
                     <p className="text-xs text-cockpit-muted">{lead.question.explanation}</p>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-medium text-theme-muted uppercase tracking-wide mb-1">Source</div>
+                    <p className="text-xs text-theme-muted">{lead.sourceMethod}</p>
+                    {lead.sourceUrl && (
+                      <a
+                        href={lead.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-violet-600 dark:text-violet-400 hover:underline inline-flex items-center gap-1 mt-1"
+                      >
+                        View source <ExternalLink size={10} />
+                      </a>
+                    )}
+                    <p className="text-[10px] text-theme-faint mt-1">
+                      Type: {lead.sourceType ?? 'llm-discovery'} · Run: {lead.source}
+                    </p>
                   </div>
                   <div>
                     <div className="text-[10px] font-medium text-theme-muted uppercase tracking-wide mb-1">Agent Reasoning</div>
@@ -1475,6 +1514,30 @@ function HistoryTab({
                     </button>
                   </div>
                 </div>
+
+                {/* Agent confidence summary */}
+                {run.agentSummary && run.agentSummary.length > 0 && (
+                  <div className="px-3 pb-2">
+                    <div className="text-[10px] font-medium text-theme-muted uppercase mb-2">
+                      Per-agent confidence
+                      {run.overallConfidence != null && (
+                        <span className="ml-2 normal-case">· overall {run.overallConfidence}%</span>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {run.agentSummary.map(ac => (
+                        <span
+                          key={ac.agent}
+                          className="text-[10px] px-2 py-1 rounded bg-cockpit-track text-cockpit-muted"
+                          title={ac.error}
+                        >
+                          {ac.agent}: {ac.avgConfidence}% ({ac.itemsProcessed})
+                          {ac.error ? ' ⚠' : ''}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Strategy details */}
                 <div className="px-3 pb-2">

@@ -144,9 +144,11 @@ export async function runDiscoveryAgent(
     emitLog(callbacks, 'analyze', `Multi-agent pipeline init (model: ${aiConfig.model}, tier: ${modelCap.tier})`, 'info');
 
     let deduped: Array<ParsedQuestion & { similarityScore: number }>;
+    let runSummary;
     try {
       const result = await runMultiAgentDiscovery(strategy, callbacks, aiConfig, callbacks.signal);
       deduped = result.discovered;
+      runSummary = result.summary;
     } catch (discoverError) {
       if (discoverError instanceof AgentAbortError ||
           (discoverError instanceof Error && discoverError.name === 'AgentAbortError')) throw discoverError;
@@ -202,6 +204,8 @@ export async function runDiscoveryAgent(
         confidence: q.confidence,
         similarityScore: q.similarityScore,
         source: run.id,
+        sourceType: 'gap-analysis',
+        sourceMethod: `AnalystAgent coverage scan → DiscoverAgent (${strategy.type})`,
         discoveredAt: new Date().toISOString(),
         tags: [
           `domain-${q.domain}`,
@@ -237,11 +241,19 @@ export async function runDiscoveryAgent(
 
     emitLog(callbacks, 'populate', 'Agent run completed successfully', 'success');
 
+    if (runSummary) {
+      emitLog(callbacks, 'populate',
+        `Per-agent confidence: ${runSummary.agentConfidences.map(a => `${a.agent} ${a.avgConfidence}%`).join(' · ')}`,
+        'info');
+    }
+
     const completedRun: Partial<AgentRun> = {
       status: 'completed',
       completedAt: new Date().toISOString(),
       leadsFound: leads.length,
       leadsApproved: autoApproved,
+      agentSummary: runSummary?.agentConfidences,
+      overallConfidence: runSummary?.overallConfidence,
     };
     updateRun(run.id, completedRun);
 

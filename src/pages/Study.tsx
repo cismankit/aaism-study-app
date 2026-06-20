@@ -4,7 +4,12 @@ import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
 import { useCert } from '../context/CertContext';
 import { usePerformance } from '../components/OSINTLayout';
-import { getAllQuestions, getQuestionsByDomain, ExamQuestion } from '../data/examContent';
+import { getAllQuestions, getQuestionsByDomain, getContentStats, ExamQuestion } from '../data/examContent';
+import { getPassThreshold } from '../services/progressService';
+import {
+  resolveQuestionProvenance,
+  formatExplanationCitation,
+} from '../utils/quizProvenance';
 import { 
   loadFlashcards,
   addFlashcard,
@@ -158,6 +163,8 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
   const { activeCert } = useCert();
   const examQuestionCount = activeCert.examFormat?.questions ?? 90;
   const examDurationSeconds = (activeCert.examFormat?.minutes ?? 150) * 60;
+  const passThreshold = getPassThreshold(activeCert.id);
+  const contentStats = getContentStats(activeCert.id);
   const [quizState, setQuizState] = useState<QuizState>('setup');
   const [quizMode, setQuizMode] = useState<QuizMode>('practice');
   const [selectedDomain, setSelectedDomain] = useState<number | 'all'>('all');
@@ -254,7 +261,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
     // Shuffle questions
     const shuffledQs = [...qs].sort(() => Math.random() - 0.5);
     
-    // Limit to 10 for practice, 90 for exam sim (real AAISM exam = 90 questions)
+    // Limit practice to 10; exam sim uses cert question count
     const count = quizMode === 'exam' ? Math.min(examQuestionCount, shuffledQs.length) : Math.min(10, shuffledQs.length);
     const selectedQs = shuffledQs.slice(0, count);
     
@@ -351,7 +358,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
             <Target className="text-primary-600" size={32} />
           </div>
           <h2 className="text-2xl font-bold text-cockpit">Practice Quiz</h2>
-          <p className="text-theme-muted mt-2">Test your knowledge across {activeCert.shortName} exam domains</p>
+          <p className="text-theme-muted mt-2">Test your knowledge across {activeCert.shortName} exam domains — {contentStats.totalQuestions} questions in bank</p>
         </div>
 
         {/* Mode Selection */}
@@ -420,7 +427,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
           disabled={getQuestionsForSelection().length === 0}
           className="w-full max-w-md mx-auto block py-4 bg-primary-600 text-white rounded-xl font-semibold hover:bg-primary-700 transition-colors disabled:opacity-50"
         >
-          Start {quizMode === 'exam' ? 'Exam Simulation' : 'Quiz'} ({Math.min(quizMode === 'exam' ? 90 : 10, getQuestionsForSelection().length)} questions)
+          Start {quizMode === 'exam' ? 'Exam Simulation' : 'Quiz'} ({Math.min(quizMode === 'exam' ? examQuestionCount : 10, getQuestionsForSelection().length)} questions)
         </button>
       </div>
     );
@@ -504,6 +511,9 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
             <p className={`text-sm ${isCorrect ? 'text-green-700 dark:text-green-400' : 'text-amber-700 dark:text-amber-400'}`}>
               {current.explanation}
             </p>
+            <p className="text-[10px] text-theme-faint mt-2 pt-2 border-t border-theme/50">
+              {formatExplanationCitation(resolveQuestionProvenance(current, activeCert.id))}
+            </p>
           </div>
         )}
 
@@ -540,9 +550,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
     .map((q, i) => ({ question: q, userAnswer: answers[i] }))
     .filter(({ question, userAnswer }) => userAnswer !== question.shuffledCorrectAnswer);
 
-  // Calculate exam-equivalent score (out of 800, pass = 450)
-  const examScore = Math.round((score / 100) * 800);
-  const passed = examScore >= 450;
+  const passed = score >= passThreshold;
 
   return (
     <div className="bg-theme-elevated rounded-xl border border-theme p-8 text-center">
@@ -550,7 +558,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
       <div className={`inline-block px-6 py-2 rounded-full text-sm font-bold mb-4 ${
         passed ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
       }`}>
-        {passed ? 'PASS' : 'NEEDS IMPROVEMENT'} — {examScore}/800 (pass = 450)
+        {passed ? 'PASS' : 'NEEDS IMPROVEMENT'} — {score}% (pass = {passThreshold}%)
       </div>
 
       <div className={`text-6xl font-bold mb-2 ${
@@ -579,7 +587,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
       {!passed && (
         <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 text-sm text-amber-700 dark:text-amber-300 max-w-md mx-auto">
           <p className="font-semibold mb-1">Exam Readiness Tip:</p>
-          <p>The AAISM pass score is 450/800 (~56%). Focus on your weakest domain and review the Cheat Sheet for key frameworks. Remember: governance answers beat technical answers.</p>
+          <p>Pass threshold is {passThreshold}%. Focus on your weakest domain and review the Knowledge Base for key frameworks.</p>
         </div>
       )}
 
@@ -1257,6 +1265,7 @@ function ExamSimTab() {
   const { activeCert } = useCert();
   const examQuestionCount = activeCert.examFormat?.questions ?? 90;
   const examDurationSeconds = (activeCert.examFormat?.minutes ?? 150) * 60;
+  const passThreshold = getPassThreshold(activeCert.id);
   const [examState, setExamState] = useState<'setup' | 'active' | 'review'>('setup');
   const [currentQ, setCurrentQ] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>([]);
@@ -1313,7 +1322,7 @@ function ExamSimTab() {
     const score = Math.round((correct / questions.length) * 100);
     
     // Update background based on score
-    if (score >= 65) setBgColor('green');  // Pass
+    if (score >= passThreshold) setBgColor('green');
     else setBgColor('red');                 // Fail
 
     addQuizAttempt({
@@ -1359,7 +1368,7 @@ function ExamSimTab() {
             <div className="text-xs text-theme-muted">Minutes</div>
           </div>
           <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
-            <div className="text-2xl font-bold text-cockpit">65%</div>
+            <div className="text-2xl font-bold text-cockpit">{passThreshold}%</div>
             <div className="text-xs text-theme-muted">Pass Score</div>
           </div>
         </div>
@@ -1482,7 +1491,7 @@ function ExamSimTab() {
   // Review state
   const correct = answers.filter((a, i) => a === questions[i].shuffledCorrectAnswer).length;
   const score = Math.round((correct / questions.length) * 100);
-  const passed = score >= 65;
+  const passed = score >= passThreshold;
 
   const wrongAnswers = questions
     .map((q, i) => ({ question: q, userAnswer: answers[i] }))
@@ -1507,7 +1516,7 @@ function ExamSimTab() {
         {passed ? '🎉 Congratulations! You passed!' : '📚 Keep studying, you\'ll get there!'}
       </p>
       <p className="text-sm text-theme-muted mb-6">
-        {correct} of {questions.length} correct • Pass mark: 65%
+        {correct} of {questions.length} correct • Pass mark: {passThreshold}%
       </p>
 
       <button

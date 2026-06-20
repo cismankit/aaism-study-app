@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Users, Play, CheckCircle, Loader2, Copy, Check, ArrowRight,
   Radar, PenLine, Briefcase, Zap, LifeBuoy, Sparkles, Bot,
-  ExternalLink, StopCircle, Globe,
+  ExternalLink, StopCircle, Globe, AlertTriangle, RefreshCw, ChevronDown,
 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import SectionCard from '../components/SectionCard';
@@ -14,6 +14,7 @@ import {
   type TeamPackPhase,
   type StepStatus,
   type TeamPackResult,
+  type StepSourceType,
 } from '../services/teamPackService';
 import { useCert } from '../context/CertContext';
 
@@ -85,44 +86,99 @@ function PackCard({
   );
 }
 
+const SOURCE_LABELS: Record<StepSourceType, string> = {
+  llm: 'LLM',
+  'osint-directory': 'OSINT directory',
+  'cert-context': 'Cert context',
+  'user-prompt': 'User prompt',
+};
+
+function confidenceColor(confidence: number): string {
+  if (confidence >= 80) return 'text-emerald-600 dark:text-emerald-400';
+  if (confidence >= 60) return 'text-amber-600 dark:text-amber-400';
+  return 'text-red-600 dark:text-red-400';
+}
+
 function StepChecklist({ steps, phase }: { steps: StepStatus[]; phase: TeamPackPhase }) {
+  const [expandedStep, setExpandedStep] = useState<string | null>(null);
+
   if (steps.length === 0) return null;
 
   return (
-    <div className="space-y-2">
-      {steps.map((step, i) => (
-        <div
-          key={step.id}
-          className={`flex items-center gap-3 p-2.5 rounded-lg border text-sm transition-all ${
-            step.status === 'done'
-              ? 'border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/10'
-              : step.status === 'running'
-                ? 'border-cyan-500/40 bg-cyan-50/50 dark:bg-cyan-500/10 animate-pulse'
-                : 'border-theme bg-theme-muted/30'
-          }`}
-        >
-          <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0">
-            {step.status === 'done' ? (
-              <CheckCircle className="w-5 h-5 text-emerald-500" />
-            ) : step.status === 'running' ? (
-              <Loader2 className="w-5 h-5 text-cyan-500 animate-spin" />
-            ) : (
-              <span className="w-5 h-5 rounded-full border-2 border-theme-muted flex items-center justify-center text-[10px] text-theme-muted">
-                {i + 1}
-              </span>
+    <details className="group" open={phase === 'executing' || phase === 'error'}>
+      <summary className="text-xs font-medium text-theme-muted cursor-pointer list-none flex items-center gap-1">
+        <ChevronDown className="w-3.5 h-3.5 group-open:rotate-180 transition-transform" />
+        Step progress · {PHASE_LABELS[phase]} ({steps.filter(s => s.status === 'done').length}/{steps.length})
+      </summary>
+      <div className="space-y-2 mt-2">
+        {steps.map((step, i) => (
+          <div
+            key={step.id}
+            className={`rounded-lg border text-sm transition-all ${
+              step.status === 'error'
+                ? 'border-red-500/40 bg-red-50/50 dark:bg-red-500/10'
+                : step.status === 'done'
+                  ? 'border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/10'
+                  : step.status === 'running'
+                    ? 'border-cyan-500/40 bg-cyan-50/50 dark:bg-cyan-500/10 animate-pulse'
+                    : 'border-theme bg-theme-muted/30'
+            }`}
+          >
+            <div className="flex items-center gap-3 p-2.5">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0">
+                {step.status === 'error' ? (
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                ) : step.status === 'done' ? (
+                  <CheckCircle className="w-5 h-5 text-emerald-500" />
+                ) : step.status === 'running' ? (
+                  <Loader2 className="w-5 h-5 text-cyan-500 animate-spin" />
+                ) : (
+                  <span className="w-5 h-5 rounded-full border-2 border-theme-muted flex items-center justify-center text-[10px] text-theme-muted">
+                    {i + 1}
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className={
+                  step.status === 'error' ? 'text-red-700 dark:text-red-300 font-medium' :
+                  step.status === 'done' ? 'text-emerald-700 dark:text-emerald-300 font-medium' :
+                  'text-cockpit-muted'
+                }>
+                  {step.label}
+                </span>
+                {step.output && step.status !== 'pending' && (
+                  <div className="flex flex-wrap gap-2 mt-0.5 text-[10px] text-theme-muted">
+                    {step.output.error ? (
+                      <span className="text-red-600 dark:text-red-400">{step.output.error}</span>
+                    ) : (
+                      <>
+                        <span className={confidenceColor(step.output.confidence)}>
+                          {step.output.confidence}% confidence
+                        </span>
+                        <span>· {SOURCE_LABELS[step.output.sourceType]}</span>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              {step.output?.content && (
+                <button
+                  onClick={() => setExpandedStep(expandedStep === step.id ? null : step.id)}
+                  className="text-[10px] px-2 py-1 rounded border border-theme hover:bg-cockpit-track"
+                >
+                  {expandedStep === step.id ? 'Hide' : 'Open result'}
+                </button>
+              )}
+            </div>
+            {expandedStep === step.id && step.output?.content && (
+              <pre className="text-[10px] px-3 pb-3 font-mono whitespace-pre-wrap text-cockpit-muted max-h-32 overflow-y-auto">
+                {step.output.content}
+              </pre>
             )}
           </div>
-          <span className={step.status === 'done' ? 'text-emerald-700 dark:text-emerald-300 font-medium' : 'text-cockpit-muted'}>
-            {step.label}
-          </span>
-        </div>
-      ))}
-      {phase !== 'idle' && (
-        <p className="text-xs text-theme-muted text-center pt-1">
-          Phase: <span className="font-medium text-cockpit">{PHASE_LABELS[phase]}</span>
-        </p>
-      )}
-    </div>
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -211,7 +267,7 @@ export default function AgentTeamPacks() {
     <div className="space-y-6 max-w-6xl mx-auto">
       <PageHeader
         title="Agentic Team Packs"
-        subtitle={`Prompt → watch agents execute → get cert-aware results for ${activeCert.shortName}. Simulated multi-step runs with LLM output — not live browser automation.`}
+        subtitle={`Prompt → Run → get cert-aware results for ${activeCert.shortName}. Each step calls your configured LLM and returns confidence + source type.`}
         icon={Users}
         iconClassName="text-emerald-500"
       />
@@ -318,18 +374,32 @@ export default function AgentTeamPacks() {
               )}
 
               {error && (
-                <div className="p-3 rounded-lg border border-red-500/30 bg-red-50 dark:bg-red-500/10 text-sm text-red-700 dark:text-red-300">
-                  {error}
+                <div className="p-3 rounded-lg border border-red-500/30 bg-red-50 dark:bg-red-500/10 text-sm text-red-700 dark:text-red-300 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <p className="flex-1">{error}</p>
+                  </div>
+                  <button
+                    onClick={() => void handleRun()}
+                    disabled={!prompt.trim() || isRunning}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs hover:bg-red-700 disabled:opacity-50"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Retry
+                  </button>
                 </div>
               )}
 
-              {result && (
+              {result && result.content && (
                 <div className="space-y-3 border-t border-theme pt-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h3 className="font-semibold text-cockpit flex items-center gap-2">
                         <CheckCircle className="w-5 h-5 text-emerald-500" />
                         Mission complete
+                        <span className={`text-xs font-normal ${confidenceColor(result.overallConfidence)}`}>
+                          ({result.overallConfidence}% avg)
+                        </span>
                       </h3>
                       <p className="text-sm text-theme-muted mt-1">{result.summary}</p>
                     </div>
@@ -351,9 +421,12 @@ export default function AgentTeamPacks() {
                       )}
                     </div>
                   </div>
-                  <pre className="text-xs p-4 rounded-lg bg-theme-muted/50 border border-theme overflow-x-auto max-h-64 whitespace-pre-wrap font-mono text-cockpit-muted">
-                    {result.content}
-                  </pre>
+                  <details>
+                    <summary className="text-xs text-theme-muted cursor-pointer">Full output</summary>
+                    <pre className="text-xs p-4 mt-2 rounded-lg bg-theme-muted/50 border border-theme overflow-x-auto max-h-64 whitespace-pre-wrap font-mono text-cockpit-muted">
+                      {result.content}
+                    </pre>
+                  </details>
                 </div>
               )}
             </div>

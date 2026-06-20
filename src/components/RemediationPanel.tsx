@@ -4,6 +4,7 @@ import { ExamQuestion, getQuestionsByDomain } from '../data/examContent';
 import { PLAYBOOKS } from '../data/playbooks';
 import { findLabForTopic } from '../services/labService';
 import { useCert } from '../context/CertContext';
+import { resolveQuestionProvenance, formatExplanationCitation } from '../utils/quizProvenance';
 
 interface WrongAnswer {
   question: ExamQuestion;
@@ -28,7 +29,7 @@ export default function RemediationPanel({ wrongAnswers, onPracticeSimilar, comp
   if (wrongAnswers.length === 0) return null;
 
   const handleSimilar = (q: ExamQuestion) => {
-    const pool = getQuestionsByDomain(q.domain).filter(x => x.id !== q.id);
+    const pool = getQuestionsByDomain(q.domain, activeCert.id).filter(x => x.id !== q.id);
     const similar = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
     if (onPracticeSimilar && similar.length > 0) {
       onPracticeSimilar(similar);
@@ -46,8 +47,13 @@ export default function RemediationPanel({ wrongAnswers, onPracticeSimilar, comp
 
       <div className="space-y-3 max-h-96 overflow-y-auto">
         {wrongAnswers.map(({ question }, i) => {
+          const provenance = resolveQuestionProvenance(question, activeCert.id);
           const playbook = findPlaybookForDomain(question.domain);
           const lab = findLabForTopic(activeCert.id, question.domain, question.topic);
+          const kbHref = provenance.kbTopicId
+            ? `/knowledge?domain=${question.domain}&topic=${provenance.kbTopicId}`
+            : `/knowledge?domain=${question.domain}`;
+
           return (
             <div
               key={question.id ?? i}
@@ -62,15 +68,26 @@ export default function RemediationPanel({ wrongAnswers, onPracticeSimilar, comp
               <p className="text-xs text-cockpit-muted mt-2 line-clamp-2">
                 {question.explanation}
               </p>
+              <p className="text-[10px] text-theme-faint mt-1">
+                {formatExplanationCitation(provenance)}
+              </p>
 
               <div className="flex flex-wrap gap-2 mt-3">
-                <button
-                  onClick={() => navigate(`/knowledge?domain=${question.domain}`)}
+                <Link
+                  to={kbHref}
                   className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                 >
                   <BookOpen className="w-3 h-3" />
-                  Knowledge D{question.domain}
-                </button>
+                  {provenance.kbTopicTitle ?? `KB Domain ${question.domain}`}
+                </Link>
+                {provenance.guideSection && (
+                  <Link
+                    to={`/knowledge?domain=${question.domain}`}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200 dark:hover:bg-indigo-900/50 transition-colors"
+                  >
+                    Guide § {provenance.guideSection}
+                  </Link>
+                )}
                 {playbook && (
                   <button
                     onClick={() => navigate('/playbooks')}
@@ -84,9 +101,10 @@ export default function RemediationPanel({ wrongAnswers, onPracticeSimilar, comp
                   <Link
                     to={`/ops?lab=${lab.id}`}
                     className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-lg bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 hover:bg-cyan-200 dark:hover:bg-cyan-900/50 transition-colors"
+                    title={`Lab: ${lab.title} · D${lab.domainId}`}
                   >
                     <Terminal className="w-3 h-3" />
-                    Practice in Ops Lab
+                    {lab.title.length > 28 ? `${lab.title.slice(0, 28)}…` : lab.title}
                   </Link>
                 )}
                 <button

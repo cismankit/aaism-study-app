@@ -1,5 +1,12 @@
 /** Career intelligence types and tech stack taxonomy — public data only. */
 
+import type { ProvenanceMeta } from '../types/provenance';
+
+export interface CareerProvenance {
+  overall: ProvenanceMeta;
+  sections: Record<string, ProvenanceMeta>;
+}
+
 export interface TechStackTag {
   category: TechStackCategory;
   label: string;
@@ -39,6 +46,7 @@ export interface CompanyProfile {
   certAlignment: Array<{ cert: string; relevance: string; matchScore: number }>;
   cultureSignals: string[];
   rawNotes?: string;
+  provenance?: CareerProvenance;
 }
 
 export interface JobAnalysis {
@@ -53,6 +61,7 @@ export interface JobAnalysis {
   certTieIns: string[];
   questionsForHumans: string[];
   seniorityLevel: string;
+  provenance?: CareerProvenance;
 }
 
 export interface PeopleMapResult {
@@ -65,6 +74,7 @@ export interface PeopleMapResult {
   outreachDraft: string;
   publicFootprintTips: string[];
   ethicsNote: string;
+  provenance?: CareerProvenance;
 }
 
 export const CAREER_ETHICS_BANNER =

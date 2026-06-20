@@ -912,6 +912,13 @@ export function maskApiKey(key: string): string {
   return `${visible}${'•'.repeat(8)}`;
 }
 
+/** True when cloud provider has a key or Ollama is selected (local). */
+export function isAIConfigured(config?: AIConfig): boolean {
+  const c = config ?? loadAIConfig();
+  if (c.provider === 'ollama') return true;
+  return Boolean(c.apiKey?.trim());
+}
+
 export function loadAIConfig(): AIConfig {
   try {
     const saved = localStorage.getItem(AI_CONFIG_KEY);

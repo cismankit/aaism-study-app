@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Shield, Send, Copy, RefreshCw, Terminal, ChevronRight,
-  AlertTriangle, Zap, Brain, Crosshair,
+  AlertTriangle, Zap, Brain, Crosshair, ExternalLink,
 } from 'lucide-react';
 import {
   OPS_AGENT_PROFILES,
@@ -10,6 +10,7 @@ import {
   generateMiniLabFromIncident,
   type OpsAgentId,
   type OpsAnalysisResult,
+  type MitreMappingEntry,
 } from '../services/opsAgentService';
 import { useCert } from '../context/CertContext';
 import { loadAIConfig } from '../services/aiService';
@@ -28,6 +29,7 @@ export default function OpsCopilotPanel() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<OpsAnalysisResult | null>(null);
   const [miniLab, setMiniLab] = useState<{ title: string; steps: string[]; type: string } | null>(null);
+  const [labError, setLabError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const aiConfig = loadAIConfig();
 
@@ -57,6 +59,7 @@ export default function OpsCopilotPanel() {
     setLoading(true);
     setResult(null);
     setMiniLab(null);
+    setLabError(null);
     try {
       const analysis = await analyzeWithOpsAgent(agentId, input, context || undefined);
       setResult(analysis);
@@ -68,9 +71,15 @@ export default function OpsCopilotPanel() {
   const generateLab = async () => {
     if (!input.trim()) return;
     setLoading(true);
+    setLabError(null);
+    setMiniLab(null);
     try {
       const lab = await generateMiniLabFromIncident(input, activeCert.id, 1);
-      setMiniLab(lab);
+      if (!lab) {
+        setLabError('Mini-lab generation failed. Check AI settings and retry.');
+      } else {
+        setMiniLab(lab);
+      }
     } finally {
       setLoading(false);
     }
@@ -166,12 +175,22 @@ export default function OpsCopilotPanel() {
       </div>
 
       {result?.error && (
-        <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-start gap-2">
-          <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
-          <div>
-            <p className="text-sm text-red-700 dark:text-red-400">{result.error}</p>
-            <Link to="/settings" className="text-xs text-red-600 underline mt-1 inline-block">Configure AI in Settings →</Link>
+        <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 space-y-2">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm text-red-700 dark:text-red-400">{result.error}</p>
+              <Link to="/settings" className="text-xs text-red-600 underline mt-1 inline-block">Configure AI in Settings →</Link>
+            </div>
           </div>
+          <button
+            onClick={() => void runAnalysis()}
+            disabled={loading || !input.trim()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs hover:bg-red-700 disabled:opacity-50"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Retry analysis
+          </button>
         </div>
       )}
 
@@ -206,12 +225,32 @@ export default function OpsCopilotPanel() {
             </div>
           )}
           {result.mitreMapping.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {result.mitreMapping.map((m, i) => (
-                <span key={i} className="text-xs px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">{m}</span>
-              ))}
+            <div className="p-4 rounded-xl bg-theme-elevated border border-theme">
+              <h4 className="text-sm font-semibold text-cockpit mb-2">MITRE Mappings</h4>
+              <div className="flex flex-wrap gap-2">
+                {result.mitreMapping.map((m, i) => (
+                  <MitreBadge key={i} entry={m} />
+                ))}
+              </div>
             </div>
           )}
+        </div>
+      )}
+
+      {labError && (
+        <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 space-y-2">
+          <p className="text-sm text-red-700 dark:text-red-400 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            {labError}
+          </p>
+          <button
+            onClick={() => void generateLab()}
+            disabled={loading || !input.trim()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs hover:bg-red-700 disabled:opacity-50"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Retry mini-lab
+          </button>
         </div>
       )}
 
@@ -231,6 +270,31 @@ export default function OpsCopilotPanel() {
       )}
     </div>
   );
+}
+
+function MitreBadge({ entry }: { entry: MitreMappingEntry }) {
+  const lowConf = entry.confidence === 'low' || entry.inferred;
+  const content = (
+    <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded ${
+      lowConf
+        ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 border border-amber-300/50'
+        : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
+    }`}>
+      <span className="font-mono text-[10px] opacity-70">{entry.framework}</span>
+      {entry.label}
+      {lowConf && <span className="text-[9px] uppercase tracking-wide opacity-70">inferred</span>}
+    </span>
+  );
+
+  if (entry.url) {
+    return (
+      <a href={entry.url} target="_blank" rel="noreferrer" className="hover:opacity-80 inline-flex items-center gap-0.5">
+        {content}
+        <ExternalLink className="w-3 h-3 opacity-50" />
+      </a>
+    );
+  }
+  return content;
 }
 
 function ResultSection({ title, items, numbered }: { title: string; items: string[]; numbered?: boolean }) {

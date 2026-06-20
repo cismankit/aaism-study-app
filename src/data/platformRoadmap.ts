@@ -175,6 +175,12 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
     status: 'shipped',
   },
   {
+    id: 'confidence-provenance',
+    title: 'Confidence & provenance',
+    summary: 'Source-backed confidence badges on intel feeds, KB frameworks, readiness scores, and AI outputs — verified when linked to official docs (NIST, ISACA, OWASP).',
+    status: 'shipped',
+  },
+  {
     id: 'sandbox-vms',
     title: 'Live sandbox VMs',
     summary: 'Real isolated lab environments with actual command execution — requires backend infrastructure.',

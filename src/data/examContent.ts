@@ -12,6 +12,7 @@ import { QIST_QUESTIONS } from './certifications/content/qist/questions';
 import { SECURITY_PLUS_QUESTIONS } from './certifications/content/security-plus/questions';
 import { DEFAULT_CERT_ID, getCertification } from './certifications/registry';
 import { getActiveCertId } from '../services/certContextService';
+import { topics as kbTopics } from './knowledgeBase';
 
 export interface ExamTopic {
   id: string;
@@ -1820,22 +1821,35 @@ export function getChapterById(domainId: number, chapterId: string): Chapter | u
   return domain.chapters.find(c => c.id === chapterId);
 }
 
-// Statistics for active cert
+// Statistics for active cert — all counts derived from loaded content
 export function getContentStats(certId?: string) {
   const id = certId ?? getActiveCertId();
+  const cert = getCertification(id);
   const domains = getDomainsForCert(id);
+  const domainIds = new Set(domains.map(d => d.id));
   const allQuestions = getAllQuestions(id);
-  const aaismChapters = id === DEFAULT_CERT_ID
-    ? ALL_DOMAINS.reduce((acc, d) => acc + d.chapters.length, 0)
-    : 0;
-  const aaismTopics = id === DEFAULT_CERT_ID
-    ? ALL_DOMAINS.reduce((acc, d) =>
-        acc + d.chapters.reduce((acc2, c) => acc2 + c.topics.length, 0), 0)
-    : 0;
+
+  let totalChapters = 0;
+  let totalTopics = 0;
+
+  if (id === DEFAULT_CERT_ID) {
+    totalChapters = ALL_DOMAINS.reduce((acc, d) => acc + d.chapters.length, 0);
+    totalTopics = ALL_DOMAINS.reduce(
+      (acc, d) => acc + d.chapters.reduce((acc2, c) => acc2 + c.topics.length, 0),
+      0,
+    );
+  } else if (cert?.domainGuides?.length) {
+    totalChapters = cert.domainGuides.length;
+    totalTopics = cert.domainGuides.reduce((acc, g) => acc + g.coreConcepts.length, 0);
+  }
+
+  const kbTopicCount = kbTopics.filter(t => domainIds.has(t.domain)).length;
+  totalTopics = Math.max(totalTopics, kbTopicCount);
+
   return {
     totalDomains: domains.length,
-    totalChapters: aaismChapters,
-    totalTopics: aaismTopics,
+    totalChapters,
+    totalTopics,
     totalQuestions: allQuestions.length,
     questionsByDomain: domains.map(d => ({
       domain: d.id,

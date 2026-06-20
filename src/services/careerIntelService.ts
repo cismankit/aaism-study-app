@@ -15,6 +15,11 @@ import {
   type PeopleMapResult,
   type TechStackTag,
 } from '../data/careerIntel';
+import {
+  buildCompanyProfileProvenance,
+  buildJobAnalysisProvenance,
+  buildPeopleMapProvenance,
+} from './confidenceService';
 
 function readProfiles(): CompanyProfile[] {
   try {
@@ -98,10 +103,14 @@ export async function buildCompanyProfile(input: {
   const cert = getActiveCertification();
   const certContext = buildCertTrainingContext(cert);
   let jobText = input.jobPostingText?.trim() ?? '';
+  let fetchedFromUrl = false;
 
   if (!jobText && input.jobPostingUrl) {
     const fetched = await fetchJobTextFromUrl(input.jobPostingUrl);
-    if (fetched) jobText = fetched;
+    if (fetched) {
+      jobText = fetched;
+      fetchedFromUrl = true;
+    }
   }
 
   const agent = getOpsAgent('claude-analyst');
@@ -133,6 +142,16 @@ export async function buildCompanyProfile(input: {
   }>(response.content);
 
   const combinedText = `${input.companyName} ${jobText}`;
+  const llmParsed = parsed !== null;
+  const provenance = buildCompanyProfileProvenance({
+    companyName: input.companyName,
+    careersUrl: input.careersUrl,
+    jobText,
+    jobUrl: input.jobPostingUrl,
+    fetchedFromUrl,
+    llmParsed,
+  });
+
   return {
     id: crypto.randomUUID(),
     companyName: input.companyName,
@@ -146,6 +165,7 @@ export async function buildCompanyProfile(input: {
     certAlignment: parsed?.certAlignment ?? [{ cert: cert.shortName, relevance: 'General security alignment', matchScore: 60 }],
     cultureSignals: parsed?.cultureSignals ?? [],
     rawNotes: jobText.slice(0, 500) || undefined,
+    provenance,
   };
 }
 
@@ -156,10 +176,14 @@ export async function analyzeJobPosting(input: {
 }): Promise<JobAnalysis> {
   const cert = getActiveCertification();
   let text = input.jobText?.trim() ?? '';
+  let fetchedFromUrl = false;
 
   if (!text && input.jobUrl) {
     const fetched = await fetchJobTextFromUrl(input.jobUrl);
-    if (fetched) text = fetched;
+    if (fetched) {
+      text = fetched;
+      fetchedFromUrl = true;
+    }
   }
 
   if (!text) {
@@ -176,7 +200,14 @@ export async function analyzeJobPosting(input: {
     { role: 'user', content: `Analyze this job posting:\n${text.slice(0, 7000)}` },
   ], { jsonMode: true, temperature: 0.3 });
 
-  const parsed = response.error ? null : parseJsonBlock<Omit<JobAnalysis, 'id' | 'analyzedAt'>>(response.content);
+  const parsed = response.error ? null : parseJsonBlock<Omit<JobAnalysis, 'id' | 'analyzedAt' | 'provenance'>>(response.content);
+  const llmParsed = parsed !== null;
+  const provenance = buildJobAnalysisProvenance({
+    jobText: text,
+    jobUrl: input.jobUrl,
+    fetchedFromUrl,
+    llmParsed,
+  });
 
   return {
     id: crypto.randomUUID(),
@@ -193,6 +224,7 @@ export async function analyzeJobPosting(input: {
       'How does security integrate with product delivery here?',
     ],
     seniorityLevel: parsed?.seniorityLevel ?? 'Mid-level',
+    provenance,
   };
 }
 
@@ -229,6 +261,14 @@ export async function buildPeopleMap(input: {
     publicFootprintTips?: string[];
   }>(response.content);
 
+  const llmParsed = parsed !== null;
+  const provenance = buildPeopleMapProvenance({
+    companyName: input.companyName,
+    roleTitle: input.roleTitle,
+    profileUrls: input.profileUrls,
+    llmParsed,
+  });
+
   return {
     id: crypto.randomUUID(),
     companyName: input.companyName,
@@ -253,5 +293,6 @@ export async function buildPeopleMap(input: {
       'Find podcast appearances — great conversation starters',
     ],
     ethicsNote: CAREER_ETHICS_BANNER,
+    provenance,
   };
 }

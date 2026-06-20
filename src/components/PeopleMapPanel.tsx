@@ -1,12 +1,19 @@
 import { useState } from 'react';
 import { Loader2, Users, Copy, Check } from 'lucide-react';
 import type { PeopleMapResult } from '../data/careerIntel';
+import ConfidenceBadge from './ConfidenceBadge';
+import { ProvenancedBlock } from './ProvenanceFooter';
+import ProvenanceFooter from './ProvenanceFooter';
 
 interface PeopleMapPanelProps {
   onBuild: (input: { companyName: string; roleTitle: string; profileUrls?: string }) => Promise<void>;
   result: PeopleMapResult | null;
   loading: boolean;
   error: string | null;
+}
+
+function sectionMeta(result: PeopleMapResult, key: string) {
+  return result.provenance?.sections[key] ?? result.provenance?.overall;
 }
 
 export default function PeopleMapPanel({ onBuild, result, loading, error }: PeopleMapPanelProps) {
@@ -63,55 +70,84 @@ export default function PeopleMapPanel({ onBuild, result, loading, error }: Peop
 
       {result && (
         <div className="rounded-xl border border-theme bg-theme-elevated p-4 space-y-4">
-          <div>
-            <p className="text-[10px] font-semibold text-theme-muted uppercase mb-1">Org hypothesis</p>
-            <ul className="text-xs text-cockpit space-y-1 list-disc list-inside">
-              {result.orgHypothesis.map(line => (
-                <li key={line}>{line}</li>
-              ))}
-            </ul>
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm font-semibold text-cockpit">
+              {result.roleTitle} @ {result.companyName}
+            </p>
+            {result.provenance?.overall && (
+              <ConfidenceBadge confidence={result.provenance.overall.confidence} />
+            )}
           </div>
 
-          <div>
-            <p className="text-[10px] font-semibold text-theme-muted uppercase mb-2">Who to talk to</p>
-            <div className="space-y-2">
-              {result.contactsToReach.map(c => (
-                <div key={c.role} className="flex items-start gap-2 p-2 rounded-lg bg-cockpit-track">
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
-                    c.priority === 'high' ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400' :
-                    c.priority === 'medium' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400' :
-                    'bg-cockpit-track text-theme-muted'
-                  }`}>
-                    {c.priority}
-                  </span>
-                  <div>
-                    <p className="text-xs font-medium text-cockpit">{c.role}</p>
-                    <p className="text-[11px] text-theme-muted">{c.why}</p>
-                  </div>
+          {sectionMeta(result, 'orgHypothesis') && (
+            <ProvenancedBlock provenance={sectionMeta(result, 'orgHypothesis')!}>
+              <div>
+                <p className="text-[10px] font-semibold text-theme-muted uppercase mb-1">Org hypothesis</p>
+                <ul className="text-xs text-cockpit space-y-1 list-disc list-inside">
+                  {result.orgHypothesis.map(line => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </div>
+            </ProvenancedBlock>
+          )}
+
+          {sectionMeta(result, 'contactsToReach') && (
+            <ProvenancedBlock provenance={sectionMeta(result, 'contactsToReach')!}>
+              <div>
+                <p className="text-[10px] font-semibold text-theme-muted uppercase mb-2">Who to talk to</p>
+                <div className="space-y-2">
+                  {result.contactsToReach.map(c => (
+                    <div key={c.role} className="flex items-start gap-2 p-2 rounded-lg bg-cockpit-track">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                        c.priority === 'high' ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-400' :
+                        c.priority === 'medium' ? 'bg-amber-500/20 text-amber-700 dark:text-amber-400' :
+                        'bg-cockpit-track text-theme-muted'
+                      }`}>
+                        {c.priority}
+                      </span>
+                      <div>
+                        <p className="text-xs font-medium text-cockpit">{c.role}</p>
+                        <p className="text-[11px] text-theme-muted">{c.why}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            </ProvenancedBlock>
+          )}
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-[10px] font-semibold text-theme-muted uppercase">Outreach draft</p>
-              <button onClick={copyDraft} className="text-[10px] flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {copied ? 'Copied' : 'Copy'}
-              </button>
-            </div>
-            <p className="text-xs text-cockpit leading-relaxed p-3 rounded-lg bg-cockpit-track">{result.outreachDraft}</p>
-          </div>
+          {sectionMeta(result, 'outreachDraft') && (
+            <ProvenancedBlock provenance={sectionMeta(result, 'outreachDraft')!}>
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[10px] font-semibold text-theme-muted uppercase">Outreach draft</p>
+                  <button onClick={copyDraft} className="text-[10px] flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                    {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <p className="text-xs text-cockpit leading-relaxed p-3 rounded-lg bg-cockpit-track">{result.outreachDraft}</p>
+              </div>
+            </ProvenancedBlock>
+          )}
 
-          <div>
-            <p className="text-[10px] font-semibold text-theme-muted uppercase mb-1">Public footprint tips</p>
-            <ul className="text-xs text-theme-secondary space-y-1 list-disc list-inside">
-              {result.publicFootprintTips.map(tip => (
-                <li key={tip}>{tip}</li>
-              ))}
-            </ul>
-          </div>
+          {sectionMeta(result, 'publicFootprintTips') && (
+            <ProvenancedBlock provenance={sectionMeta(result, 'publicFootprintTips')!}>
+              <div>
+                <p className="text-[10px] font-semibold text-theme-muted uppercase mb-1">Public footprint tips</p>
+                <ul className="text-xs text-theme-secondary space-y-1 list-disc list-inside">
+                  {result.publicFootprintTips.map(tip => (
+                    <li key={tip}>{tip}</li>
+                  ))}
+                </ul>
+              </div>
+            </ProvenancedBlock>
+          )}
+
+          {result.provenance?.overall && (
+            <ProvenanceFooter provenance={result.provenance.overall} />
+          )}
         </div>
       )}
     </div>

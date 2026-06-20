@@ -1,16 +1,21 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
-import { sampleQuestions } from '../data/initialData';
+import { useCert } from '../context/CertContext';
+import { getAllQuestions, getQuestionsByDomain, type ExamQuestion } from '../data/examContent';
 import { ChevronRight, CheckCircle, XCircle, RotateCcw, Zap } from 'lucide-react';
 import RemediationPanel from '../components/RemediationPanel';
-import { ExamQuestion } from '../data/examContent';
+import {
+  resolveQuestionProvenance,
+  formatExplanationCitation,
+} from '../utils/quizProvenance';
 
 type QuizState = 'setup' | 'active' | 'review';
 
 export default function Quiz() {
   const { state, addQuizAttempt } = useApp();
   const { completeQuiz } = useGamification();
+  const { activeCert } = useCert();
   const [quizState, setQuizState] = useState<QuizState>('setup');
   const [selectedDomain, setSelectedDomain] = useState<number | 'all'>('all');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -18,15 +23,23 @@ export default function Quiz() {
   const [answers, setAnswers] = useState<(number | null)[]>([]);
   const [showExplanation, setShowExplanation] = useState(false);
   const [earnedXP, setEarnedXP] = useState(0);
+  const [sessionQuestions, setSessionQuestions] = useState<ExamQuestion[]>([]);
 
-  const filteredQuestions = selectedDomain === 'all'
-    ? sampleQuestions
-    : sampleQuestions.filter(q => q.domain === selectedDomain);
+  const allQuestions = getAllQuestions(activeCert.id);
 
+  const filteredQuestions = sessionQuestions.length > 0 ? sessionQuestions : [];
   const currentQuestion = filteredQuestions[currentQuestionIndex];
+  const currentProvenance = currentQuestion
+    ? resolveQuestionProvenance(currentQuestion, activeCert.id)
+    : null;
 
   const startQuiz = () => {
-    setAnswers(new Array(filteredQuestions.length).fill(null));
+    const pool = selectedDomain === 'all'
+      ? allQuestions
+      : getQuestionsByDomain(selectedDomain, activeCert.id);
+    const selected = [...pool].sort(() => Math.random() - 0.5).slice(0, 10);
+    setSessionQuestions(selected);
+    setAnswers(new Array(selected.length).fill(null));
     setCurrentQuestionIndex(0);
     setSelectedAnswer(null);
     setShowExplanation(false);
@@ -81,6 +94,7 @@ export default function Quiz() {
     setCurrentQuestionIndex(0);
     setSelectedAnswer(null);
     setAnswers([]);
+    setSessionQuestions([]);
     setShowExplanation(false);
   };
 
@@ -89,7 +103,9 @@ export default function Quiz() {
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-cockpit">Practice Quiz</h1>
-          <p className="text-cockpit-muted mt-2">Test your knowledge with practice questions</p>
+          <p className="text-cockpit-muted mt-2">
+            Test your knowledge — {allQuestions.length} questions in the {activeCert.shortName} bank
+          </p>
         </div>
 
         <div className="bg-theme-elevated rounded-xl shadow-sm border p-8 max-w-2xl">
@@ -105,11 +121,11 @@ export default function Quiz() {
               }`}
             >
               <span className="font-medium">All Domains</span>
-              <span className="text-sm text-theme-muted ml-2">({sampleQuestions.length} questions)</span>
+              <span className="text-sm text-theme-muted ml-2">({allQuestions.length} in bank · 10 per quiz)</span>
             </button>
             
-            {state.domains.map(domain => {
-              const questionCount = sampleQuestions.filter(q => q.domain === domain.id).length;
+            {activeCert.domains.map(domain => {
+              const questionCount = getQuestionsByDomain(domain.id, activeCert.id).length;
               return (
                 <button
                   key={domain.id}
@@ -130,7 +146,7 @@ export default function Quiz() {
 
           <button
             onClick={startQuiz}
-            disabled={filteredQuestions.length === 0}
+            disabled={selectedDomain === 'all' ? allQuestions.length === 0 : getQuestionsByDomain(selectedDomain as number, activeCert.id).length === 0}
             className="w-full py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             Start Quiz
@@ -237,10 +253,13 @@ export default function Quiz() {
           </div>
 
           {/* Explanation */}
-          {showExplanation && (
+          {showExplanation && currentProvenance && (
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="font-medium text-blue-800 mb-2">Explanation:</p>
               <p className="text-blue-700">{currentQuestion.explanation}</p>
+              <p className="text-[10px] text-blue-600/80 mt-2 pt-2 border-t border-blue-200">
+                {formatExplanationCitation(currentProvenance)}
+              </p>
             </div>
           )}
 
@@ -315,7 +334,7 @@ export default function Quiz() {
 
         <RemediationPanel
           wrongAnswers={filteredQuestions
-            .map((q, i) => ({ question: q as ExamQuestion, userAnswer: answers[i] }))
+            .map((q, i) => ({ question: q, userAnswer: answers[i] }))
             .filter(({ question, userAnswer }) => userAnswer !== question.correctAnswer)}
           compact
         />

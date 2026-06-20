@@ -8,7 +8,7 @@ import MissionDashboard from '../components/MissionDashboard';
 import { useCert } from '../context/CertContext';
 import {
   orchestrateStudyMission,
-  getMissionGoalOptions,
+  getSuggestedMissionGoal,
   type MissionGoal,
   type AgentHandoff,
   type StudyMissionPlan,
@@ -26,7 +26,7 @@ export default function StudyMission() {
   const [xpEarned, setXpEarned] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
 
-  const goalOptions = getMissionGoalOptions(activeCert.id);
+  const suggestedGoal = getSuggestedMissionGoal(activeCert.id);
   const recentMissions = getMissionLog(activeCert.id).slice(-3).reverse();
 
   const startMission = async (goal: MissionGoal) => {
@@ -69,22 +69,20 @@ export default function StudyMission() {
       {phase === 'pick-goal' && (
         <>
           <div className="rounded-xl border border-theme bg-theme-elevated p-4">
-            <p className="text-sm font-semibold text-cockpit mb-1">Pick your mission goal</p>
+            <p className="text-sm font-semibold text-cockpit mb-1">Your next mission</p>
             <p className="text-xs text-theme-muted mb-4">
-              Agent team orchestrates: Hermes assesses weak areas → Claude picks topics + lab → OpenClaw pulls intel.
+              Based on your progress — one guided loop: read → quiz → lab → intel.
             </p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {goalOptions.map(goal => (
-                <button
-                  key={`${goal.type}-${goal.domainId ?? 'all'}`}
-                  onClick={() => startMission(goal)}
-                  className="text-left p-4 rounded-xl border border-theme hover:border-emerald-500/50 hover:bg-emerald-50/30 dark:hover:bg-emerald-500/5 transition-all"
-                >
-                  <p className="font-medium text-sm text-cockpit">{goal.label}</p>
-                  <p className="text-[10px] text-theme-muted mt-1 capitalize">{goal.type.replace('-', ' ')}</p>
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => startMission(suggestedGoal)}
+              className="w-full text-left p-4 rounded-xl border border-emerald-500/50 bg-emerald-50/30 dark:bg-emerald-500/5 hover:border-emerald-500 transition-all"
+            >
+              <p className="font-medium text-sm text-cockpit">{suggestedGoal.label}</p>
+              <p className="text-[10px] text-theme-muted mt-1 capitalize flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-emerald-500" />
+                {suggestedGoal.type.replace(/-/g, ' ')} · Start mission
+              </p>
+            </button>
             {error && <p className="text-xs text-red-600 dark:text-red-400 mt-3">{error}</p>}
           </div>
 

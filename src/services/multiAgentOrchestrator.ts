@@ -27,6 +27,18 @@ import { getActiveCertification, buildCertTrainingContext } from './certContextS
 
 export type AgentName = 'AnalystAgent' | 'DiscoverAgent' | 'CriticAgent' | 'DedupAgent';
 
+export interface AgentConfidenceSummary {
+  agent: AgentName;
+  itemsProcessed: number;
+  avgConfidence: number;
+  error?: string;
+}
+
+export interface OrchestratorRunSummary {
+  agentConfidences: AgentConfidenceSummary[];
+  overallConfidence: number;
+}
+
 export interface OrchestratorContext {
   strategy: DiscoveryStrategy;
   config: AIConfig;
@@ -464,6 +476,46 @@ export function runDedupAgent(
   return result;
 }
 
+function buildRunSummary(
+  analystGaps: number,
+  discovered: ParsedQuestion[],
+  criticCount: number,
+  deduped: Array<ParsedQuestion & { similarityScore: number }>,
+  discoverError?: string,
+): OrchestratorRunSummary {
+  const avg = (items: Array<{ confidence: number }>) =>
+    items.length > 0
+      ? Math.round(items.reduce((s, q) => s + q.confidence, 0) / items.length)
+      : 0;
+
+  const agentConfidences: AgentConfidenceSummary[] = [
+    {
+      agent: 'AnalystAgent',
+      itemsProcessed: analystGaps,
+      avgConfidence: analystGaps > 0 ? 95 : 0,
+    },
+    {
+      agent: 'DiscoverAgent',
+      itemsProcessed: discovered.length,
+      avgConfidence: avg(discovered),
+      error: discoverError,
+    },
+    {
+      agent: 'CriticAgent',
+      itemsProcessed: criticCount,
+      avgConfidence: avg(discovered.slice(0, criticCount)),
+    },
+    {
+      agent: 'DedupAgent',
+      itemsProcessed: deduped.length,
+      avgConfidence: avg(deduped),
+    },
+  ];
+
+  const overallConfidence = deduped.length > 0 ? avg(deduped) : 0;
+  return { agentConfidences, overallConfidence };
+}
+
 export async function runMultiAgentDiscovery(
   strategy: DiscoveryStrategy,
   callbacks: AgentCallbacks,
@@ -472,6 +524,7 @@ export async function runMultiAgentDiscovery(
 ): Promise<{
   discovered: Array<ParsedQuestion & { similarityScore: number }>;
   coverage: ReturnType<typeof analyzeCoverage>;
+  summary: OrchestratorRunSummary;
 }> {
   const baseConfig = config || await resolveAgentConfig(loadAIConfig());
   const ensemble = loadEnsembleConfig();
@@ -486,6 +539,7 @@ export async function runMultiAgentDiscovery(
   const { coverage, topGaps } = runAnalystAgent(ctx);
 
   let discovered = await runDiscoverAgent(ctx, topGaps, getAllQuestions().slice(0, 5));
+  const discoverCount = discovered.length;
 
   if (discovered.length === 0) {
     const fallback = getRecommendedFallbackModel();
@@ -509,8 +563,17 @@ export async function runMultiAgentDiscovery(
   }
 
   const deduped = runDedupAgent(ctx, discovered);
+  const summary = buildRunSummary(topGaps.length, discovered.slice(0, discoverCount), discovered.length, deduped);
 
-  return { discovered: deduped, coverage };
+  agentLog('AnalystAgent', callbacks, 'populate',
+    `Run summary — overall confidence ${summary.overallConfidence}%`, 'success');
+  for (const ac of summary.agentConfidences) {
+    const errSuffix = ac.error ? ` (error: ${ac.error})` : '';
+    agentLog(ac.agent, callbacks, 'populate',
+      `${ac.agent}: ${ac.itemsProcessed} items, avg confidence ${ac.avgConfidence}%${errSuffix}`, 'info');
+  }
+
+  return { discovered: deduped, coverage, summary };
 }
 
 export type { ParsedQuestion };

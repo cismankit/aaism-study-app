@@ -11,8 +11,8 @@ import { getLabsForDomain } from './labService';
 import type { LabDefinition } from '../data/labs/types';
 import { getQuestionsByDomain, type ExamQuestion } from '../data/examContent';
 import { getDomainsForCert } from '../data/examContent';
-import { TOPIC_HEAT_MAP } from '../data/communityIntelligence';
-import { buildStaticIntelItems } from './rssFeedService';
+import { fetchLiveIntelFeed, type IntelFeedItem } from './rssFeedService';
+import { relevanceToConfidence } from '../utils/quizProvenance';
 
 export type MissionGoalType = 'domain-focus' | 'weak-drill' | 'daily-30min';
 
@@ -34,6 +34,10 @@ export interface IntelHeadline {
   title: string;
   summary: string;
   source?: string;
+  sourceUrl?: string;
+  link?: string;
+  confidence: number;
+  isLive: boolean;
 }
 
 export interface StudyMissionPlan {
@@ -92,39 +96,31 @@ function pickQuizQuestions(domainId: number, count = 5): ExamQuestion[] {
   return [...pool].sort(() => Math.random() - 0.5).slice(0, Math.min(count, pool.length));
 }
 
-function pickIntelHeadlines(domainId: number, count = 2): IntelHeadline[] {
-  const headlines: IntelHeadline[] = [];
+function intelItemToHeadline(item: IntelFeedItem): IntelHeadline {
+  return {
+    title: item.title,
+    summary: item.summary.slice(0, 220),
+    source: item.source,
+    sourceUrl: item.sourceUrl,
+    link: item.link,
+    confidence: relevanceToConfidence(item.relevanceScore, item.isLive),
+    isLive: item.isLive,
+  };
+}
 
-  const heatTopics = TOPIC_HEAT_MAP.filter(t => t.domain === domainId).slice(0, count);
-  heatTopics.forEach(t => {
-    headlines.push({
-      title: t.topic,
-      summary: `${t.topic} is trending (heat ${t.heat}) in Domain ${domainId} — relevant for current threat landscape.`,
-      source: 'Community Intel',
-    });
-  });
+async function pickIntelHeadlines(_domainId: number, count = 2): Promise<IntelHeadline[]> {
+  try {
+    const feed = await fetchLiveIntelFeed();
+    const liveItems = feed.items.filter(i => i.isLive && i.link.startsWith('http'));
+    if (liveItems.length === 0) return [];
 
-  const cached = buildStaticIntelItems();
-  if (cached.length > 0) {
-    for (const item of cached.slice(0, 6)) {
-      if (headlines.length >= count) break;
-      headlines.push({
-        title: item.title,
-        summary: item.summary.slice(0, 200),
-        source: item.source,
-      });
-    }
+    return liveItems
+      .map(intelItemToHeadline)
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, count);
+  } catch {
+    return [];
   }
-
-  while (headlines.length < count) {
-    headlines.push({
-      title: `Domain ${domainId} security update`,
-      summary: 'Review cert-aligned intel feeds in Intel Hub for the latest developments.',
-      source: 'AAISM Intel',
-    });
-  }
-
-  return headlines.slice(0, count);
 }
 
 function buildIntelBrief(headlines: IntelHeadline[], domainName: string): string {
@@ -163,6 +159,14 @@ function buildTomorrowSuggestion(
     return `Tomorrow: explore Domain ${nextDomain.domainId} — no quizzes yet`;
   }
   return 'Tomorrow: daily 30-min mixed review across all domains';
+}
+
+export function getSuggestedMissionGoal(certId: string): MissionGoal {
+  const options = getMissionGoalOptions(certId);
+  return options[0] ?? {
+    type: 'daily-30min',
+    label: 'Daily 30 min — balanced mix',
+  };
 }
 
 export function getMissionGoalOptions(certId: string): MissionGoal[] {
@@ -294,7 +298,7 @@ export async function orchestrateStudyMission(
   );
   checkAbort();
 
-  const intelHeadlines = pickIntelHeadlines(domainId, 2);
+  const intelHeadlines = await pickIntelHeadlines(domainId, 2);
   checkAbort();
   const openclawSummary = await runAgentStep(
     'openclaw',

@@ -8,11 +8,14 @@ import SlidePanel from './SlidePanel';
 import {
   fetchLiveIntelFeed,
   formatTimeAgo,
+  formatPublishedDate,
   getCategoryColor,
   type IntelFeedItem,
 } from '../services/rssFeedService';
 import { RSS_SOURCES } from '../data/rssSources';
 import { generateQuestionsFromIntel } from '../services/intelToQuestionsService';
+import ConfidenceBadge from './ConfidenceBadge';
+import { buildRssItemConfidence } from '../services/confidenceService';
 
 interface LiveIntelFeedProps {
   onClose?: () => void;
@@ -209,7 +212,7 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
         open={!!selectedItem}
         onClose={() => setSelectedItem(null)}
         title={selectedItem?.title ?? ''}
-        subtitle={selectedItem ? `${selectedItem.source} · ${formatTimeAgo(selectedItem.publishedAt)}` : undefined}
+        subtitle={selectedItem ? `${selectedItem.source} · ${formatPublishedDate(selectedItem.publishedAt)}` : undefined}
         width="lg"
       >
         {selectedItem && (
@@ -223,6 +226,16 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
                   <Radio className="w-3 h-3" /> LIVE RSS
                 </span>
               )}
+              <ConfidenceBadge
+                confidence={buildRssItemConfidence({
+                  title: selectedItem.title,
+                  source: selectedItem.source,
+                  sourceUrl: selectedItem.sourceUrl,
+                  link: selectedItem.link,
+                  isLive: selectedItem.isLive,
+                })}
+                compact
+              />
               {selectedItem.relevanceScore != null && selectedItem.relevanceScore > 0 && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-cockpit-track text-cockpit-muted">
                   AAISM relevance {selectedItem.relevanceScore}
@@ -232,6 +245,25 @@ export default function LiveIntelFeed({ onClose, showCloseButton, compact }: Liv
             <p className="text-sm text-theme-secondary leading-relaxed">
               {selectedItem.summary}
             </p>
+            <div className="text-[11px] text-cockpit-muted space-y-1">
+              <p>
+                <span className="font-medium text-cockpit">Published:</span>{' '}
+                {formatPublishedDate(selectedItem.publishedAt)} ({formatTimeAgo(selectedItem.publishedAt)})
+              </p>
+              {selectedItem.link.startsWith('http') && (
+                <p className="truncate">
+                  <span className="font-medium text-cockpit">Source URL:</span>{' '}
+                  <a
+                    href={selectedItem.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-600 dark:text-emerald-400 hover:underline"
+                  >
+                    {selectedItem.link}
+                  </a>
+                </p>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2 pt-2">
               <button
                 type="button"
@@ -298,6 +330,13 @@ function FeedItemRow({
   onClick: (e: React.MouseEvent) => void;
 }) {
   const isExternal = item.link.startsWith('http');
+  const confidence = buildRssItemConfidence({
+    title: item.title,
+    source: item.source,
+    sourceUrl: item.sourceUrl,
+    link: item.link,
+    isLive: item.isLive,
+  });
 
   return (
     <button
@@ -320,8 +359,9 @@ function FeedItemRow({
                 LIVE
               </span>
             )}
-            <span className="text-[10px] text-cockpit-subtle ml-auto flex-shrink-0">
-              {formatTimeAgo(item.publishedAt)}
+            <ConfidenceBadge confidence={confidence} compact />
+            <span className="text-[10px] text-cockpit-subtle ml-auto flex-shrink-0" title={formatPublishedDate(item.publishedAt)}>
+              {formatPublishedDate(item.publishedAt)}
             </span>
           </div>
           <p className="text-xs font-semibold text-cockpit line-clamp-2 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
@@ -330,6 +370,11 @@ function FeedItemRow({
           <p className="text-[11px] text-cockpit-muted line-clamp-1 mt-0.5">
             {item.summary}
           </p>
+          {isExternal && (
+            <p className="text-[9px] text-cockpit-subtle truncate mt-0.5 group-hover:text-emerald-600 dark:group-hover:text-emerald-400">
+              {item.link}
+            </p>
+          )}
         </div>
         <div className="mt-1 flex-shrink-0 text-cockpit-subtle dark:text-cockpit-muted group-hover:text-emerald-500 transition-colors">
           {isExternal ? <ExternalLink className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -493,7 +538,7 @@ export function LiveRssFeedPanel() {
         open={!!selectedItem}
         onClose={() => setSelectedItem(null)}
         title={selectedItem?.title ?? ''}
-        subtitle={selectedItem ? `${selectedItem.source} · ${formatTimeAgo(selectedItem.publishedAt)}` : undefined}
+        subtitle={selectedItem ? `${selectedItem.source} · ${formatPublishedDate(selectedItem.publishedAt)}` : undefined}
       >
         {selectedItem && (
           <div className="space-y-4">

@@ -1,12 +1,19 @@
 import { useState } from 'react';
 import { Loader2, FileSearch } from 'lucide-react';
 import type { JobAnalysis } from '../data/careerIntel';
+import ConfidenceBadge from './ConfidenceBadge';
+import { ProvenancedBlock } from './ProvenanceFooter';
+import ProvenanceFooter from './ProvenanceFooter';
 
 interface JobAnalyzerPanelProps {
   onAnalyze: (input: { title?: string; jobText?: string; jobUrl?: string }) => Promise<void>;
   result: JobAnalysis | null;
   loading: boolean;
   error: string | null;
+}
+
+function sectionMeta(result: JobAnalysis, key: string) {
+  return result.provenance?.sections[key] ?? result.provenance?.overall;
 }
 
 export default function JobAnalyzerPanel({ onAnalyze, result, loading, error }: JobAnalyzerPanelProps) {
@@ -52,37 +59,77 @@ export default function JobAnalyzerPanel({ onAnalyze, result, loading, error }: 
 
       {result && (
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-500/5 p-4 space-y-4">
-          <h3 className="font-semibold text-cockpit">{result.title}</h3>
-          <p className="text-xs text-theme-muted">Seniority: {result.seniorityLevel}</p>
-
-          <SkillSection title="Required skills" items={result.requiredSkills} accent />
-          <SkillSection title="Nice-to-have" items={result.niceToHaveSkills} />
-
-          {result.techStack.length > 0 && (
+          <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-[10px] font-semibold text-theme-muted uppercase mb-1">Tech stack tags</p>
-              <div className="flex flex-wrap gap-1">
-                {result.techStack.map(t => (
-                  <span key={`${t.category}-${t.label}`} className="text-[10px] px-2 py-0.5 rounded-full bg-cockpit-track">
-                    {t.label}
-                  </span>
-                ))}
-              </div>
+              <h3 className="font-semibold text-cockpit">{result.title}</h3>
+              <p className="text-xs text-theme-muted mt-0.5">Seniority: {result.seniorityLevel}</p>
             </div>
+            {result.provenance?.overall && (
+              <ConfidenceBadge confidence={result.provenance.overall.confidence} />
+            )}
+          </div>
+
+          {sectionMeta(result, 'requiredSkills') && (
+            <ProvenancedBlock provenance={sectionMeta(result, 'requiredSkills')!}>
+              <SkillSection title="Required skills" items={result.requiredSkills} accent />
+            </ProvenancedBlock>
           )}
 
-          <SkillSection title="Team / department hints" items={result.teamHints} />
-          <SkillSection title="Interview prep (cert-aligned)" items={result.interviewPrep} />
-          <SkillSection title="Cert tie-ins" items={result.certTieIns} />
+          {sectionMeta(result, 'niceToHaveSkills') && (
+            <ProvenancedBlock provenance={sectionMeta(result, 'niceToHaveSkills')!}>
+              <SkillSection title="Nice-to-have" items={result.niceToHaveSkills} />
+            </ProvenancedBlock>
+          )}
 
-          <div>
-            <p className="text-[10px] font-semibold text-theme-muted uppercase mb-1">Questions to ask a real human</p>
-            <ul className="text-xs text-cockpit space-y-1 list-disc list-inside">
-              {result.questionsForHumans.map(q => (
-                <li key={q}>{q}</li>
-              ))}
-            </ul>
-          </div>
+          {result.techStack.length > 0 && sectionMeta(result, 'techStack') && (
+            <ProvenancedBlock provenance={sectionMeta(result, 'techStack')!}>
+              <div>
+                <p className="text-[10px] font-semibold text-theme-muted uppercase mb-1">Tech stack tags</p>
+                <div className="flex flex-wrap gap-1">
+                  {result.techStack.map(t => (
+                    <span key={`${t.category}-${t.label}`} className="text-[10px] px-2 py-0.5 rounded-full bg-cockpit-track">
+                      {t.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </ProvenancedBlock>
+          )}
+
+          {sectionMeta(result, 'teamHints') && (
+            <ProvenancedBlock provenance={sectionMeta(result, 'teamHints')!}>
+              <SkillSection title="Team / department hints" items={result.teamHints} />
+            </ProvenancedBlock>
+          )}
+
+          {sectionMeta(result, 'interviewPrep') && (
+            <ProvenancedBlock provenance={sectionMeta(result, 'interviewPrep')!}>
+              <SkillSection title="Interview prep (cert-aligned)" items={result.interviewPrep} />
+            </ProvenancedBlock>
+          )}
+
+          {sectionMeta(result, 'certTieIns') && (
+            <ProvenancedBlock provenance={sectionMeta(result, 'certTieIns')!}>
+              <SkillSection title="Cert tie-ins" items={result.certTieIns} />
+            </ProvenancedBlock>
+          )}
+
+          {sectionMeta(result, 'questionsForHumans') && (
+            <ProvenancedBlock provenance={sectionMeta(result, 'questionsForHumans')!}>
+              <div>
+                <p className="text-[10px] font-semibold text-theme-muted uppercase mb-1">Questions to ask a real human</p>
+                <ul className="text-xs text-cockpit space-y-1 list-disc list-inside">
+                  {result.questionsForHumans.map(q => (
+                    <li key={q}>{q}</li>
+                  ))}
+                </ul>
+              </div>
+            </ProvenancedBlock>
+          )}
+
+          {result.provenance?.overall && (
+            <ProvenanceFooter provenance={result.provenance.overall} />
+          )}
         </div>
       )}
     </div>

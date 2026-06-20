@@ -4,6 +4,8 @@ import { ExamQuestion } from '../data/examContent';
 
 export type LeadStatus = 'discovered' | 'pending_review' | 'approved' | 'rejected' | 'auto_approved';
 
+export type LeadSourceType = 'gap-analysis' | 'rss-intel' | 'llm-discovery' | 'community-pattern';
+
 export interface QuestionLead {
   id: string;
   question: ExamQuestion;
@@ -11,10 +13,20 @@ export interface QuestionLead {
   confidence: number; // 0-100, how closely it matches ISACA patterns
   similarityScore: number; // 0-100, how similar to existing questions (lower = more unique)
   source: string; // which agent run discovered it
+  sourceType?: LeadSourceType;
+  sourceUrl?: string;
+  sourceMethod?: string;
   discoveredAt: string;
   reviewedAt?: string;
   tags: string[];
   reasoning: string; // why the agent thinks this is a good lead
+}
+
+export interface AgentConfidenceSummary {
+  agent: string;
+  itemsProcessed: number;
+  avgConfidence: number;
+  error?: string;
 }
 
 export interface AgentRun {
@@ -28,6 +40,8 @@ export interface AgentRun {
   leadsRejected: number;
   error?: string;
   log: AgentLogEntry[];
+  agentSummary?: AgentConfidenceSummary[];
+  overallConfidence?: number;
 }
 
 export interface AgentLogEntry {

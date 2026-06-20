@@ -434,6 +434,12 @@ export function formatTimeAgo(isoDate: string): string {
   return new Date(isoDate).toLocaleDateString();
 }
 
+export function formatPublishedDate(isoDate: string): string {
+  const d = new Date(isoDate);
+  if (Number.isNaN(d.getTime())) return 'Date unknown';
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 export function getCategoryColor(category: RssSourceCategory): string {
   const map: Record<RssSourceCategory, string> = {
     threat: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import {
   ArrowLeft, CheckCircle, Circle, Copy, Terminal, FileText,
   GitBranch, ChevronRight, Trophy, AlertTriangle, Shield,
+  ShieldCheck, UserCheck,
 } from 'lucide-react';
 import type { LabDefinition } from '../data/labs/types';
 import {
@@ -10,7 +11,7 @@ import {
   completeLab,
 } from '../services/labService';
 import { useGamification } from '../context/GamificationContext';
-import { chat, loadAIConfig } from '../services/aiService';
+import { chat, loadAIConfig, isAIConfigured } from '../services/aiService';
 
 interface LabRunnerProps {
   lab: LabDefinition;
@@ -19,6 +20,38 @@ interface LabRunnerProps {
 }
 
 type Phase = 'steps' | 'complete';
+type VerificationStatus = 'verified' | 'self-reported' | 'ai-assessed';
+
+interface StepVerification {
+  status: VerificationStatus;
+  confidence?: number;
+  feedback?: string;
+}
+
+function VerificationBadge({ verification }: { verification: StepVerification }) {
+  if (verification.status === 'verified') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-medium">
+        <ShieldCheck className="w-3 h-3" />
+        Verified{verification.confidence != null ? ` (${verification.confidence}%)` : ''}
+      </span>
+    );
+  }
+  if (verification.status === 'ai-assessed') {
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400 font-medium">
+        <Shield className="w-3 h-3" />
+        AI-assessed ({verification.confidence ?? 'medium'}% confidence)
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 font-medium">
+      <UserCheck className="w-3 h-3" />
+      Self-reported
+    </span>
+  );
+}
 
 export default function LabRunner({ lab, onBack, onComplete }: LabRunnerProps) {
   const { addXP } = useGamification();
@@ -29,12 +62,14 @@ export default function LabRunner({ lab, onBack, onComplete }: LabRunnerProps) {
   const [decisionResults, setDecisionResults] = useState<Array<{ correct: boolean }>>([]);
   const [showDecisionExplanation, setShowDecisionExplanation] = useState(false);
   const [outputChecks, setOutputChecks] = useState<Record<string, string>>({});
+  const [stepVerification, setStepVerification] = useState<Record<string, StepVerification>>({});
   const [aiChecking, setAiChecking] = useState<string | null>(null);
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
 
-  const toggleStep = useCallback((stepId: string) => {
+  const toggleStep = useCallback((stepId: string, verification: StepVerification) => {
     markStepComplete(lab.id, stepId);
     setCompletedSteps(prev => prev.includes(stepId) ? prev : [...prev, stepId]);
+    setStepVerification(prev => ({ ...prev, [stepId]: verification }));
   }, [lab.id]);
 
   const copyCommand = (cmd: string) => {
@@ -48,21 +83,52 @@ export default function LabRunner({ lab, onBack, onComplete }: LabRunnerProps) {
     setAiChecking(stepId);
     try {
       const config = loadAIConfig();
+      if (!isAIConfigured(config)) {
+        setStepVerification(prev => ({
+          ...prev,
+          [stepId]: {
+            status: 'self-reported',
+            feedback: 'AI not configured — use Mark done to self-report completion.',
+          },
+        }));
+        return;
+      }
+
       const res = await chat(config, [
         {
           role: 'system',
-          content: 'You are a cybersecurity lab validator. Respond with JSON: {"valid": boolean, "feedback": string}. Be lenient for learning exercises.',
+          content: 'You are a cybersecurity lab validator. Respond with JSON: {"valid": boolean, "feedback": string, "confidence": number}. confidence is 0-100 indicating how sure you are the output matches the expected outcome.',
         },
         {
           role: 'user',
-          content: `Lab step validation.\nExpected hint: ${hint ?? 'general correctness'}\nUser output:\n${output}\n\nIs this a reasonable attempt?`,
+          content: `Lab step validation.\nExpected hint: ${hint ?? 'general correctness'}\nUser output:\n${output}\n\nDoes this output reasonably match the expected outcome?`,
         },
       ], { jsonMode: true, temperature: 0.2 });
-      if (res.content) {
-        try {
-          const parsed = JSON.parse(res.content) as { valid?: boolean; feedback?: string };
-          if (parsed.valid) toggleStep(stepId);
-        } catch { /* user can still mark manually */ }
+
+      if (res.error) {
+        setStepVerification(prev => ({
+          ...prev,
+          [stepId]: { status: 'self-reported', feedback: res.error },
+        }));
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(res.content) as { valid?: boolean; feedback?: string; confidence?: number };
+        const confidence = Math.max(0, Math.min(100, Math.round(parsed.confidence ?? (parsed.valid ? 72 : 35))));
+        const status: VerificationStatus =
+          parsed.valid && confidence >= 80 ? 'verified'
+            : parsed.valid ? 'ai-assessed'
+              : 'self-reported';
+        setStepVerification(prev => ({
+          ...prev,
+          [stepId]: { status, confidence, feedback: parsed.feedback },
+        }));
+      } catch {
+        setStepVerification(prev => ({
+          ...prev,
+          [stepId]: { status: 'self-reported', feedback: 'Could not parse AI response — mark done manually.' },
+        }));
       }
     } finally {
       setAiChecking(null);
@@ -193,14 +259,18 @@ export default function LabRunner({ lab, onBack, onComplete }: LabRunnerProps) {
         <div className="space-y-3">
           {lab.steps.map((step, i) => {
             const done = completedSteps.includes(step.id);
+            const verification = stepVerification[step.id];
             return (
               <div key={step.id} className={`p-4 rounded-xl border ${done ? 'border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-900/10' : 'border-theme bg-theme-elevated'}`}>
                 <div className="flex items-start gap-3">
-                  <button onClick={() => toggleStep(step.id)} className="mt-0.5 shrink-0">
+                  <div className="mt-0.5 shrink-0">
                     {done ? <CheckCircle className="w-5 h-5 text-emerald-500" /> : <Circle className="w-5 h-5 text-theme-faint" />}
-                  </button>
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-xs text-theme-faint mb-1">Step {i + 1}</div>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <div className="text-xs text-theme-faint">Step {i + 1}</div>
+                      {verification && <VerificationBadge verification={verification} />}
+                    </div>
                     <h4 className="font-semibold text-sm text-cockpit">{step.title}</h4>
                     <p className="text-sm text-theme-muted mt-1">{step.instruction}</p>
                     {step.command && (
@@ -227,6 +297,11 @@ export default function LabRunner({ lab, onBack, onComplete }: LabRunnerProps) {
                         className="w-full px-3 py-2 text-xs border border-theme rounded-lg bg-theme-muted dark:bg-gray-800 font-mono"
                         rows={2}
                       />
+                      {verification?.feedback && (
+                        <p className={`text-xs mt-2 ${verification.status === 'verified' ? 'text-emerald-600' : verification.status === 'ai-assessed' ? 'text-violet-600' : 'text-theme-muted'}`}>
+                          {verification.feedback}
+                        </p>
+                      )}
                       <div className="flex gap-2 mt-2">
                         <button
                           onClick={() => void checkOutputWithAI(step.id, outputChecks[step.id] ?? '', step.validationHint)}
@@ -236,8 +311,9 @@ export default function LabRunner({ lab, onBack, onComplete }: LabRunnerProps) {
                           {aiChecking === step.id ? 'Checking…' : 'AI validate output'}
                         </button>
                         <button
-                          onClick={() => toggleStep(step.id)}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
+                          onClick={() => toggleStep(step.id, { status: 'self-reported' })}
+                          disabled={done}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 disabled:opacity-50"
                         >
                           Mark done
                         </button>

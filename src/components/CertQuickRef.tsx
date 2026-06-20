@@ -12,6 +12,9 @@ import {
   type QuickRefMeta,
   type QuickRefTab,
 } from '../data/certifications/quickRef';
+import ConfidenceBadge from './ConfidenceBadge';
+import { getFrameworkDoc } from '../data/frameworkDocs';
+import { buildFrameworkConfidence } from '../services/confidenceService';
 
 interface CollapsibleProps {
   title: string;
@@ -65,7 +68,14 @@ function FrameworksPanel({ cert }: { cert: Certification }) {
           <Star size={18} /> Frameworks across {cert.shortName} domains
         </h3>
       </div>
-      {frameworks.map((fw, i) => (
+      {frameworks.map((fw, i) => {
+        const doc = getFrameworkDoc(fw.name);
+        const { linked, summary } = buildFrameworkConfidence({
+          name: fw.name,
+          docUrl: doc?.url,
+          publisher: doc?.publisher,
+        });
+        return (
         <Collapsible
           key={fw.name}
           title={fw.name}
@@ -75,16 +85,34 @@ function FrameworksPanel({ cert }: { cert: Certification }) {
         >
           <div className="mt-3 space-y-2">
             <p className="text-sm text-cockpit-muted">{fw.relevance}</p>
-            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-              fw.examWeight === 'high' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
-              fw.examWeight === 'medium' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300' :
-              'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-            }`}>
-              Exam weight: {fw.examWeight}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                fw.examWeight === 'high' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
+                fw.examWeight === 'medium' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300' :
+                'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+              }`}>
+                Exam weight: {fw.examWeight}
+              </span>
+              <ConfidenceBadge confidence={summary} compact />
+              <ConfidenceBadge confidence={linked} compact />
+            </div>
+            {doc?.url ? (
+              <a
+                href={doc.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+              >
+                <ExternalLink size={14} />
+                {doc.publisher} official documentation
+              </a>
+            ) : (
+              <p className="text-[11px] text-theme-muted">No official doc URL mapped — see Knowledge Base for context.</p>
+            )}
           </div>
         </Collapsible>
-      ))}
+        );
+      })}
       {frameworks.length === 0 && (
         <p className="text-sm text-theme-muted">No framework crosswalk in domain guides yet — check Knowledge Base for deep dives.</p>
       )}
@@ -95,7 +123,7 @@ function FrameworksPanel({ cert }: { cert: Certification }) {
 function DomainPanel({ cert, domainId }: { cert: Certification; domainId: number }) {
   const guide = getDomainGuide(cert, domainId);
   if (!guide) {
-    return <p className="text-sm text-theme-muted">Domain guide coming soon for this track.</p>;
+    return <p className="text-sm text-theme-muted">Domain guide not available for this track — explore Knowledge Base for deep dives.</p>;
   }
 
   const color = domainId % 3 === 1 ? 'blue' : domainId % 3 === 2 ? 'red' : 'purple';
