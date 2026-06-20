@@ -56,12 +56,26 @@ export default function Study() {
   const { setBgColor } = usePerformance();
   const { activeCert } = useCert();
   const [quizBootstrap, setQuizBootstrap] = useState<{ domainId?: number; questionCount?: number } | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-  // Handle URL params for quiz generation
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  // Handle URL params for quiz generation and mission handoffs
   useEffect(() => {
     const tab = searchParams.get('tab');
+    const domainParam = searchParams.get('domain');
     if (tab === 'quiz') {
       setActiveTab('quiz');
+      if (domainParam) {
+        const domainId = Number(domainParam);
+        if (Number.isFinite(domainId) && domainId > 0) {
+          setQuizBootstrap({ domainId });
+        }
+      }
     }
   }, [searchParams]);
 
@@ -83,6 +97,11 @@ export default function Study() {
 
   return (
     <div className="min-h-[calc(100vh-120px)] flex flex-col">
+      {toast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-medium shadow-lg animate-fade-in">
+          {toast}
+        </div>
+      )}
       {/* Floating Tab Navigation */}
       <div className="flex justify-center mb-8">
         <div className="flex gap-1 bg-theme-elevated/80 backdrop-blur-lg p-1.5 rounded-2xl border border-theme/50 dark:border-gray-700/50 shadow-xl">
@@ -129,7 +148,13 @@ export default function Study() {
               <ChevronRight className="w-4 h-4 text-red-400 group-hover:translate-x-0.5 transition-transform" />
             </Link>
           )}
-          {activeTab === 'tutor' && <TutorTab />}
+          {activeTab === 'tutor' && (
+            <TutorTab
+              onSwitchTab={tab => setActiveTab(tab)}
+              onToast={setToast}
+              onQuizBootstrap={bootstrap => setQuizBootstrap(bootstrap)}
+            />
+          )}
           {activeTab === 'notes' && <NotesTab />}
           {activeTab === 'flashcards' && <FlashcardsTab />}
           {activeTab === 'quiz' && <QuizTab bootstrap={quizBootstrap} onBootstrapConsumed={() => setQuizBootstrap(null)} />}
@@ -141,10 +166,23 @@ export default function Study() {
 }
 
 // ============ AI TUTOR TAB (Embedded Full Tutor) ============
-function TutorTab() {
+function TutorTab({
+  onSwitchTab,
+  onToast,
+  onQuizBootstrap,
+}: {
+  onSwitchTab: (tab: 'notes' | 'quiz') => void;
+  onToast: (message: string) => void;
+  onQuizBootstrap: (bootstrap: { domainId: number; questionCount?: number }) => void;
+}) {
   return (
     <div className="animate-fade-in">
-      <Tutor embedded />
+      <Tutor
+        embedded
+        onSwitchTab={onSwitchTab}
+        onToast={onToast}
+        onQuizBootstrap={onQuizBootstrap}
+      />
     </div>
   );
 }
@@ -175,6 +213,16 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
   const [earnedXP, setEarnedXP] = useState(0);
   const [questions, setQuestions] = useState<ShuffledQuestion[]>([]);
   const [examTimer, setExamTimer] = useState(0); // seconds remaining
+
+  // Pre-select domain when arriving from AI Tutor "Create Quiz"
+  useEffect(() => {
+    const stored = localStorage.getItem('generateQuizDomain');
+    if (!stored || quizState !== 'setup') return;
+    const domainId = Number(stored);
+    if (Number.isFinite(domainId) && activeCert.domains.some(d => d.id === domainId)) {
+      setSelectedDomain(domainId);
+    }
+  }, [activeCert.id, quizState]);
 
   const allQuestions = getAllQuestions(activeCert.id);
 
@@ -227,6 +275,8 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
     if (!bootstrap?.domainId || quizState !== 'setup') return;
     setSelectedDomain(bootstrap.domainId);
     onBootstrapConsumed?.();
+    localStorage.removeItem('generateQuizDomain');
+    localStorage.removeItem('generateQuizFrom');
     // Defer start until domain state is applied
     const timer = setTimeout(() => {
       const qs = getQuestionsByDomain(bootstrap.domainId!);
@@ -350,9 +400,16 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
       name: d.name,
       icon: d.icon ?? '📘',
     }));
+    const tutorQuizDomain = localStorage.getItem('generateQuizDomain');
+    const fromTutor = tutorQuizDomain && domainInfo.some(d => d.id === Number(tutorQuizDomain));
 
     return (
       <div className="bg-theme-elevated rounded-xl border border-theme p-8">
+        {fromTutor && (
+          <div className="mb-6 p-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 text-sm text-purple-800 dark:text-purple-300">
+            Quiz topic saved from AI Tutor — Domain {tutorQuizDomain} selected. Start when ready.
+          </div>
+        )}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <Target className="text-primary-600" size={32} />
@@ -607,6 +664,7 @@ function QuizTab({ bootstrap, onBootstrapConsumed }: { bootstrap?: { domainId?: 
 // ============ NOTES TAB ============
 function NotesTab() {
   const { state, addNote, updateNote, deleteNote } = useApp();
+  const { activeCert } = useCert();
   const [activeDomain, setActiveDomain] = useState<number | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -617,10 +675,20 @@ function NotesTab() {
   const [showCombined, setShowCombined] = useState(true);
   const [convertedToCards, setConvertedToCards] = useState<Set<string>>(new Set());
 
-  // Get all notes from selected domain(s)
-  const allNotes = state.domains.flatMap(domain => 
+  // Get all notes from selected domain(s) — scoped to active cert domains
+  const certDomainIds = new Set(activeCert.domains.map(d => d.id));
+  const allNotes = state.domains.flatMap(domain =>
+    certDomainIds.has(domain.id) &&
     (activeDomain === 'all' || activeDomain === domain.id)
-      ? domain.notes.map(note => ({ ...note, domainId: domain.id, domainIcon: domain.icon }))
+      ? domain.notes.map(note => {
+          const certDomain = activeCert.domains.find(d => d.id === domain.id);
+          return {
+            ...note,
+            domainId: domain.id,
+            domainIcon: certDomain?.icon ?? domain.icon,
+            domainName: certDomain?.name ?? domain.name,
+          };
+        })
       : []
   );
 
@@ -649,6 +717,7 @@ function NotesTab() {
           content: domNotes.map(n => `### ${n.title.replace('AI Tutor: ', '')}\n${n.content}`).join('\n\n---\n\n'),
           domainId: Number(domainId),
           domainIcon: domNotes[0].domainIcon,
+          domainName: domNotes[0].domainName,
           createdAt: domNotes[0].createdAt,
           updatedAt: domNotes[domNotes.length - 1].updatedAt,
         });
@@ -722,7 +791,9 @@ function NotesTab() {
     setNoteContent('');
   };
 
-  const totalNotes = state.domains.reduce((sum, d) => sum + d.notes.length, 0);
+  const totalNotes = state.domains
+    .filter(d => certDomainIds.has(d.id))
+    .reduce((sum, d) => sum + d.notes.length, 0);
 
   return (
     <div className="space-y-4">
@@ -770,7 +841,7 @@ function NotesTab() {
           >
             All
           </button>
-          {state.domains.map(d => (
+          {activeCert.domains.map(d => (
             <button
               key={d.id}
               onClick={() => setActiveDomain(d.id)}
@@ -779,6 +850,7 @@ function NotesTab() {
                   ? 'bg-primary-600 text-white'
                   : 'bg-theme-elevated text-cockpit-muted border border-theme'
               }`}
+              title={d.name}
             >
               {d.icon}
             </button>
@@ -797,8 +869,10 @@ function NotesTab() {
                 onChange={e => setSelectedDomainForNew(Number(e.target.value))}
                 className="px-3 py-2 border border-theme bg-theme-elevated dark:bg-gray-700 text-cockpit rounded-lg"
               >
-                {state.domains.map(d => (
-                  <option key={d.id} value={d.id}>{d.icon} Domain {d.id}</option>
+                {activeCert.domains.map(d => (
+                  <option key={d.id} value={d.id}>
+                    {d.icon} {d.shortName}
+                  </option>
                 ))}
               </select>
               <input
@@ -907,7 +981,8 @@ function NotesTab() {
                           )}
                         </div>
                         <p className="text-xs text-theme-faint">
-                          {new Date(note.updatedAt).toLocaleDateString()} • Domain {note.domainId}
+                          {new Date(note.updatedAt).toLocaleDateString()} •{' '}
+                          {note.domainName ?? `Domain ${note.domainId}`}
                         </p>
                       </div>
                     </div>
@@ -984,13 +1059,18 @@ function NotesTab() {
 
 // ============ FLASHCARDS TAB ============
 function FlashcardsTab() {
+  const { activeCert } = useCert();
   const [cards, setCards] = useState<Flashcard[]>([]);
   const [dueCards, setDueCards] = useState<Flashcard[]>([]);
   const [stats, setStats] = useState({ total: 0, due: 0, mastered: 0, learning: 0, new: 0 });
   const [mode, setMode] = useState<'overview' | 'review' | 'create'>('overview');
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [newCard, setNewCard] = useState({ front: '', back: '', domainId: 1 });
+  const [newCard, setNewCard] = useState({
+    front: '',
+    back: '',
+    domainId: activeCert.domains[0]?.id ?? 1,
+  });
 
   useEffect(() => {
     refreshData();
@@ -1025,7 +1105,7 @@ function FlashcardsTab() {
         tags: [],
         difficulty: 'medium',
       });
-      setNewCard({ front: '', back: '', domainId: 1 });
+      setNewCard({ front: '', back: '', domainId: activeCert.domains[0]?.id ?? 1 });
       refreshData();
     }
   };
@@ -1235,10 +1315,11 @@ function FlashcardsTab() {
               onChange={e => setNewCard({ ...newCard, domainId: Number(e.target.value) })}
               className="w-full px-4 py-3 border border-theme bg-theme-elevated dark:bg-gray-700 text-cockpit rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500"
             >
-              <option value={1}>Domain 1: AI Governance</option>
-              <option value={2}>Domain 2: AI Risk Management</option>
-              <option value={3}>Domain 3: AI Development</option>
-              <option value={4}>Domain 4: AI Operations</option>
+              {activeCert.domains.map(d => (
+                <option key={d.id} value={d.id}>
+                  {d.icon} {d.shortName}: {d.name}
+                </option>
+              ))}
             </select>
           </div>
 

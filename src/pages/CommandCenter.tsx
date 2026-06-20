@@ -9,7 +9,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
 import { getLevelFromXP, getXPProgress } from '../data/gamificationData';
-import { TOPIC_HEAT_MAP, QUESTION_PATTERNS } from '../data/communityIntelligence';
+import { getTopicHeatMap, getQuestionPatterns } from '../data/communityIntelligence';
 import { getPipelineStats } from '../services/agentService';
 import { analyzeQuestionPatterns } from '../services/intelligenceAgent';
 import { PLAYBOOKS } from '../data/playbooks';
@@ -30,7 +30,6 @@ import { getReadinessScore, getDomainProgress, getMissionLog } from '../services
 import { getContentStats } from '../data/examContent';
 import { getLabsForCert } from '../data/labs';
 import {
-  shouldDefaultToMission,
   isFeatureUnlocked,
 } from '../services/productTierService';
 import { isJobSeekerModeEnabled } from '../services/integrationsConfigService';
@@ -42,16 +41,18 @@ import {
   getDigestStudioUrl,
 } from '../services/intelDigestService';
 import ConfidenceBadge from '../components/ConfidenceBadge';
+import DailyLoopStrip from '../components/DailyLoopStrip';
 import { buildReadinessConfidence } from '../services/confidenceService';
+import { getDailyLoopSteps, getFocusContext } from '../services/sidebarJourneyService';
 
 type NextAction = { label: string; sub: string; route: string; icon: typeof Crosshair; primary: boolean };
 
 const ONBOARDING_ACTIONS: Record<OnboardingHint, NextAction> = {
-  mission: { label: 'Start today\'s mission', sub: '25 min · read → quiz → lab', route: '/mission', icon: Target, primary: true },
+  mission: { label: 'Start today\'s mission', sub: '25 min · read → quiz → lab', route: '/', icon: Target, primary: true },
   study: { label: 'Practice by domain', sub: '5 questions · ~3 min', route: '/study', icon: Crosshair, primary: true },
   intel: { label: 'Check Intel Hub', sub: 'Traps & heat map', route: '/intel', icon: Radar, primary: true },
   agent: { label: 'Run Agent Discovery', sub: 'Gap analysis on your weak domains', route: '/agent', icon: Bot, primary: true },
-  command: { label: 'Review readiness', sub: 'Track depth & streak', route: '/', icon: LayoutDashboard, primary: false },
+  command: { label: 'Review readiness', sub: 'Track depth & streak', route: '/command', icon: LayoutDashboard, primary: false },
 };
 
 export default function CommandCenter() {
@@ -64,7 +65,8 @@ export default function CommandCenter() {
 
   const stats = getPipelineStats();
   const patternAnalysis = analyzeQuestionPatterns();
-  const risingTopics = TOPIC_HEAT_MAP.filter(t => t.trend === 'rising' && t.heat >= 85);
+  const risingTopics = getTopicHeatMap(activeCert.id).filter(t => t.trend === 'rising' && t.heat >= 85);
+  const questionPatterns = getQuestionPatterns(activeCert.id);
 
   const recentQuizzes = state.quizAttempts.slice(-10);
   const avgScore = recentQuizzes.length > 0
@@ -151,7 +153,6 @@ export default function CommandCenter() {
   const [showRoadmap, setShowRoadmap] = useState(false);
   const [microQuizDomain, setMicroQuizDomain] = useState<{ id: number; name: string } | null>(null);
   const [onboardingHint] = useState<OnboardingHint | null>(() => consumeOnboardingHint());
-  const jobSeekerMode = isJobSeekerModeEnabled();
 
   useEffect(() => {
     const lastSeen = localStorage.getItem(LAST_SEEN_RELEASE_KEY);
@@ -189,34 +190,32 @@ export default function CommandCenter() {
   const labCount = useMemo(() => getLabsForCert(activeCert.id).length, [activeCert.id]);
   const showOsintArsenal = isFeatureUnlocked('osint-arsenal');
   const showStudio = isFeatureUnlocked('content-studio');
+  const jobSeekerMode = isJobSeekerModeEnabled();
+  const examQuestions = activeCert.examFormat?.questions ?? 90;
+  const passScore = activeCert.examFormat?.passingScore ?? 65;
 
-  useEffect(() => {
-    if (sessionStorage.getItem('aegis-home-redirect-mission') === 'true') return;
-    if (shouldDefaultToMission(activeCert.id, hudValue)) {
-      sessionStorage.setItem('aegis-home-redirect-mission', 'true');
-      navigate('/mission', { replace: true, state: { fromCommand: true } });
-    }
-  }, [activeCert.id, hudValue, navigate]);
   const quizAttemptCount = gameState.totalQuizzesTaken || state.quizAttempts.length;
   const readinessConfidence = buildReadinessConfidence(quizAttemptCount);
   const ringCircumference = 2 * Math.PI * 88;
   const ringOffset = ringCircumference - (hudValue / 100) * ringCircumference;
+  const focusContext = useMemo(() => getFocusContext(activeCert.id), [activeCert.id, state.quizAttempts]);
+  const dailyLoopSteps = useMemo(() => getDailyLoopSteps(activeCert.id), [activeCert.id, state.quizAttempts, stats.lastRunAt]);
 
   const nextAction = useMemo((): NextAction => {
     if (onboardingHint) return ONBOARDING_ACTIONS[onboardingHint];
     if (hudValue < 30 || recentQuizzes.length === 0) {
-      return { label: 'Start today\'s mission', sub: '25 min guided loop', route: '/mission', icon: Target, primary: true };
+      return { label: 'Start today\'s mission', sub: '25 min guided loop', route: '/', icon: Target, primary: true };
     }
     if (examCountdown !== null && examCountdown <= 14 && domainReadiness < 70) {
-      return { label: 'Focus weak domains', sub: `${examCountdown} days to exam`, route: '/mission', icon: Target, primary: true };
+      return { label: 'Focus weak domains', sub: `${examCountdown} days to exam`, route: '/', icon: Target, primary: true };
     }
     if (stats.pendingCount > 0) {
       return { label: 'Review agent leads', sub: `${stats.pendingCount} pending`, route: '/agent', icon: Bot, primary: false };
     }
     if (recentQuizzes.length > 0 && avgScore < 70) {
-      return { label: 'Retry weak areas', sub: `Avg ${avgScore}% — mission drill`, route: '/mission', icon: Target, primary: true };
+      return { label: 'Retry weak areas', sub: `Avg ${avgScore}% — mission drill`, route: '/', icon: Target, primary: true };
     }
-    return { label: 'Continue today\'s mission', sub: 'Pick up where you left off', route: '/mission', icon: Target, primary: true };
+    return { label: 'Continue today\'s mission', sub: 'Pick up where you left off', route: '/', icon: Target, primary: true };
   }, [onboardingHint, hudValue, recentQuizzes.length, examCountdown, domainReadiness, stats.pendingCount, avgScore]);
 
   const NextActionIcon = nextAction.icon;
@@ -233,17 +232,17 @@ export default function CommandCenter() {
         <div>
           <div className="flex items-center gap-2 text-[10px] font-mono text-accent-emerald tracking-[0.25em] uppercase">
             <Radio className="w-3 h-3" />
-            {activeCert.shortName} · Daily ops
+            {activeCert.shortName} · Learn · Work · Earn
           </div>
           <h1 className="text-2xl font-bold text-cockpit mt-1 flex items-center gap-2">
             <LayoutDashboard className="w-6 h-6 text-emerald-600 dark:text-emerald-500" />
             Command Center
           </h1>
           <p className="text-xs text-theme-muted mt-0.5">
-            25 minutes a day. Pass faster. · {hudValue}% readiness
+            One daily loop — not four silos. {hudValue}% readiness on {activeCert.name}.
           </p>
           <p className="text-[11px] text-theme-faint mt-1">
-            Your track: {contentStats.totalQuestions} questions · {labCount} labs · Live intel
+            {contentStats.totalQuestions} questions · {labCount} labs · {examQuestions}Q exam · {passScore}% pass bar
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -261,25 +260,52 @@ export default function CommandCenter() {
         </div>
       </div>
 
-      {/* Prominent mission entry — one click to unified study flow */}
-      <button
-        type="button"
-        onClick={() => navigate('/mission')}
-        className="w-full cockpit-glass rounded-xl p-4 text-left border border-emerald-500/30 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group"
-      >
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <Target className="w-5 h-5 text-white" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-sm font-bold text-cockpit">Today&apos;s Mission</div>
-              <div className="text-xs text-cockpit-muted">25 min — weak domain → read → quiz → lab. The loop that moves your score.</div>
-            </div>
-          </div>
-          <ChevronRight className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+      {/* Learn · Work · Earn hero */}
+      <section className="cockpit-glass rounded-xl p-4 border border-emerald-500/25">
+        <p className="text-[10px] font-mono uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
+          Your {activeCert.shortName} track
+        </p>
+        <p className="text-sm text-cockpit mt-1">
+          Learn the material, work the drills, earn exam readiness — Mission, Practice/Ops, and Exam/Career are one story.
+        </p>
+        <div className="grid sm:grid-cols-3 gap-3 mt-4">
+          <LearnWorkEarnPillar
+            phase="Learn"
+            title="Mission"
+            description={`25 min on ${activeCert.shortName} — read → quiz → lab → intel`}
+            route="/"
+            icon={Target}
+            onNavigate={navigate}
+            highlight={nextAction.route === '/'}
+          />
+          <LearnWorkEarnPillar
+            phase="Work"
+            title="Practice & Ops"
+            description={`${contentStats.totalQuestions} questions · ${labCount} labs · domain drills`}
+            route="/study"
+            icon={Crosshair}
+            onNavigate={navigate}
+            highlight={nextAction.route === '/study' || nextAction.route === '/ops'}
+          />
+          <LearnWorkEarnPillar
+            phase="Earn"
+            title={jobSeekerMode ? 'Exam & Career' : 'Exam Sim'}
+            description={jobSeekerMode
+              ? `${examQuestions}Q timed sim · role mapping & job OSINT`
+              : `${examQuestions} questions · ${passScore}% to pass · timed conditions`}
+            route={jobSeekerMode ? '/career' : '/exam'}
+            icon={jobSeekerMode ? Briefcase : Zap}
+            onNavigate={navigate}
+            highlight={nextAction.route === '/exam' || nextAction.route === '/career'}
+          />
         </div>
-      </button>
+      </section>
+
+      <DailyLoopStrip
+        steps={dailyLoopSteps}
+        focusLabel={focusContext.focusLabel}
+        certShortName={activeCert.shortName}
+      />
 
       {showWhatsNew && newReleases.length > 0 && (
         <div className="relative cockpit-glass rounded-xl p-4 animate-fade-in border-amber-200/60 dark:border-amber-500/20">
@@ -331,13 +357,18 @@ export default function CommandCenter() {
       <div className="grid gap-4 lg:grid-cols-12 lg:grid-rows-[auto_1fr]">
         {/* Left instrument panel — throttles */}
         <div className="lg:col-span-3 space-y-3 order-2 lg:order-1">
-          <InstrumentPanel title="Throttle Controls" icon={Zap} accent="emerald">
+          <InstrumentPanel title="Learn · Work · Earn" icon={Zap} accent="emerald">
+            <p className="text-[10px] text-cockpit-subtle mb-2">Jump to any phase of today&apos;s loop</p>
             <div className="grid grid-cols-2 gap-2">
-              <ThrottleButton icon={Target} label="Mission" sub="25 min loop" onClick={() => navigate('/mission')} primary={nextAction.route === '/mission'} highlight />
-              <ThrottleButton icon={Crosshair} label="Practice" sub="By domain" onClick={() => navigate('/study')} primary={nextAction.route === '/study'} />
-              <ThrottleButton icon={Zap} label="Exam" sub={`${activeCert.examFormat?.questions ?? 90}Q sim`} onClick={() => navigate('/exam')} />
+              <ThrottleButton icon={Target} label="Learn" sub="Mission · 25 min" onClick={() => navigate('/')} primary={nextAction.route === '/'} highlight />
+              <ThrottleButton icon={Crosshair} label="Work" sub="Practice · Ops" onClick={() => navigate('/study')} primary={nextAction.route === '/study'} />
+              <ThrottleButton icon={Zap} label="Earn" sub={`${examQuestions}Q sim`} onClick={() => navigate('/exam')} />
+              <ThrottleButton icon={Terminal} label="Ops Lab" sub="Hands-on drills" onClick={() => navigate('/ops')} />
               <ThrottleButton icon={Bot} label="Agent" sub={`${stats.pendingCount} leads`} onClick={() => navigate('/agent')} pulse={stats.pendingCount > 0} />
               <ThrottleButton icon={Radar} label="Intel" sub="Daily traps" onClick={() => navigate('/intel')} />
+              {jobSeekerMode && (
+                <ThrottleButton icon={Briefcase} label="Career" sub="Role OSINT" onClick={() => navigate('/career')} />
+              )}
               {showStudio && (
                 <ThrottleButton icon={PenLine} label="Studio" sub="Create posts" onClick={() => navigate('/studio')} />
               )}
@@ -629,7 +660,7 @@ export default function CommandCenter() {
           <div className="grid gap-4 mt-4 lg:grid-cols-3">
             <SecondaryCard title="Quick Scenarios" icon={Shield} iconColor="text-indigo-600 dark:text-indigo-400">
               <div className="space-y-2">
-                {QUESTION_PATTERNS.filter(p => ['best', 'most', 'first'].includes(p.id)).map(p => (
+                {questionPatterns.filter(p => ['best', 'most', 'first'].includes(p.id)).map(p => (
                   <button
                     key={p.id}
                     onClick={() => navigate(`/scenarios?mode=drill&pattern=${p.id}`)}
@@ -724,6 +755,28 @@ export default function CommandCenter() {
         onClose={() => setMicroQuizDomain(null)}
       />
     </div>
+  );
+}
+
+function LearnWorkEarnPillar({ phase, title, description, route, icon: Icon, onNavigate, highlight }: {
+  phase: string; title: string; description: string; route: string;
+  icon: typeof Target; onNavigate: (route: string) => void; highlight?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onNavigate(route)}
+      className={`rounded-lg border p-3 text-left transition-all hover:scale-[1.01] hover:border-emerald-500/40 ${
+        highlight ? 'border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-500/10 ring-1 ring-emerald-500/20' : 'border-theme bg-theme-elevated'
+      }`}
+    >
+      <div className="flex items-center gap-2 mb-1.5">
+        <span className="text-[9px] font-mono uppercase tracking-widest text-emerald-700 dark:text-emerald-400">{phase}</span>
+        <Icon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 ml-auto" />
+      </div>
+      <div className="text-sm font-bold text-cockpit">{title}</div>
+      <p className="text-[10px] text-theme-muted mt-1 leading-snug">{description}</p>
+    </button>
   );
 }
 

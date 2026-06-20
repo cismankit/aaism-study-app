@@ -25,6 +25,7 @@ export const PRO_FEATURES: GatedFeatureId[] = [
 /** Always visible day 1 — hero loop + core study path */
 export const CORE_FEATURE_ROUTES = [
   '/',
+  '/command',
   '/mission',
   '/study',
   '/exam',

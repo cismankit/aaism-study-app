@@ -1,14 +1,13 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  CheckCircle2, BookOpen, Target, Terminal, Radar,
-  ChevronDown, ChevronUp, Loader2, Sparkles, ArrowRight,
-  ExternalLink, ShieldCheck,
+  BookOpen, Target, Terminal, Radar,
+  ChevronDown, ChevronUp, Loader2, Sparkles,
+  ExternalLink, ShieldCheck, TrendingUp, Briefcase, Users,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
 import { useCert } from '../context/CertContext';
-import { getOpsAgent } from '../services/opsAgentService';
 import { addMissionLogEntry } from '../services/progressService';
 import { markStepComplete } from '../services/labService';
 import type { StudyMissionPlan, AgentHandoff } from '../services/missionOrchestrator';
@@ -17,6 +16,8 @@ import {
   resolveQuestionProvenance,
   formatExplanationCitation,
 } from '../utils/quizProvenance';
+import AgentCouncilStrip from './AgentCouncilStrip';
+import { getAgentForMissionTask } from '../data/learnWorkEarnAgents';
 
 interface MissionDashboardProps {
   plan: StudyMissionPlan;
@@ -393,6 +394,20 @@ export default function MissionDashboard({ plan, handoffs, onComplete }: Mission
     if (currentTask === 'intel') {
       return (
         <div className="space-y-2">
+          {plan.communityHeat.length > 0 && (
+            <div className="rounded-lg border border-orange-500/30 bg-orange-50/30 dark:bg-orange-500/10 p-2.5 space-y-1">
+              <p className="text-[10px] font-semibold text-orange-700 dark:text-orange-400 flex items-center gap-1">
+                <Users className="w-3 h-3" /> Connect · Community exam heat
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {plan.communityHeat.map(h => (
+                  <span key={h.topic} className="text-[10px] px-1.5 py-0.5 rounded bg-theme-elevated border border-theme">
+                    {h.topic} · {h.heat}%{h.trend ? ` · ${h.trend}` : ''}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
           {plan.intelHeadlines.length === 0 ? (
             <p className="text-xs text-theme-muted">
               No live RSS headlines available — check Intel Hub or try again later.
@@ -441,46 +456,22 @@ export default function MissionDashboard({ plan, handoffs, onComplete }: Mission
 
   const currentMeta = currentTask ? TASK_META[currentTask] : null;
   const CurrentIcon = currentMeta?.icon ?? BookOpen;
+  const activePillar = currentTask ? getAgentForMissionTask(currentTask).id : null;
 
   return (
     <div className="space-y-4">
-      {/* Agent handoff pipeline */}
-      <div className="rounded-xl border border-theme bg-theme-elevated p-4">
-        <p className="text-[10px] font-semibold text-theme-muted tracking-widest uppercase mb-3">
-          Agent pipeline
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
-          {handoffs.map((h, i) => {
-            const agent = getOpsAgent(h.agent);
-            return (
-              <div key={`${h.agent}-${h.phase}`} className="flex items-center gap-2">
-                {i > 0 && <ArrowRight className="w-3 h-3 text-theme-faint" />}
-                <div
-                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border text-xs ${
-                    h.status === 'done'
-                      ? 'border-emerald-500/40 bg-emerald-50/50 dark:bg-emerald-500/10'
-                      : h.status === 'running'
-                        ? 'border-cyan-500/40 bg-cyan-50/50 dark:bg-cyan-500/10 animate-pulse'
-                        : 'border-theme bg-cockpit-track'
-                  }`}
-                >
-                  <span className={`font-semibold ${agent.accent}`}>{h.agentName}</span>
-                  {h.status === 'done' && <CheckCircle2 className="w-3 h-3 text-emerald-500" />}
-                  {h.status === 'running' && <Loader2 className="w-3 h-3 animate-spin text-cyan-500" />}
-                </div>
-              </div>
-            );
-          })}
+      <AgentCouncilStrip handoffs={handoffs} activePillar={activePillar} variant="active" />
+
+      {/* Invest brief from Strategist */}
+      {plan.investBrief && (
+        <div className="rounded-xl border border-violet-500/30 bg-violet-50/30 dark:bg-violet-500/10 p-3">
+          <p className="text-[10px] font-semibold text-violet-700 dark:text-violet-400 tracking-widest uppercase flex items-center gap-1 mb-1">
+            <TrendingUp className="w-3 h-3" /> Invest · Domain ROI
+            {plan.domainWeight && <span className="text-theme-muted normal-case">· {plan.domainWeight} exam weight</span>}
+          </p>
+          <p className="text-xs text-cockpit leading-relaxed">{plan.investBrief}</p>
         </div>
-        <div className="mt-3 space-y-1">
-          {handoffs.filter(h => h.status === 'done').map(h => (
-            <p key={`${h.agent}-msg`} className="text-[11px] text-theme-muted">
-              <span className={`font-medium ${getOpsAgent(h.agent).accent}`}>{h.agentName}:</span>{' '}
-              {h.message.slice(0, 160)}{h.message.length > 160 ? '…' : ''}
-            </p>
-          ))}
-        </div>
-      </div>
+      )}
 
       {/* Header + progress */}
       <div>
@@ -513,9 +504,20 @@ export default function MissionDashboard({ plan, handoffs, onComplete }: Mission
       )}
 
       {allDone && !finishing && (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/10 p-4">
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/10 p-4 space-y-3">
           <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Mission ready to complete</p>
-          <p className="text-xs text-theme-muted mt-1">{plan.tomorrowSuggestion}</p>
+          <p className="text-xs text-theme-muted">{plan.tomorrowSuggestion}</p>
+          {plan.earnAction && (
+            <div className="rounded-lg border border-emerald-500/20 bg-theme-elevated p-3">
+              <p className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1 mb-1">
+                <Briefcase className="w-3 h-3" /> Earn · Next career action
+              </p>
+              <p className="text-xs text-cockpit">{plan.earnAction}</p>
+              <Link to="/career" className="inline-flex text-[10px] text-emerald-600 dark:text-emerald-400 hover:underline mt-1">
+                Open Career Intel →
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>

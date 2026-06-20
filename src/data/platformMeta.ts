@@ -73,7 +73,7 @@ export const PLATFORM_WORKFLOWS: PlatformWorkflow[] = [
     title: 'Command Center',
     summary: 'Your mission dashboard — readiness, threats, and quick actions.',
     howItHelps: 'See domain readiness scores, rising threats, trap alerts, and jump to study modes in one view.',
-    route: '/',
+    route: '/command',
     tips: [
       'Check Domain Readiness before each study session — attack lowest scores first.',
       'Rising Threats reflect community intel heat map — high-yield exam topics.',

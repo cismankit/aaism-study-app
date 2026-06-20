@@ -30,7 +30,7 @@ export default function FeatureGate({ children }: { children: React.ReactNode })
       </p>
       <div className="flex flex-wrap gap-2 justify-center pt-2">
         <Link
-          to="/mission"
+          to="/"
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium"
         >
           <Target className="w-4 h-4" /> Today&apos;s mission

@@ -885,3 +885,94 @@ export const FORUM_SOURCES: ForumSource[] = [
     notes: 'Useful for understanding concepts from multiple perspectives. Cross-reference with official ISACA materials.',
   },
 ];
+
+// ============ CERT-AWARE COMMUNITY INTEL ============
+
+const CISSP_TOPIC_HEAT: TopicHeat[] = [
+  { topic: 'Risk Management Frameworks (NIST, ISO 27001)', domain: 1, heat: 94, trend: 'stable', communityNotes: 'Governance-first mindset — risk treatment, BIA, and policy hierarchy are heavily tested.' },
+  { topic: 'Cryptography & Key Management', domain: 3, heat: 91, trend: 'stable', communityNotes: 'Symmetric vs asymmetric, PKI, digital signatures — know use cases not just definitions.' },
+  { topic: 'IAM & Access Control Models', domain: 5, heat: 90, trend: 'rising', communityNotes: 'RBAC, ABAC, federation, SSO, privileged access — scenario judgment dominates.' },
+  { topic: 'Network Security Architecture', domain: 4, heat: 88, trend: 'stable', communityNotes: 'Segmentation, VPN, wireless, zero trust overlays — manager perspective wins.' },
+  { topic: 'Incident Response & BCP/DRP', domain: 7, heat: 87, trend: 'stable', communityNotes: 'FIRST actions, RTO/RPO, tabletop exercises — sequence matters.' },
+  { topic: 'Secure SDLC & Supply Chain', domain: 8, heat: 85, trend: 'rising', communityNotes: 'DevSecOps, code review, third-party components — growing exam weight.' },
+  { topic: 'Security Assessment & Auditing', domain: 6, heat: 83, trend: 'stable', communityNotes: 'Pen test vs vuln assessment, audit evidence, compliance mapping.' },
+  { topic: 'Asset Classification & Handling', domain: 2, heat: 80, trend: 'stable', communityNotes: 'Data ownership, retention, destruction, privacy regulations.' },
+];
+
+const SECURITY_PLUS_TOPIC_HEAT: TopicHeat[] = [
+  { topic: 'Threat Types & Attack Mitigations', domain: 2, heat: 93, trend: 'rising', communityNotes: 'Malware, social engineering, DDoS — match attack to control.' },
+  { topic: 'Zero Trust & Network Segmentation', domain: 3, heat: 91, trend: 'rising', communityNotes: 'Micro-segmentation, SASE, cloud shared responsibility.' },
+  { topic: 'Cryptography Use Cases', domain: 3, heat: 88, trend: 'stable', communityNotes: 'TLS, hashing, digital signatures — practical application over math.' },
+  { topic: 'Incident Response Lifecycle', domain: 4, heat: 87, trend: 'stable', communityNotes: 'Preparation → detection → containment → eradication → recovery.' },
+  { topic: 'Governance, Risk & Compliance', domain: 5, heat: 85, trend: 'stable', communityNotes: 'Policies, risk registers, third-party assessments.' },
+  { topic: 'Identity & Access Management', domain: 3, heat: 84, trend: 'stable', communityNotes: 'MFA, federation, least privilege, account lifecycle.' },
+  { topic: 'Vulnerability Management', domain: 2, heat: 82, trend: 'stable', communityNotes: 'Scanning, prioritization, patching cadence, compensating controls.' },
+  { topic: 'Cloud & Virtualization Security', domain: 3, heat: 80, trend: 'rising', communityNotes: 'CSPM, container security, hybrid connectivity.' },
+];
+
+const GENERIC_TRAP_PATTERNS: TrapPattern[] = [
+  {
+    id: 'generic-trap-1',
+    name: 'Technical Over Management',
+    description: 'Choosing the technically correct answer instead of the governance- or management-appropriate one.',
+    domains: [1, 2, 3, 4, 5, 6, 7, 8],
+    frequency: 'very_common',
+    example: 'Q: "What is the BEST first step?" Wrong: immediate technical fix → Right: assess scope, involve stakeholders, align with policy.',
+    whyStudentsFail: 'Practitioners default to hands-on fixes; certification exams test judgment and process.',
+    howToAvoid: 'Ask: "What would a CISO or program owner recommend?"',
+  },
+  {
+    id: 'generic-trap-2',
+    name: 'Skipping NOT/EXCEPT',
+    description: 'Missing negative qualifiers in the stem.',
+    domains: [1, 2, 3, 4, 5],
+    frequency: 'very_common',
+    example: 'Q: "Which is NOT a detective control?" — students pick a detective control because they missed NOT.',
+    whyStudentsFail: 'Time pressure causes skim-reading.',
+    howToAvoid: 'Underline NOT/EXCEPT/LEAST before reading options.',
+  },
+  {
+    id: 'generic-trap-3',
+    name: 'Action Before Assessment',
+    description: 'Jumping to remediation before understanding scope and impact.',
+    domains: [1, 2, 4, 7],
+    frequency: 'very_common',
+    example: 'FIRST questions: assess and document before contain, eradicate, or notify.',
+    whyStudentsFail: 'Urgency bias under exam stress.',
+    howToAvoid: 'FIRST ≈ Assess → Plan → Act → Monitor.',
+  },
+];
+
+export interface CommunityIntelMeta {
+  certId: string;
+  isAaismSourced: boolean;
+  sourceLabel: string;
+}
+
+export function getCommunityIntelMeta(certId: string): CommunityIntelMeta {
+  if (certId === 'aaism') {
+    return { certId, isAaismSourced: true, sourceLabel: 'AAISM community intelligence' };
+  }
+  return {
+    certId,
+    isAaismSourced: false,
+    sourceLabel: `${certId.toUpperCase()} curated stubs — run Research tab for AI-discovered patterns`,
+  };
+}
+
+export function getTopicHeatMap(certId: string): TopicHeat[] {
+  if (certId === 'cissp') return CISSP_TOPIC_HEAT;
+  if (certId === 'security-plus') return SECURITY_PLUS_TOPIC_HEAT;
+  if (certId === 'aaism') return TOPIC_HEAT_MAP;
+  return [];
+}
+
+export function getTrapPatterns(certId: string): TrapPattern[] {
+  if (certId === 'aaism') return TRAP_PATTERNS;
+  return GENERIC_TRAP_PATTERNS;
+}
+
+/** Question keyword patterns (BEST/MOST/FIRST) are vendor-agnostic — reuse for all certs. */
+export function getQuestionPatterns(_certId: string): QuestionPattern[] {
+  return QUESTION_PATTERNS;
+}

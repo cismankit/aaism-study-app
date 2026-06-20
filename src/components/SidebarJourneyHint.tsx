@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
-import { X, LayoutDashboard, Crosshair, Zap, Radar, Bot } from 'lucide-react';
+import { X, Target, Crosshair, Zap } from 'lucide-react';
 import { PLATFORM_NAME } from '../constants/platformBrand';
 
 const JOURNEY_DISMISSED_KEY = 'aegis-sidebar-journey-dismissed';
 
 const MISSION_PATH = [
-  { label: 'Command', subtitle: 'Orient & plan', icon: LayoutDashboard, color: 'text-emerald-500' },
-  { label: 'Practice', subtitle: '312+ questions', icon: Crosshair, color: 'text-cyan-500' },
-  { label: 'Exam', subtitle: '90Q timed sim', icon: Zap, color: 'text-amber-500' },
-  { label: 'Intel', subtitle: 'Live OSINT feeds', icon: Radar, color: 'text-violet-500' },
-  { label: 'Agent', subtitle: 'AI discovery', icon: Bot, color: 'text-pink-500' },
+  { label: 'Learn', subtitle: 'Daily mission', icon: Target, color: 'text-emerald-500' },
+  { label: 'Work', subtitle: 'Drills & ops', icon: Crosshair, color: 'text-cyan-500' },
+  { label: 'Earn', subtitle: 'Exam & career', icon: Zap, color: 'text-amber-500' },
 ] as const;
 
 export function isJourneyHintDismissed(): boolean {
@@ -44,7 +42,7 @@ export default function SidebarJourneyHint({ collapsed }: SidebarJourneyHintProp
 
   return (
     <div
-      className="fixed left-16 top-1/2 -translate-y-1/2 z-[55] w-64 animate-fade-in pointer-events-auto hidden lg:block"
+      className="fixed left-[72px] top-1/2 -translate-y-1/2 z-[55] w-64 animate-fade-in pointer-events-auto hidden lg:block"
       role="dialog"
       aria-label="Learning path guide"
     >
@@ -55,7 +53,7 @@ export default function SidebarJourneyHint({ collapsed }: SidebarJourneyHintProp
               {PLATFORM_NAME} path
             </p>
             <p className="text-xs text-theme-muted mt-0.5">
-              Hover icons for guidance — follow this flow for exam readiness.
+              Hover icons for guidance — Learn, Work, Earn in one daily loop.
             </p>
           </div>
           <button

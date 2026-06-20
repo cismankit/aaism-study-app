@@ -1,12 +1,11 @@
 /**
- * Unified study mission orchestrator — Hermes → Claude Analyst → OpenClaw handoff.
+ * Unified study mission orchestrator — Invest → Learn → Work → Connect → Earn handoff chain.
  */
 
 import { chat, resolveAIConfigForRun } from './aiService';
 import { isKillSwitchActive, KILL_SWITCH_HALT_MESSAGE, linkAbortSignal } from './killSwitchService';
+import { buildMissionPillarPrompt } from './agentPrompts';
 import { buildCertTrainingContext, getActiveCertification } from './certContextService';
-import { buildMissionHandoffPrompt } from './agentPrompts';
-import { type OpsAgentId } from './opsAgentService';
 import { getDomainProgress, getWeakestDomain } from './progressService';
 import { topics, type Topic } from '../data/knowledgeBase';
 import { getLabsForDomain } from './labService';
@@ -15,6 +14,13 @@ import { getQuestionsByDomain, type ExamQuestion } from '../data/examContent';
 import { getDomainsForCert } from '../data/examContent';
 import { fetchLiveIntelFeed, type IntelFeedItem } from './rssFeedService';
 import { relevanceToConfidence } from '../utils/quizProvenance';
+import { getDomainGuide } from '../data/aaismDomainGuide';
+import { getTopicHeatMap } from '../data/communityIntelligence';
+import {
+  MISSION_HANDOFF_ORDER,
+  getLearnWorkEarnAgent,
+  type LearnWorkEarnPillar,
+} from '../data/learnWorkEarnAgents';
 
 export type MissionGoalType = 'domain-focus' | 'weak-drill' | 'daily-30min';
 
@@ -25,11 +31,19 @@ export interface MissionGoal {
 }
 
 export interface AgentHandoff {
-  agent: OpsAgentId;
+  pillar: LearnWorkEarnPillar;
+  agent: LearnWorkEarnPillar;
   agentName: string;
   phase: string;
+  produces: string;
   message: string;
   status: 'pending' | 'running' | 'done';
+}
+
+export interface CommunityHeatItem {
+  topic: string;
+  heat: number;
+  trend?: string;
 }
 
 export interface IntelHeadline {
@@ -47,11 +61,15 @@ export interface StudyMissionPlan {
   goal: MissionGoal;
   domainId: number;
   domainName: string;
+  domainWeight?: string;
   topics: Topic[];
   lab: LabDefinition | null;
   intelHeadlines: IntelHeadline[];
+  communityHeat: CommunityHeatItem[];
   quizQuestions: ExamQuestion[];
   intelBrief: string;
+  investBrief: string;
+  earnAction: string;
   handoffs: AgentHandoff[];
   tomorrowSuggestion: string;
 }
@@ -68,8 +86,10 @@ export interface SharedMissionContext {
   goal: MissionGoal;
   domainId: number;
   domainName: string;
+  domainWeight?: string;
   weakDomains: Array<{ domainId: number; avg: number; count: number }>;
   domainProgress: ReturnType<typeof getDomainProgress>;
+  communityHeat: CommunityHeatItem[];
 }
 
 const WEAK_THRESHOLD = 60;
@@ -125,27 +145,64 @@ async function pickIntelHeadlines(_domainId: number, count = 2): Promise<IntelHe
   }
 }
 
+function pickCommunityHeat(certId: string, domainId: number, count = 3): CommunityHeatItem[] {
+  return getTopicHeatMap(certId)
+    .filter(t => t.domain === domainId)
+    .sort((a, b) => b.heat - a.heat)
+    .slice(0, count)
+    .map(t => ({ topic: t.topic, heat: t.heat, trend: t.trend }));
+}
+
 function buildIntelBrief(headlines: IntelHeadline[], domainName: string): string {
   const parts = headlines.map(h => `${h.title}: ${h.summary}`).join(' ');
   return `Intel brief for ${domainName}: ${parts.slice(0, 600)}`;
 }
 
+function buildInvestFallback(ctx: SharedMissionContext): string {
+  const weak = ctx.weakDomains.find(d => d.domainId === ctx.domainId);
+  const weight = ctx.domainWeight ?? 'unknown weight';
+  if (weak) {
+    return `D${ctx.domainId} ${ctx.domainName} (${weight}) — ${weak.avg}% avg. Highest ROI: close this gap before exam sim.`;
+  }
+  return `D${ctx.domainId} ${ctx.domainName} (${weight}) — no quiz data yet. ROI: establish baseline with today's mission loop.`;
+}
+
+function buildEarnFallback(ctx: SharedMissionContext, heat: CommunityHeatItem[]): string {
+  const hotTopic = heat[0]?.topic ?? ctx.domainName;
+  return `After D${ctx.domainId}, analyze a job post mentioning "${hotTopic}" on Career Intel — map skills to ${ctx.certShortName}.`;
+}
+
 function resolveDomain(
   certId: string,
   goal: MissionGoal,
-): { domainId: number; domainName: string } {
+): { domainId: number; domainName: string; domainWeight?: string } {
   const domains = getDomainsForCert(certId);
   if (goal.domainId) {
     const d = domains.find(x => x.id === goal.domainId);
-    return { domainId: goal.domainId, domainName: d?.name ?? `Domain ${goal.domainId}` };
+    const guide = getDomainGuide(goal.domainId);
+    return {
+      domainId: goal.domainId,
+      domainName: d?.name ?? `Domain ${goal.domainId}`,
+      domainWeight: guide?.weight,
+    };
   }
   const weakest = getWeakestDomain(certId);
   if (weakest) {
     const d = domains.find(x => x.id === weakest.domainId);
-    return { domainId: weakest.domainId, domainName: d?.name ?? `Domain ${weakest.domainId}` };
+    const guide = getDomainGuide(weakest.domainId);
+    return {
+      domainId: weakest.domainId,
+      domainName: d?.name ?? `Domain ${weakest.domainId}`,
+      domainWeight: guide?.weight,
+    };
   }
   const first = domains[0];
-  return { domainId: first?.id ?? 1, domainName: first?.name ?? 'Domain 1' };
+  const guide = first ? getDomainGuide(first.id) : undefined;
+  return {
+    domainId: first?.id ?? 1,
+    domainName: first?.name ?? 'Domain 1',
+    domainWeight: guide?.weight,
+  };
 }
 
 function buildTomorrowSuggestion(
@@ -154,13 +211,28 @@ function buildTomorrowSuggestion(
 ): string {
   const weak = ctx.weakDomains.filter(d => d.domainId !== completedDomainId && d.avg < WEAK_THRESHOLD);
   if (weak.length > 0) {
-    return `Tomorrow: weak domain drill on Domain ${weak[0].domainId} (${weak[0].avg}% avg)`;
+    return `Tomorrow: Invest picks D${weak[0].domainId} (${weak[0].avg}% avg) — weak domain ROI`;
   }
   const nextDomain = ctx.domainProgress.find(d => d.domainId !== completedDomainId && d.count === 0);
   if (nextDomain) {
     return `Tomorrow: explore Domain ${nextDomain.domainId} — no quizzes yet`;
   }
   return 'Tomorrow: daily 30-min mixed review across all domains';
+}
+
+function buildInitialHandoffs(): AgentHandoff[] {
+  return MISSION_HANDOFF_ORDER.map(pillar => {
+    const agent = getLearnWorkEarnAgent(pillar);
+    return {
+      pillar,
+      agent: pillar,
+      agentName: agent.name,
+      phase: agent.orchestrationPhase,
+      produces: agent.produces,
+      message: `${agent.role}…`,
+      status: 'pending' as const,
+    };
+  });
 }
 
 export function getSuggestedMissionGoal(certId: string): MissionGoal {
@@ -200,16 +272,16 @@ export function getMissionGoalOptions(certId: string): MissionGoal[] {
   return options;
 }
 
-async function runAgentStep(
-  agentId: OpsAgentId,
-  phase: string,
+async function runPillarStep(
+  pillar: LearnWorkEarnPillar,
   userPrompt: string,
   certContext: string,
   handoffs: AgentHandoff[],
   callbacks: MissionOrchestratorCallbacks,
   signal?: AbortSignal,
 ): Promise<string> {
-  const idx = handoffs.findIndex(h => h.agent === agentId && h.phase === phase);
+  const agent = getLearnWorkEarnAgent(pillar);
+  const idx = handoffs.findIndex(h => h.pillar === pillar);
   if (idx >= 0) {
     handoffs[idx] = { ...handoffs[idx], status: 'running' };
     callbacks.onHandoffUpdate([...handoffs]);
@@ -223,12 +295,15 @@ async function runAgentStep(
 
   const config = await resolveAIConfigForRun();
   const response = await chat(config, [
-    { role: 'system', content: `${buildMissionHandoffPrompt(agentId)}\n\n${certContext}\nReturn concise JSON or plain text.` },
+    {
+      role: 'system',
+      content: `${buildMissionPillarPrompt(pillar)}\n\n${certContext}\nReturn concise plain text (2-3 sentences).`,
+    },
     { role: 'user', content: userPrompt },
   ], { jsonMode: false, temperature: 0.3, numPredict: 2048, timeoutMs: 90_000, signal });
 
   if (response.error) {
-    const errMsg = `${agentId} ${phase}: ${response.error}`;
+    const errMsg = `${agent.name} ${agent.orchestrationPhase}: ${response.error}`;
     callbacks.onError(errMsg);
     if (idx >= 0) {
       handoffs[idx] = {
@@ -251,7 +326,7 @@ async function runAgentStep(
   return message;
 }
 
-/** Single Hermes handoff step for Settings smoke tests. */
+/** Single Invest handoff step for Settings smoke tests. */
 export async function smokeTestMissionHandoff(): Promise<{
   ok: boolean;
   summary: string;
@@ -259,21 +334,13 @@ export async function smokeTestMissionHandoff(): Promise<{
 }> {
   const cert = getActiveCertification();
   const certContext = buildCertTrainingContext(cert);
-  const handoffs: AgentHandoff[] = [
-    {
-      agent: 'hermes',
-      agentName: 'Hermes',
-      phase: 'assess',
-      message: 'Smoke test…',
-      status: 'pending',
-    },
-  ];
+  const handoffs = buildInitialHandoffs();
+  handoffs[0] = { ...handoffs[0], status: 'pending', message: 'Smoke test…' };
   let capturedError = '';
 
   try {
-    const summary = await runAgentStep(
-      'hermes',
-      'assess',
+    const summary = await runPillarStep(
+      'invest',
       `Smoke test: summarize one priority for ${cert.shortName} Domain 1 in one sentence.`,
       certContext,
       handoffs,
@@ -313,11 +380,12 @@ export async function orchestrateStudyMission(
 
   const cert = getActiveCertification();
   const certContext = buildCertTrainingContext(cert);
-  const { domainId, domainName } = resolveDomain(cert.id, goal);
+  const { domainId, domainName, domainWeight } = resolveDomain(cert.id, goal);
   const domainProgress = getDomainProgress(cert.id);
   const weakDomains = domainProgress
     .filter(d => d.count > 0 && d.avg < WEAK_THRESHOLD)
     .sort((a, b) => a.avg - b.avg);
+  const communityHeat = pickCommunityHeat(cert.id, domainId, 3);
 
   const ctx: SharedMissionContext = {
     certId: cert.id,
@@ -325,60 +393,31 @@ export async function orchestrateStudyMission(
     goal,
     domainId,
     domainName,
+    domainWeight,
     weakDomains,
     domainProgress,
+    communityHeat,
   };
 
-  const handoffs: AgentHandoff[] = [
-    { agent: 'hermes', agentName: 'Hermes', phase: 'assess', message: 'Analyzing domain scores…', status: 'pending' },
-    { agent: 'claude-analyst', agentName: 'Claude Analyst', phase: 'curate', message: 'Selecting KB topics and lab…', status: 'pending' },
-    { agent: 'openclaw', agentName: 'OpenClaw', phase: 'intel', message: 'Pulling relevant headlines…', status: 'pending' },
-  ];
+  const handoffs = buildInitialHandoffs();
   callbacks.onHandoffUpdate([...handoffs]);
 
   const checkAbort = () => {
     if (isKillSwitchActive() || runSignal.aborted) throw new Error(KILL_SWITCH_HALT_MESSAGE);
   };
 
-  checkAbort();
-  const hermesSummary = await runAgentStep(
-    'hermes',
-    'assess',
-    `Assess weak areas for ${cert.shortName}. Domain focus: ${domainName} (D${domainId}). ` +
-    `Weak domains: ${weakDomains.map(d => `D${d.domainId}@${d.avg}%`).join(', ') || 'none yet'}. ` +
-    `Goal: ${goal.label}. Summarize priority in 2 sentences.`,
-    certContext,
-    handoffs,
-    callbacks,
-    runSignal,
-  );
-  checkAbort();
-
-  if (handoffs[0]) handoffs[0].message = hermesSummary.slice(0, 200);
-  callbacks.onHandoffUpdate([...handoffs]);
-
   const missionTopics = pickTopicsForDomain(domainId, 3);
   const missionLab = pickLabForDomain(cert.id, domainId);
-
-  checkAbort();
-  await runAgentStep(
-    'claude-analyst',
-    'curate',
-    `Pick study plan for D${domainId} ${domainName}. Topics: ${missionTopics.map(t => t.title).join(', ')}. ` +
-    `Lab: ${missionLab?.title ?? 'none available'}. Confirm alignment with ${goal.label}.`,
-    certContext,
-    handoffs,
-    callbacks,
-    runSignal,
-  );
-  checkAbort();
-
+  const missionQuiz = pickQuizQuestions(domainId, 5);
   const intelHeadlines = await pickIntelHeadlines(domainId, 2);
+
   checkAbort();
-  const openclawSummary = await runAgentStep(
-    'openclaw',
-    'intel',
-    `Summarize intel relevance for D${domainId}: ${intelHeadlines.map(h => h.title).join('; ')}. One paragraph brief.`,
+  const investSummary = await runPillarStep(
+    'invest',
+    `Invest ROI for ${cert.shortName}. Domain: ${domainName} (D${domainId}, ${domainWeight ?? 'weight unknown'}). ` +
+    `Weak domains: ${weakDomains.map(d => `D${d.domainId}@${d.avg}%`).join(', ') || 'none yet'}. ` +
+    `Goal: ${goal.label}. Community heat: ${communityHeat.map(h => h.topic).join(', ') || 'none'}. ` +
+    `Summarize priority in 2 sentences with explicit ROI rationale.`,
     certContext,
     handoffs,
     callbacks,
@@ -386,20 +425,81 @@ export async function orchestrateStudyMission(
   );
   checkAbort();
 
-  const intelBrief = openclawSummary.length > 80
-    ? openclawSummary
+  const investBrief = investSummary.length > 20
+    ? investSummary
+    : buildInvestFallback(ctx);
+
+  checkAbort();
+  await runPillarStep(
+    'learn',
+    `Learn plan for D${domainId} ${domainName}. Topics: ${missionTopics.map(t => t.title).join(', ')}. ` +
+    `Quiz: ${missionQuiz.length} bank questions. Confirm alignment with ${goal.label}.`,
+    certContext,
+    handoffs,
+    callbacks,
+    runSignal,
+  );
+  checkAbort();
+
+  checkAbort();
+  await runPillarStep(
+    'work',
+    `Work ops assignment for D${domainId}. Lab: ${missionLab?.title ?? 'none available'}. ` +
+    `First step: ${missionLab?.steps?.[0]?.title ?? 'N/A'}. Confirm hands-on focus.`,
+    certContext,
+    handoffs,
+    callbacks,
+    runSignal,
+  );
+  checkAbort();
+
+  checkAbort();
+  const connectSummary = await runPillarStep(
+    'connect',
+    `Connect intel for D${domainId}: Headlines: ${intelHeadlines.map(h => h.title).join('; ') || 'none'}. ` +
+    `Community heat: ${communityHeat.map(h => `${h.topic}(${h.heat})`).join(', ') || 'none'}. One paragraph brief.`,
+    certContext,
+    handoffs,
+    callbacks,
+    runSignal,
+  );
+  checkAbort();
+
+  const intelBrief = connectSummary.length > 80
+    ? connectSummary
     : buildIntelBrief(intelHeadlines, domainName);
+
+  checkAbort();
+  const earnSummary = await runPillarStep(
+    'earn',
+    `Earn career tie-in for D${domainId} ${domainName} on ${cert.shortName}. ` +
+    `Hot community topic: ${communityHeat[0]?.topic ?? domainName}. ` +
+    `Suggest one public-data career action (job post analysis, outreach draft, or agent gap run).`,
+    certContext,
+    handoffs,
+    callbacks,
+    runSignal,
+  );
+  checkAbort();
+
+  const earnAction = earnSummary.length > 20
+    ? earnSummary
+    : buildEarnFallback(ctx, communityHeat);
 
   const plan: StudyMissionPlan = {
     id: crypto.randomUUID(),
     goal,
     domainId,
     domainName,
+    domainWeight,
     topics: missionTopics,
     lab: missionLab,
     intelHeadlines,
-    quizQuestions: pickQuizQuestions(domainId, 5),
+    communityHeat,
+    quizQuestions: missionQuiz,
     intelBrief,
+    investBrief,
+    earnAction,
     handoffs: [...handoffs],
     tomorrowSuggestion: buildTomorrowSuggestion(ctx, domainId),
   };

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getSessionFocusLabel } from '../services/sidebarJourneyService';
 import { isFullCatalogUnlocked } from '../services/productTierService';
+import { PROGRESS_CHANGED_EVENT } from '../services/progressService';
 
 const SESSION_START_KEY = 'aegis-session-start';
 const FOCUS_MODE_KEY = 'aegis-sidebar-focus-mode';
@@ -20,21 +21,27 @@ export function useSessionContext(activeCertId: string) {
   const [focusLabel, setFocusLabel] = useState('Overview');
   const [focusMode, setFocusMode] = useState(getFocusModeEnabled);
 
-  useEffect(() => {
-    let start = sessionStorage.getItem(SESSION_START_KEY);
+  const tickSession = useCallback(() => {
+    const start = sessionStorage.getItem(SESSION_START_KEY);
     if (!start) {
-      start = String(Date.now());
-      sessionStorage.setItem(SESSION_START_KEY, start);
+      const now = String(Date.now());
+      sessionStorage.setItem(SESSION_START_KEY, now);
+      setSessionMinutes(0);
+      return;
     }
     const startMs = Number(start);
-
-    const tick = () => {
-      setSessionMinutes(Math.max(0, Math.floor((Date.now() - startMs) / 60_000)));
-    };
-    tick();
-    const id = window.setInterval(tick, 60_000);
-    return () => window.clearInterval(id);
+    setSessionMinutes(Math.max(0, Math.floor((Date.now() - startMs) / 60_000)));
   }, []);
+
+  useEffect(() => {
+    tickSession();
+    const id = window.setInterval(tickSession, 10_000);
+    window.addEventListener(PROGRESS_CHANGED_EVENT, tickSession);
+    return () => {
+      window.clearInterval(id);
+      window.removeEventListener(PROGRESS_CHANGED_EVENT, tickSession);
+    };
+  }, [tickSession]);
 
   useEffect(() => {
     setFocusLabel(getSessionFocusLabel(activeCertId));

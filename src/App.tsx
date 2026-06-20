@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import OSINTLayout from './components/OSINTLayout'
 import FeatureGate from './components/FeatureGate'
@@ -47,8 +47,9 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<OSINTLayout />}>
-        <Route index element={<CommandCenter />} />
-        <Route path="mission" element={<StudyMission />} />
+        <Route index element={<StudyMission />} />
+        <Route path="command" element={<CommandCenter />} />
+        <Route path="mission" element={<Navigate to="/" replace />} />
         <Route path="career" element={<CareerIntel />} />
         <Route path="study" element={<Study />} />
         <Route path="exam" element={<Suspense fallback={<RouteFallback />}><Exam /></Suspense>} />

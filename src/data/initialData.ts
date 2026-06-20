@@ -1,4 +1,5 @@
-import { AppState, QuizQuestion } from '../types';
+import { AppState, QuizQuestion, Domain } from '../types';
+import { getCertification } from './certifications/registry';
 
 export const initialState: AppState = {
   resources: [
@@ -215,16 +216,43 @@ export const sampleQuestions: QuizQuestion[] = [
 // Local storage helpers
 const STORAGE_KEY = 'aaism-study-app-state';
 
+function emptyDomainsForCert(certId: string): Domain[] {
+  const cert = getCertification(certId);
+  if (cert?.domains.length) {
+    return cert.domains.map(d => ({
+      id: d.id,
+      name: d.name,
+      icon: d.icon ?? '📘',
+      notes: [],
+    }));
+  }
+  return initialState.domains.map(d => ({ ...d, notes: [] }));
+}
+
+function migrateNotesByCert(parsed: AppState): AppState {
+  if (parsed.notesByCert && Object.keys(parsed.notesByCert).length > 0) {
+    return parsed;
+  }
+  const notesByCert: Record<string, Domain[]> = {
+    aaism: parsed.domains ?? initialState.domains,
+  };
+  return { ...parsed, notesByCert };
+}
+
 export function loadState(): AppState {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = migrateNotesByCert(JSON.parse(saved) as AppState);
+      return parsed;
     }
   } catch (e) {
     console.error('Failed to load state:', e);
   }
-  return initialState;
+  return {
+    ...initialState,
+    notesByCert: { aaism: initialState.domains },
+  };
 }
 
 export function saveState(state: AppState): void {
@@ -233,4 +261,11 @@ export function saveState(state: AppState): void {
   } catch (e) {
     console.error('Failed to save state:', e);
   }
+}
+
+export function getDomainsForCertNotes(certId: string, state: AppState): Domain[] {
+  if (state.notesByCert?.[certId]) {
+    return state.notesByCert[certId];
+  }
+  return emptyDomainsForCert(certId);
 }

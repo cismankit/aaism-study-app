@@ -151,6 +151,8 @@ export interface StudySession {
 export interface AppState {
   resources: StudyResource[];
   domains: Domain[];
+  /** Per-cert note isolation — domains array holds notes for active cert only */
+  notesByCert?: Record<string, Domain[]>;
   quizAttempts: QuizAttempt[];
   studySessions: StudySession[];
   examDate: string | null;

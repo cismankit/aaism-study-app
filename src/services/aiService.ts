@@ -100,6 +100,13 @@ export interface AIResponse {
   error?: string;
 }
 
+export interface ChatStreamCallbacks {
+  onThinking?: (delta: string, fullThinking: string) => void;
+  onContent?: (delta: string, fullContent: string) => void;
+  onDone?: (result: { content: string; thinking: string }) => void;
+  onError?: (error: string) => void;
+}
+
 export interface ChatOptions {
   jsonMode?: boolean;
   temperature?: number;
@@ -109,6 +116,20 @@ export interface ChatOptions {
   timeoutMs?: number;
   /** Optional run-level abort (agent missions, team packs, etc.) */
   signal?: AbortSignal;
+  /**
+   * Ollama thinking models (gemma4/qwen3). Default: enabled unless jsonMode or explicitly false.
+   * Set false for agent JSON work to skip thinking tokens.
+   */
+  allowThinking?: boolean;
+  /** Stream Ollama /api/chat — requires streamCallbacks for live updates */
+  stream?: boolean;
+  streamCallbacks?: ChatStreamCallbacks;
+}
+
+/** Models that emit thinking tokens — disable for chat unless allowThinking is set. */
+export function isThinkingCapableOllamaModel(model: string): boolean {
+  const lower = model.toLowerCase();
+  return /gemma4|qwen3|deepseek-r1|:r1/i.test(lower);
 }
 
 // Default configurations for each provider
@@ -662,6 +683,132 @@ function formatOllamaError(status: number, statusText: string, bodyText: string,
   return `Ollama error (${status} ${statusText})`;
 }
 
+async function streamOllamaChat(
+  baseUrl: string,
+  body: Record<string, unknown>,
+  model: string,
+  options: ChatOptions,
+): Promise<AIResponse> {
+  const timeoutMs = options.timeoutMs ?? 120_000;
+  const callbacks = options.streamCallbacks!;
+  const streamBody = { ...body, stream: true };
+
+  const abortSignals = [AbortSignal.timeout(timeoutMs), getKillSwitchAbortSignal()];
+  if (options.signal) abortSignals.push(options.signal);
+
+  try {
+    const response = await ollamaFetch(`${baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(streamBody),
+      signal: combineAbortSignals(...abortSignals),
+      timeout: timeoutMs,
+    });
+
+    if (!response.ok) {
+      const bodyText = await response.text().catch(() => '');
+      const err = formatOllamaError(response.status, response.statusText, bodyText, model);
+      callbacks.onError?.(err);
+      return { content: '', error: err };
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      const err = 'Ollama stream unavailable — response body missing';
+      callbacks.onError?.(err);
+      return { content: '', error: err };
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullThinking = '';
+    let fullContent = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() ?? '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        try {
+          const parsed = JSON.parse(trimmed) as {
+            message?: { content?: string; thinking?: string };
+            done?: boolean;
+            error?: string;
+          };
+          if (parsed.error) {
+            const err = String(parsed.error);
+            callbacks.onError?.(err);
+            return { content: '', error: err };
+          }
+          const msg = parsed.message ?? {};
+          if (msg.thinking) {
+            const delta = String(msg.thinking);
+            fullThinking += delta;
+            callbacks.onThinking?.(delta, fullThinking);
+          }
+          if (msg.content) {
+            const delta = String(msg.content);
+            fullContent += delta;
+            callbacks.onContent?.(delta, fullContent);
+          }
+        } catch {
+          /* skip partial JSON lines */
+        }
+      }
+    }
+
+    let content = fullContent.trim();
+    if (!content && fullThinking) {
+      if (options.jsonMode) {
+        const jsonMatch = fullThinking.match(/\{[\s\S]*\}/) ?? fullThinking.match(/\[[\s\S]*\]/);
+        content = (jsonMatch?.[0] ?? fullThinking).trim();
+      } else {
+        content = fullThinking.trim();
+      }
+    }
+
+    callbacks.onDone?.({ content, thinking: fullThinking });
+
+    if (!content) {
+      const err = 'Ollama returned empty response — try a different model or increase num_predict';
+      callbacks.onError?.(err);
+      return { content: '', error: err };
+    }
+    return { content };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    const timedOut =
+      error instanceof Error &&
+      (error.name === 'TimeoutError' ||
+        (error.name === 'AbortError' && /timed?\s*out|aborted due to timeout/i.test(msg)));
+    if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
+      if (isKillSwitchActive()) {
+        const err = KILL_SWITCH_HALT_MESSAGE;
+        callbacks.onError?.(err);
+        return { content: '', error: err };
+      }
+      if (timedOut) {
+        const secs = Math.round(timeoutMs / 1000);
+        const err = `Request timed out after ${secs}s — local models can be slow on first load. Try again or switch model in Settings.`;
+        callbacks.onError?.(err);
+        return { content: '', error: err };
+      }
+      const err = 'AI request cancelled';
+      callbacks.onError?.(err);
+      return { content: '', error: err };
+    }
+    const err = `Ollama connection failed. Make sure Ollama is running locally. ${msg}`;
+    callbacks.onError?.(err);
+    return { content: '', error: err };
+  }
+}
+
 async function callOllama(config: AIConfig, messages: Message[], options?: ChatOptions): Promise<AIResponse> {
   try {
     const resolved = await resolveOllamaModel(config);
@@ -693,9 +840,20 @@ async function callOllama(config: AIConfig, messages: Message[], options?: ChatO
       body.format = 'json';
     }
 
+    const disableThinking =
+      options?.allowThinking === false ||
+      (options?.allowThinking === undefined && options?.jsonMode);
+    if (disableThinking && isThinkingCapableOllamaModel(model)) {
+      body.think = false;
+    }
+
     const baseUrl = normalizeOllamaBaseUrl(config.baseUrl ?? defaultConfigs.ollama.baseUrl!);
     const urlError = assertSafeOllamaBaseUrl(baseUrl);
     if (urlError) return { content: '', error: urlError };
+
+    if (options?.stream && options.streamCallbacks) {
+      return streamOllamaChat(baseUrl, body, model, options);
+    }
 
     const abortSignals = [AbortSignal.timeout(timeoutMs), getKillSwitchAbortSignal()];
     if (options?.signal) abortSignals.push(options.signal);
@@ -730,8 +888,19 @@ async function callOllama(config: AIConfig, messages: Message[], options?: ChatO
     return { content };
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
-    if (error instanceof Error && error.name === 'AbortError') {
+    const timedOut =
+      error instanceof Error &&
+      (error.name === 'TimeoutError' ||
+        (error.name === 'AbortError' && /timed?\s*out|aborted due to timeout/i.test(msg)));
+    if (error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError')) {
       if (isKillSwitchActive()) return { content: '', error: KILL_SWITCH_HALT_MESSAGE };
+      if (timedOut) {
+        const secs = Math.round((options?.timeoutMs ?? 120_000) / 1000);
+        return {
+          content: '',
+          error: `Request timed out after ${secs}s — local models can be slow on first load. Try again or switch model in Settings.`,
+        };
+      }
       return { content: '', error: 'AI request cancelled' };
     }
     if (msg.includes('not found') || msg.includes('ollama pull')) {
@@ -926,9 +1095,11 @@ export async function generateQuestions(
   config: AIConfig,
   domain: number,
   count: number = 5,
-  difficulty: 'easy' | 'medium' | 'hard' = 'medium'
+  difficulty: 'easy' | 'medium' | 'hard' = 'medium',
+  systemContext: string = AAISM_CONTEXT,
+  certShortName: string = 'AAISM',
 ): Promise<AIResponse> {
-  const prompt = `Generate ${count} ${difficulty} difficulty multiple-choice practice questions for AAISM Domain ${domain}.
+  const prompt = `Generate ${count} ${difficulty} difficulty multiple-choice practice questions for ${certShortName} Domain ${domain}.
 
 For each question provide:
 1. The question text
@@ -949,7 +1120,7 @@ Format as JSON array:
 Make questions exam-realistic, testing conceptual understanding not just memorization.`;
 
   return chatJson(config, [
-    { role: 'system', content: AAISM_CONTEXT },
+    { role: 'system', content: systemContext },
     { role: 'user', content: prompt },
   ]);
 }
@@ -957,11 +1128,13 @@ Make questions exam-realistic, testing conceptual understanding not just memoriz
 export async function explainConcept(
   config: AIConfig,
   concept: string,
-  domain?: number
+  domain?: number,
+  systemContext: string = AAISM_CONTEXT,
+  certShortName: string = 'AAISM',
 ): Promise<AIResponse> {
   const domainContext = domain ? `Focus on Domain ${domain} perspective.` : '';
 
-  const prompt = `Explain this AAISM exam concept in detail: "${concept}"
+  const prompt = `Explain this ${certShortName} exam concept in detail: "${concept}"
 
 ${domainContext}
 
@@ -969,21 +1142,22 @@ Provide:
 1. **Definition**: Clear, concise definition
 2. **Key Points**: 3-5 essential points to remember
 3. **Real-World Example**: Practical example
-4. **Exam Relevance**: Why this matters for the AAISM exam
+4. **Exam Relevance**: Why this matters for the ${certShortName} exam
 5. **Related Concepts**: Other topics this connects to
 6. **Common Exam Traps**: Misconceptions to avoid
 
 Use clear formatting with headers and bullet points.`;
 
   return chat(config, [
-    { role: 'system', content: AAISM_CONTEXT },
+    { role: 'system', content: systemContext },
     { role: 'user', content: prompt },
   ]);
 }
 
 export async function analyzeWeakAreas(
   config: AIConfig,
-  quizHistory: { domain: number; score: number; }[]
+  quizHistory: { domain: number; score: number; }[],
+  systemContext: string = AAISM_CONTEXT,
 ): Promise<AIResponse> {
   const prompt = `Analyze this quiz performance history and provide study recommendations:
 
@@ -1000,7 +1174,7 @@ Provide:
 Be specific and actionable.`;
 
   return chat(config, [
-    { role: 'system', content: AAISM_CONTEXT },
+    { role: 'system', content: systemContext },
     { role: 'user', content: prompt },
   ]);
 }
@@ -1008,11 +1182,13 @@ Be specific and actionable.`;
 export async function createStudyGuide(
   config: AIConfig,
   domain: number,
-  topic?: string
+  topic?: string,
+  systemContext: string = AAISM_CONTEXT,
+  certShortName: string = 'AAISM',
 ): Promise<AIResponse> {
   const topicFocus = topic ? `Specifically focus on: ${topic}` : '';
 
-  const prompt = `Create a comprehensive study guide for AAISM Domain ${domain}.
+  const prompt = `Create a comprehensive study guide for ${certShortName} Domain ${domain}.
 ${topicFocus}
 
 Include:
@@ -1027,7 +1203,7 @@ Include:
 Format with clear headers and organized sections.`;
 
   return chat(config, [
-    { role: 'system', content: AAISM_CONTEXT },
+    { role: 'system', content: systemContext },
     { role: 'user', content: prompt },
   ]);
 }

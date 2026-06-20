@@ -278,6 +278,33 @@ export function loadCertIntoContexts(certId: string): {
   };
 }
 
+/** Build gamification state from unified progress store (preferred over legacy key). */
+export function getGamificationStateFromProgress(certId?: string): GamificationState {
+  const id = certId ?? getActiveCertId();
+  const snap = loadProgress();
+  const slice = snap.byCert[id] ?? defaultCertSlice();
+  return {
+    ...initialGamificationState,
+    xp: snap.xp,
+    level: snap.level,
+    currentStreak: snap.streak.current,
+    longestStreak: snap.streak.longest,
+    lastActivityDate: snap.streak.lastActivityDate,
+    totalQuizzesTaken: slice.totalQuizzesTaken,
+    perfectQuizzes: slice.perfectQuizzes,
+    totalStudyMinutes: snap.totalStudyMinutes,
+    domainScores: slice.domainScores,
+    unlockedBadges: [],
+    dailyChallenges: [],
+  };
+}
+
+export const PROGRESS_CHANGED_EVENT = 'aaism-progress-changed';
+
+export function notifyProgressChanged(): void {
+  window.dispatchEvent(new CustomEvent(PROGRESS_CHANGED_EVENT));
+}
+
 export function addExamAttempt(
   attempt: Omit<ExamAttemptRecord, 'id'>,
   certId?: string,
@@ -412,4 +439,18 @@ export function getWeakestDomain(certId?: string): { domainId: number; avg: numb
   if (progress.length === 0) return null;
   const weakest = progress.reduce((a, b) => (a.avg < b.avg ? a : b));
   return { domainId: weakest.domainId, avg: weakest.avg };
+}
+
+export function getTodayActivityCounts(certId?: string): {
+  quizzes: number;
+  labs: number;
+  missions: number;
+} {
+  const today = new Date().toISOString().slice(0, 10);
+  const slice = getCertSlice(certId);
+  return {
+    quizzes: slice.quizHistory.filter(q => q.date.startsWith(today)).length,
+    labs: (slice.labProgress ?? []).filter(l => l.completedAt.startsWith(today)).length,
+    missions: (slice.missionLog ?? []).filter(m => m.completedAt.startsWith(today)).length,
+  };
 }

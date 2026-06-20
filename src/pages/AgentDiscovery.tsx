@@ -341,15 +341,38 @@ export default function AgentDiscovery() {
         }
       />
 
-      {hasMemory && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-violet-500/25 bg-violet-500/5 text-xs text-violet-800 dark:text-violet-300">
-          <Database className="w-3.5 h-3.5 shrink-0" />
-          Using your memory body ({memorySessions} session{memorySessions === 1 ? '' : 's'})
-          {memoryStats.weakDomainCount > 0 && (
-            <span className="text-theme-muted"> · {memoryStats.weakDomainCount} weak-domain signal{memoryStats.weakDomainCount === 1 ? '' : 's'}</span>
-          )}
-        </div>
-      )}
+      {hasMemory && (() => {
+        const memory = loadMemory();
+        const lastMission = memory.cognition.lastMission;
+        return (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 rounded-lg border border-violet-500/25 bg-violet-500/5 text-xs text-violet-800 dark:text-violet-300">
+            <div className="flex items-center gap-2 min-w-0">
+              <Database className="w-3.5 h-3.5 shrink-0" />
+              <span>
+                Memory body · {memorySessions} session{memorySessions === 1 ? '' : 's'}
+                {memoryStats.weakDomainCount > 0 && (
+                  <span className="text-theme-muted"> · {memoryStats.weakDomainCount} weak-domain signal{memoryStats.weakDomainCount === 1 ? '' : 's'}</span>
+                )}
+              </span>
+            </div>
+            {lastMission && (
+              <>
+                <span className="hidden sm:inline text-theme-faint">·</span>
+                <span className="text-theme-muted">
+                  Last mission: D{lastMission.domainId} — {lastMission.goalLabel}
+                  {lastMission.quizScore != null && ` (${lastMission.quizScore}% quiz)`}
+                </span>
+                <Link
+                  to={`/study?tab=quiz&domain=${lastMission.domainId}`}
+                  className="inline-flex items-center gap-1 font-medium text-violet-700 dark:text-violet-300 hover:underline"
+                >
+                  Drill same domain <ArrowRight className="w-3 h-3" />
+                </Link>
+              </>
+            )}
+          </div>
+        );
+      })()}
 
       {showSmallModelBanner && (
         <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">

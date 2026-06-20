@@ -534,9 +534,9 @@ export function getDomainGuide(domainId: number): DomainGuide | undefined {
   return AAISM_DOMAIN_GUIDES.find(d => d.id === domainId);
 }
 
-export function searchDomainGuides(query: string): DomainGuide[] {
+export function searchDomainGuides(query: string, guides: DomainGuide[] = AAISM_DOMAIN_GUIDES): DomainGuide[] {
   const q = query.toLowerCase();
-  return AAISM_DOMAIN_GUIDES.filter(
+  return guides.filter(
     guide =>
       guide.name.toLowerCase().includes(q) ||
       guide.shortName.toLowerCase().includes(q) ||

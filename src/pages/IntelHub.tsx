@@ -8,10 +8,14 @@ import {
 import PageHeader from '../components/PageHeader';
 import SlidePanel from '../components/SlidePanel';
 import {
-  QUESTION_PATTERNS,
-  TRAP_PATTERNS,
-  TOPIC_HEAT_MAP,
+  getQuestionPatterns,
+  getTrapPatterns,
+  getTopicHeatMap,
+  getCommunityIntelMeta,
   FORUM_SOURCES,
+  type TrapPattern,
+  type QuestionPattern,
+  type TopicHeat,
 } from '../data/communityIntelligence';
 import {
   researchExamPatterns,
@@ -25,6 +29,7 @@ import {
 } from '../services/intelligenceAgent';
 import { loadAIConfig } from '../services/aiService';
 import { useNavigate, Link } from 'react-router-dom';
+import { useCert } from '../context/CertContext';
 import OSINTArsenal from './OSINTArsenal';
 import {
   buildWeeklyIntelDigest,
@@ -36,9 +41,14 @@ import {
 type IntelTab = 'patterns' | 'hot_topics' | 'traps' | 'research' | 'insights' | 'arsenal';
 
 export default function IntelHub() {
+  const { activeCert } = useCert();
+  const intelMeta = getCommunityIntelMeta(activeCert.id);
+  const questionPatterns = getQuestionPatterns(activeCert.id);
+  const trapPatterns = getTrapPatterns(activeCert.id);
+  const topicHeatMap = getTopicHeatMap(activeCert.id);
   const [activeTab, setActiveTab] = useState<IntelTab>('patterns');
   const [expandedPattern, setExpandedPattern] = useState<string | null>(null);
-  const [selectedTrap, setSelectedTrap] = useState<typeof TRAP_PATTERNS[0] | null>(null);
+  const [selectedTrap, setSelectedTrap] = useState<TrapPattern | null>(null);
   const [analysis, setAnalysis] = useState<PatternAnalysis | null>(null);
   const [insights, setInsights] = useState<IntelligenceInsight[]>(loadInsights());
   const [isResearching, setIsResearching] = useState(false);
@@ -52,7 +62,7 @@ export default function IntelHub() {
 
   useEffect(() => {
     setAnalysis(analyzeQuestionPatterns());
-    void buildWeeklyIntelDigest().then(d => {
+    void buildWeeklyIntelDigest(false, activeCert.id).then(d => {
       cacheDigest(d);
       setDigestUrl(getDigestStudioUrl(d));
     });
@@ -68,7 +78,7 @@ export default function IntelHub() {
     { id: 'traps', label: 'Trap Alerts', icon: AlertTriangle, description: 'Common wrong-answer bait — click any trap for full detail.' },
     { id: 'research', label: 'Research', icon: Search, description: 'Run the AI agent to discover new patterns and traps.' },
     { id: 'insights', label: 'Insights', icon: Lightbulb, description: 'Saved research output and automated recommendations.' },
-    { id: 'arsenal', label: 'Arsenal', icon: Globe, description: 'Curated OSINT-style source directory for AAISM exam and org intel.' },
+    { id: 'arsenal', label: 'Arsenal', icon: Globe, description: `Curated OSINT-style source directory for ${activeCert.shortName} exam and org intel.` },
   ];
 
   const activeTabMeta = tabs.find(t => t.id === activeTab);
@@ -119,7 +129,7 @@ export default function IntelHub() {
         icon={Radar}
         iconClassName="text-purple-500"
         title="Intel Hub"
-        subtitle="Deep dive into exam patterns, traps, and community intelligence — use Live Feed in the top bar for RSS stream."
+        subtitle={`${activeCert.shortName} exam patterns, traps, and community intelligence — use Live Feed in the top bar for RSS stream.`}
       />
 
       {/* Tabs */}
@@ -147,9 +157,15 @@ export default function IntelHub() {
         <p className="text-sm text-theme-muted -mt-2">{activeTabMeta.description}</p>
       )}
 
+      {!intelMeta.isAaismSourced && (
+        <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-sm text-amber-800 dark:text-amber-300">
+          Showing <strong>{intelMeta.sourceLabel}</strong> for {activeCert.shortName}. AAISM-specific community data is not mixed in — use Research to discover {activeCert.shortName} patterns.
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/50 dark:bg-violet-900/10">
         <div>
-          <p className="text-sm font-semibold text-violet-800 dark:text-violet-300">Weekly AAISM Intel Digest</p>
+          <p className="text-sm font-semibold text-violet-800 dark:text-violet-300">Weekly {activeCert.shortName} Intel Digest</p>
           <p className="text-xs text-violet-700/80 dark:text-violet-400/80 mt-0.5">
             Top RSS headlines + community heat topics — pre-fill Content Studio
           </p>
@@ -170,17 +186,19 @@ export default function IntelHub() {
           frequencyColors={frequencyColors}
           analysis={analysis}
           navigate={navigate}
+          questionPatterns={questionPatterns}
         />
       )}
 
       {activeTab === 'hot_topics' && (
-        <HotTopicsTab trendIcons={trendIcons} />
+        <HotTopicsTab trendIcons={trendIcons} certShortName={activeCert.shortName} topicHeatMap={topicHeatMap} />
       )}
 
       {activeTab === 'traps' && (
         <TrapsTab
           onSelectTrap={setSelectedTrap}
           frequencyColors={frequencyColors}
+          trapPatterns={trapPatterns}
         />
       )}
 
@@ -236,7 +254,7 @@ export default function IntelHub() {
   );
 }
 
-function TrapDetail({ trap }: { trap: typeof TRAP_PATTERNS[0] }) {
+function TrapDetail({ trap }: { trap: TrapPattern }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-cockpit-muted">{trap.description}</p>
@@ -269,12 +287,14 @@ function PatternsTab({
   frequencyColors,
   analysis,
   navigate,
+  questionPatterns,
 }: {
   expandedPattern: string | null;
   setExpandedPattern: (id: string | null) => void;
   frequencyColors: Record<string, string>;
   analysis: PatternAnalysis | null;
   navigate: ReturnType<typeof useNavigate>;
+  questionPatterns: QuestionPattern[];
 }) {
   return (
     <div className="space-y-4">
@@ -298,7 +318,7 @@ function PatternsTab({
 
       {/* Pattern cards */}
       <div className="grid gap-4">
-        {QUESTION_PATTERNS.map(pattern => {
+        {questionPatterns.map(pattern => {
           const isExpanded = expandedPattern === pattern.id;
           return (
             <div
@@ -380,13 +400,19 @@ function PatternsTab({
 
 // ============ HOT TOPICS TAB ============
 
-function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof TrendingUp> }) {
-  const domainNames: Record<number, string> = {
-    1: 'AI Governance',
-    2: 'AI Risk',
-    3: 'AI Development',
-    4: 'AI Operations',
-  };
+function HotTopicsTab({
+  trendIcons,
+  certShortName,
+  topicHeatMap,
+}: {
+  trendIcons: Record<string, typeof TrendingUp>;
+  certShortName: string;
+  topicHeatMap: TopicHeat[];
+}) {
+  const { activeCert } = useCert();
+  const domainNames: Record<number, string> = Object.fromEntries(
+    activeCert.domains.map(d => [d.id, d.shortName]),
+  );
 
   const domainColors: Record<number, string> = {
     1: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
@@ -403,12 +429,17 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
           Topic Heat Map — Community-Reported Exam Frequency
         </h3>
         <p className="text-sm text-theme-muted mb-4">
-          Topics ranked by how frequently communities report seeing them on the AAISM exam. Higher heat = more likely to appear.
+          Topics ranked by how frequently communities report seeing them on the {certShortName} exam. Higher heat = more likely to appear.
         </p>
       </div>
 
+      {topicHeatMap.length === 0 ? (
+        <div className="bg-theme-elevated rounded-xl p-6 border border-theme text-center text-sm text-theme-muted">
+          No curated heat map for {certShortName} yet. Use the Research tab to discover topic frequency with AI.
+        </div>
+      ) : (
       <div className="space-y-2">
-        {TOPIC_HEAT_MAP.map((topic, i) => {
+        {topicHeatMap.map((topic, i) => {
           const TrendIcon = trendIcons[topic.trend] || Minus;
           const trendColor = topic.trend === 'rising' ? 'text-green-500' : topic.trend === 'declining' ? 'text-red-500' : 'text-theme-faint';
 
@@ -461,6 +492,7 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
           );
         })}
       </div>
+      )}
 
       {/* Forum sources */}
       <div className="bg-theme-elevated rounded-xl p-4 border border-theme">
@@ -504,9 +536,11 @@ function HotTopicsTab({ trendIcons }: { trendIcons: Record<string, typeof Trendi
 function TrapsTab({
   onSelectTrap,
   frequencyColors,
+  trapPatterns,
 }: {
-  onSelectTrap: (trap: typeof TRAP_PATTERNS[0]) => void;
+  onSelectTrap: (trap: TrapPattern) => void;
   frequencyColors: Record<string, string>;
+  trapPatterns: TrapPattern[];
 }) {
   const freqMap: Record<string, string> = {
     very_common: 'very_high',
@@ -527,7 +561,7 @@ function TrapsTab({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        {TRAP_PATTERNS.map(trap => (
+        {trapPatterns.map(trap => (
           <button
             key={trap.id}
             onClick={() => onSelectTrap(trap)}

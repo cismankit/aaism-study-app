@@ -1,6 +1,7 @@
 import { isTauri } from '../utils/tauriEnv';
 import { isLocalhost } from './gpuDetection';
 import { isAllowedOllamaUrl } from '../data/securityPolicy';
+import { combineAbortSignals } from './killSwitchService';
 
 export const DEFAULT_OLLAMA_URL = 'http://localhost:11434';
 export const OLLAMA_FETCH_TIMEOUT_MS = 8_000;
@@ -36,13 +37,18 @@ async function getTauriFetch(): Promise<(url: string, init?: OllamaFetchInit) =>
  * CORS: Ollama returns 403 for Origin http://tauri.localhost while Node/CLI works.
  */
 export async function ollamaFetch(url: string, init?: OllamaFetchInit): Promise<Response> {
-  const { timeout, ...rest } = init ?? {};
+  const { timeout, signal: callerSignal, ...rest } = init ?? {};
   const ms = timeout ?? OLLAMA_FETCH_TIMEOUT_MS;
+  const timeoutSignal = AbortSignal.timeout(ms);
+  const signal = callerSignal
+    ? combineAbortSignals(timeoutSignal, callerSignal)
+    : timeoutSignal;
+
   if (isTauri()) {
     const fetchFn = await getTauriFetch();
-    return fetchFn(url, { ...rest, timeout: ms } as RequestInit);
+    return fetchFn(url, { ...rest, signal, timeout: ms } as RequestInit);
   }
-  return fetch(url, { ...rest, signal: AbortSignal.timeout(ms) });
+  return fetch(url, { ...rest, signal });
 }
 
 /** Normalize user-entered Ollama base URL — always falls back to localhost:11434. */

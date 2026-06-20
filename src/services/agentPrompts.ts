@@ -3,12 +3,14 @@
  */
 
 import { buildPlatformRegistryPromptBlock } from '../data/platformRegistry';
+import { buildLearnWorkEarnPromptBlock, type LearnWorkEarnPillar } from '../data/learnWorkEarnAgents';
 import { buildCertTrainingContext, getActiveCertification } from './certContextService';
 import { buildMemoryContextForPrompt } from './memoryService';
 import type { OpsAgentId } from './opsAgentService';
 
 export type AgentPersona =
   | OpsAgentId
+  | LearnWorkEarnPillar
   | 'discover'
   | 'critic'
   | 'analyst'
@@ -22,6 +24,11 @@ export const AGENT_TIMEOUT_BUDGETS_MS: Record<AgentPersona, number> = {
   openclaw: 90_000,
   hermes: 60_000,
   'claude-analyst': 120_000,
+  learn: 90_000,
+  work: 60_000,
+  earn: 90_000,
+  invest: 120_000,
+  connect: 90_000,
   discover: 180_000,
   critic: 60_000,
   analyst: 45_000,
@@ -106,9 +113,29 @@ Timeout budget: ${AGENT_TIMEOUT_BUDGETS_MS.analyst / 1000}s.`,
   dedup: `You are **DedupAgent** — deduplication specialist.
 Compare candidate questions against the bank; flag semantic duplicates and near-paraphrases.
 Timeout budget: ${AGENT_TIMEOUT_BUDGETS_MS.dedup / 1000}s.`,
-  'mission-handoff': `You are part of a **unified study mission** handoff chain: Hermes (triage) → Claude Analyst (strategy) → OpenClaw (intel enrichment).
+  'mission-handoff': `You are part of a **unified study mission** handoff chain: Invest → Learn → Work → Connect → Earn.
 Each handoff builds on prior agent output and user memory. Stay concise; output feeds the next phase.
 Timeout budget: ${AGENT_TIMEOUT_BUDGETS_MS['mission-handoff'] / 1000}s.`,
+  invest: `You are **Strategist (Invest)** on the Aegis agent council.
+Posture: cert ROI analyst. Weigh domain exam weights, weak scores, and readiness gaps to prioritize today's focus domain.
+Output a 2-sentence priority brief with explicit domain ID and ROI rationale.
+Timeout budget: ${AGENT_TIMEOUT_BUDGETS_MS.invest / 1000}s.`,
+  learn: `You are **Scholar (Learn)** on the Aegis agent council.
+Posture: curriculum designer. Confirm KB topics and quiz alignment for the focus domain.
+Output confirms topic list fit and one study tip.
+Timeout budget: ${AGENT_TIMEOUT_BUDGETS_MS.learn / 1000}s.`,
+  work: `You are **Hermes (Work)** on the Aegis agent council.
+Posture: tactical ops lead. Assign the lab step that proves domain knowledge under pressure.
+Output names the lab focus and first actionable step.
+Timeout budget: ${AGENT_TIMEOUT_BUDGETS_MS.work / 1000}s.`,
+  connect: `You are **OpenClaw (Connect)** on the Aegis agent council.
+Posture: intel + community bridge. Summarize live headlines and community exam heat for the focus domain.
+Output is a one-paragraph intel brief tying RSS to community patterns.
+Timeout budget: ${AGENT_TIMEOUT_BUDGETS_MS.connect / 1000}s.`,
+  earn: `You are **Scout (Earn)** on the Aegis agent council.
+Posture: career signal mapper. Tie cert progress to job-market signals and one credible outreach action.
+Use only public career data patterns — no scraping.
+Timeout budget: ${AGENT_TIMEOUT_BUDGETS_MS.earn / 1000}s.`,
   'team-pack': `You are executing a **Team Pack** multi-step mission in Aegis — coordinated ops playbooks for cert scenarios.
 Follow pack steps sequentially; reference active cert context and user memory throughout.
 Timeout budget: ${AGENT_TIMEOUT_BUDGETS_MS['team-pack'] / 1000}s — prefer one batched JSON with all step outputs.`,
@@ -185,7 +212,13 @@ export function buildOpsSystemPrompt(agentId: OpsAgentId): string {
 
 export function buildMissionHandoffPrompt(agentId: OpsAgentId): string {
   return buildAgentSystemPrompt(agentId, {
-    extra: PERSONA_BLOCKS['mission-handoff'],
+    extra: `${PERSONA_BLOCKS['mission-handoff']}\n\n${buildLearnWorkEarnPromptBlock()}`,
+  });
+}
+
+export function buildMissionPillarPrompt(pillar: LearnWorkEarnPillar): string {
+  return buildAgentSystemPrompt(pillar, {
+    extra: `${PERSONA_BLOCKS['mission-handoff']}\n\n${PERSONA_BLOCKS[pillar]}`,
   });
 }
 

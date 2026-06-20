@@ -61,7 +61,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     if (dontShowAgain) setOnboarded(true);
     setOnboardingHint('mission');
     onComplete();
-    if (goMission) navigate('/mission');
+    if (goMission) navigate('/');
   };
 
   return (

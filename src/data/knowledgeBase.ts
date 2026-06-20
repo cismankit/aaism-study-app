@@ -1,6 +1,9 @@
 // Comprehensive AAISM Knowledge Base
 // This provides context for AI and can be used for local search
 
+import { searchDomainGuides, type DomainGuide } from './aaismDomainGuide';
+import { getCertification } from './certifications/registry';
+
 export interface Topic {
   id: string;
   domain: number;
@@ -436,10 +439,19 @@ export const owaspLLM = [
   },
 ];
 
-// Search function for knowledge base
-export function searchKnowledgeBase(query: string): { topics: Topic[]; terms: Term[] } {
+// Search function for knowledge base — AAISM topics/glossary; all certs search domain guides
+export function searchKnowledgeBase(
+  query: string,
+  certId: string = 'aaism',
+): { topics: Topic[]; terms: Term[]; guides: DomainGuide[] } {
   const lowerQuery = query.toLowerCase();
-  
+  const cert = getCertification(certId);
+  const guides = searchDomainGuides(query, cert?.domainGuides ?? []);
+
+  if (certId !== 'aaism') {
+    return { topics: [], terms: [], guides };
+  }
+
   const matchingTopics = topics.filter(topic =>
     topic.title.toLowerCase().includes(lowerQuery) ||
     topic.description.toLowerCase().includes(lowerQuery) ||
@@ -452,5 +464,5 @@ export function searchKnowledgeBase(query: string): { topics: Topic[]; terms: Te
     term.definition.toLowerCase().includes(lowerQuery)
   );
 
-  return { topics: matchingTopics, terms: matchingTerms };
+  return { topics: matchingTopics, terms: matchingTerms, guides };
 }

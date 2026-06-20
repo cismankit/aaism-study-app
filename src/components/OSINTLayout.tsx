@@ -1,7 +1,7 @@
 import { Outlet, NavLink, Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Radar, Eye, Bot, Zap,
-  Sun, Moon, Flame, ChevronRight, Settings, Menu,
+  Sun, Moon, Flame, ChevronRight, ChevronLeft, Settings, Menu,
   Activity, Map, Crosshair, PanelLeftClose,
   Terminal, Users, Target, Briefcase, Focus, Octagon,
 } from 'lucide-react';
@@ -33,6 +33,7 @@ import {
 import { isAIReady, subscribeLLMHealth } from '../services/llmHealthService';
 import { hasUnseenReleases } from '../data/releaseFeed';
 import SidebarJourneyHint from './SidebarJourneyHint';
+import FocusContextBar from './FocusContextBar';
 import { useSidebarDock } from '../hooks/useSidebarDock';
 import { useSessionContext } from '../hooks/useSessionContext';
 import { getNextBestAction } from '../services/sidebarJourneyService';
@@ -74,6 +75,7 @@ interface NavItem {
   to: string;
   icon: typeof LayoutDashboard;
   label: string;
+  shortLabel: string;
   subtitle: string;
   whyOpen: string;
   badge?: string;
@@ -95,52 +97,59 @@ const navSections: NavSection[] = [
     items: [
       {
         to: '/',
-        icon: LayoutDashboard,
-        label: 'Command',
-        subtitle: '25 min/day · pass faster',
-        whyOpen: 'Readiness, streak, and your next move',
-      },
-      {
-        to: '/mission',
         icon: Target,
         label: 'Mission',
-        subtitle: 'Your daily 25-min loop',
-        whyOpen: 'Read → quiz → lab → intel in one flow',
+        shortLabel: 'Home',
+        subtitle: 'Learn · 25-min daily loop',
+        whyOpen: 'Read → quiz → lab → intel in one guided flow',
         badge: 'Start here',
+      },
+      {
+        to: '/command',
+        icon: LayoutDashboard,
+        label: 'Command',
+        shortLabel: 'Command',
+        subtitle: 'Learn · Work · Earn overview',
+        whyOpen: 'Readiness HUD, streak, and your full ops picture',
       },
       {
         to: '/study',
         icon: Crosshair,
         label: 'Practice',
-        subtitle: 'Questions by domain',
+        shortLabel: 'Drill',
+        subtitle: 'Work · Questions by domain',
         whyOpen: 'Build recall where it matters — domain drills',
       },
       {
         to: '/exam',
         icon: Zap,
         label: 'Exam',
-        subtitle: 'Timed simulation',
+        shortLabel: 'Exam',
+        subtitle: 'Earn · Timed simulation',
         whyOpen: 'Test pacing and judgment under exam conditions',
       },
       {
         to: '/intel',
         icon: Radar,
         label: 'Intel',
-        subtitle: 'Live threat feeds',
+        shortLabel: 'Intel',
+        subtitle: 'Work · Live threat feeds',
         whyOpen: 'Stay sharp on traps and real-world context',
       },
       {
         to: '/knowledge',
         icon: Eye,
         label: 'Knowledge',
-        subtitle: 'Deep reference docs',
+        shortLabel: 'Learn',
+        subtitle: 'Learn · Deep reference docs',
         whyOpen: 'Fill gaps with guides and frameworks',
       },
       {
         to: '/agent',
         icon: Bot,
         label: 'Agent',
-        subtitle: 'Discovery & Ops Copilot',
+        shortLabel: 'Agent',
+        subtitle: 'Work · Gap analysis & ops',
         whyOpen: 'Ask, explore, and automate study workflows',
       },
     ],
@@ -154,6 +163,7 @@ const navSections: NavSection[] = [
         to: '/packs',
         icon: Users,
         label: 'Team Packs',
+        shortLabel: 'Packs',
         subtitle: 'Agent missions & workflows',
         whyOpen: 'Multi-agent ops playbooks for cert scenarios',
         gatedFeature: 'team-packs',
@@ -162,13 +172,15 @@ const navSections: NavSection[] = [
         to: '/ops',
         icon: Terminal,
         label: 'Ops Lab',
-        subtitle: 'Hands-on command drills',
+        shortLabel: 'Ops',
+        subtitle: 'Work · Hands-on command drills',
         whyOpen: 'Practice analysis and response in the lab',
       },
       {
         to: '/cheatsheet',
         icon: Map,
         label: 'Quick Ref',
+        shortLabel: 'Ref',
         subtitle: 'Cert-aware cheat sheets',
         whyOpen: 'Fast lookup during study or on exam day',
       },
@@ -176,7 +188,8 @@ const navSections: NavSection[] = [
         to: '/career',
         icon: Briefcase,
         label: 'Career',
-        subtitle: 'Job seeker OSINT',
+        shortLabel: 'Jobs',
+        subtitle: 'Earn · Job seeker OSINT',
         whyOpen: 'Map skills to roles with public career intel',
         jobSeekerOnly: true,
       },
@@ -185,6 +198,179 @@ const navSections: NavSection[] = [
 ];
 
 const SIDEBAR_SESSION_KEY = 'aaism-sidebar-open';
+
+function isNavRouteActive(pathname: string, to: string): boolean {
+  if (to === '/') {
+    return pathname === '/' || pathname === '/mission';
+  }
+  return pathname === to || pathname.startsWith(`${to}/`);
+}
+
+function readSidebarCollapsed(): boolean {
+  const stored = sessionStorage.getItem(SIDEBAR_SESSION_KEY);
+  if (stored === 'true') return false;
+  return true;
+}
+
+function SidebarUserCluster({
+  collapsed,
+  onCloseMobile,
+}: {
+  collapsed: boolean;
+  onCloseMobile: () => void;
+}) {
+  const { state } = useGamification();
+  const { activeCert, activeCertId } = useCert();
+  const { theme, toggleTheme } = useTheme();
+  const currentLevel = getLevelFromXP(state.xp);
+  const { sessionMinutes, focusLabel, focusMode, toggleFocusMode, sessionProgress } =
+    useSessionContext(activeCertId);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [aiReady, setAiReady] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => subscribeLLMHealth(report => setAiReady(isAIReady(report))), []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpen]);
+
+  const formatSessionTime = (mins: number) => {
+    if (mins < 60) return `${mins}m`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  };
+
+  return (
+    <div
+      ref={menuRef}
+      className={`sidebar-user-cluster relative border-t border-sidebar/70 shrink-0 ${collapsed ? 'px-1 py-2' : 'p-2'}`}
+      style={{ borderTopColor: `${activeCert.color}33` }}
+    >
+      <button
+        type="button"
+        onClick={() => setMenuOpen(open => !open)}
+        className={`sidebar-user-trigger w-full flex items-center rounded-lg transition-colors hover:bg-cockpit-track/80 dark:hover:bg-gray-800/80 ${
+          collapsed ? 'py-2 justify-center' : 'gap-2.5 px-2 py-2'
+        } ${menuOpen ? 'bg-cockpit-track/80 dark:bg-gray-800/80' : ''}`}
+        aria-expanded={menuOpen}
+        aria-haspopup="menu"
+        title="Account, settings, and session"
+      >
+        <div className="relative shrink-0 w-7 h-7 flex items-center justify-center">
+          <SessionRing progress={sessionProgress} color={activeCert.color} />
+          <div
+            className="absolute w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-[9px]"
+            style={{
+              backgroundColor: currentLevel.color,
+              boxShadow: `0 0 0 1px rgb(var(--sidebar-bg)), 0 0 0 2px ${activeCert.color}66`,
+            }}
+          >
+            {currentLevel.level}
+          </div>
+        </div>
+        {!collapsed && (
+          <>
+            <div className="sidebar-label overflow-hidden flex-1 min-w-0 text-left">
+              <div className="text-xs font-medium text-theme-secondary truncate">{currentLevel.title}</div>
+              <div className="flex items-center gap-2 text-[10px] text-theme-muted">
+                <span>{state.xp.toLocaleString()} XP</span>
+                <span className="flex items-center gap-0.5 font-medium" style={{ color: activeCert.color }}>
+                  <Flame className="w-3 h-3" />
+                  {state.currentStreak}
+                </span>
+              </div>
+            </div>
+            <ChevronRight
+              className={`w-3.5 h-3.5 text-theme-faint shrink-0 transition-transform ${menuOpen ? 'rotate-90' : ''}`}
+            />
+          </>
+        )}
+        {collapsed && (
+          <span
+            className={`absolute top-0.5 right-0.5 w-1.5 h-1.5 rounded-full bg-emerald-500 ring-1 ring-sidebar ${aiReady ? '' : 'hidden'}`}
+            title="AI connected"
+            aria-hidden
+          />
+        )}
+      </button>
+
+      {menuOpen && (
+        <div
+          role="menu"
+          className={`sidebar-user-menu ${collapsed ? 'sidebar-user-menu-collapsed' : ''}`}
+        >
+          <div className="px-3 py-2 border-b border-sidebar/60">
+            <div className="text-xs font-semibold text-theme-secondary">{currentLevel.title}</div>
+            <div className="text-[10px] text-theme-muted mt-0.5">
+              Level {currentLevel.level} · {state.xp.toLocaleString()} XP · {state.currentStreak} day streak
+            </div>
+          </div>
+
+          <div className="px-3 py-2 border-b border-sidebar/60 text-[10px] text-theme-muted">
+            <div className="font-medium text-theme-secondary">Session {formatSessionTime(sessionMinutes)}</div>
+            <div className="truncate mt-0.5" style={{ color: activeCert.color }}>{focusLabel}</div>
+          </div>
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              toggleFocusMode();
+            }}
+            className="sidebar-user-menu-item w-full flex items-center gap-2.5 px-3 py-2 text-xs text-theme-secondary hover:bg-cockpit-track dark:hover:bg-gray-800"
+          >
+            <Focus className={`w-3.5 h-3.5 ${focusMode ? 'text-emerald-500' : 'text-theme-muted'}`} />
+            <span>{focusMode ? 'Focus mode on' : 'Focus mode off'}</span>
+          </button>
+
+          <NavLink
+            to="/settings"
+            role="menuitem"
+            onClick={() => {
+              setMenuOpen(false);
+              onCloseMobile();
+            }}
+            className="sidebar-user-menu-item flex items-center gap-2.5 px-3 py-2 text-xs text-theme-secondary hover:bg-cockpit-track dark:hover:bg-gray-800"
+          >
+            <Settings className="w-3.5 h-3.5 text-theme-muted" />
+            <span>Settings</span>
+            {aiReady && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden />}
+          </NavLink>
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => toggleTheme()}
+            className="sidebar-user-menu-item w-full flex items-center gap-2.5 px-3 py-2 text-xs text-theme-secondary hover:bg-cockpit-track dark:hover:bg-gray-800"
+          >
+            {theme === 'light' ? (
+              <Moon className="w-3.5 h-3.5 text-theme-muted" />
+            ) : (
+              <Sun className="w-3.5 h-3.5 text-yellow-400" />
+            )}
+            <span>{theme === 'light' ? 'Dark mode' : 'Light mode'}</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function SessionRing({ progress, color }: { progress: number; color: string }) {
   const r = 10;
@@ -223,15 +409,13 @@ function Sidebar({
   mobileOpen: boolean;
   onCloseMobile: () => void;
 }) {
-  const { state } = useGamification();
   const { activeCert, activeCertId } = useCert();
-  const currentLevel = getLevelFromXP(state.xp);
   const location = useLocation();
   const [unseenUpdates, setUnseenUpdates] = useState(false);
-  const { sessionMinutes, focusLabel, focusMode, toggleFocusMode, sessionProgress } =
-    useSessionContext(activeCertId);
+  const { focusMode } = useSessionContext(activeCertId);
 
   const nextAction = getNextBestAction(activeCertId);
+  const nextActionPath = nextAction.to.split('?')[0];
   const jobSeekerMode = isJobSeekerModeEnabled();
 
   const visibleSections = navSections.map(section => ({
@@ -249,25 +433,28 @@ function Sidebar({
 
   const { getDockStyle, dockHandlers, navRef } = useSidebarDock(collapsed, location.pathname);
 
-  const activeSection = visibleSections.find(section =>
-    section.items.some(item =>
-      item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to),
-    ),
-  );
+  const isNavItemActive = (to: string) => isNavRouteActive(location.pathname, to);
 
-  const formatSessionTime = (mins: number) => {
-    if (mins < 60) return `${mins}m`;
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  };
+  const activeSection = visibleSections.find(section =>
+    section.items.some(item => isNavItemActive(item.to)),
+  );
 
   return (
     <aside
       className={`sidebar-panel sidebar-panel-seamless ${collapsed ? 'sidebar-collapsed' : 'w-56'} fixed lg:sticky inset-y-0 left-0 flex-shrink-0 bg-sidebar flex flex-col h-screen z-50 group/sidebar ${mobileOpen ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0 lg:opacity-100'} lg:translate-x-0 ${focusMode ? 'sidebar-focus-mode' : ''}`}
     >
+      <button
+        type="button"
+        onClick={onToggle}
+        className="sidebar-edge-toggle"
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
+      </button>
+
       {/* Brand + cert track */}
-      <div className={`sidebar-brand-header flex flex-col ${collapsed ? 'items-center px-1.5 py-3 pb-8' : 'px-3 py-3'} relative shrink-0`}>
+      <div className={`sidebar-brand-header flex flex-col ${collapsed ? 'items-center px-1.5 py-3' : 'px-3 py-3'} relative shrink-0`}>
         <div className={`flex items-center w-full ${collapsed ? 'justify-center' : 'gap-2.5'}`}>
           {collapsed ? (
             <CertSwitcher rail integrated>
@@ -310,16 +497,6 @@ function Sidebar({
             <CertSwitcher integrated />
           </div>
         )}
-        {collapsed && (
-          <button
-            onClick={onToggle}
-            className="sidebar-expand-fab w-5 h-5 rounded-full bg-sidebar border border-sidebar flex items-center justify-center text-theme-muted hover:text-cockpit dark:hover:text-white hover:bg-theme-muted dark:hover:bg-gray-700 transition-all shadow-sm opacity-0 group-hover/sidebar:opacity-100"
-            title="Expand sidebar"
-            aria-label="Expand sidebar"
-          >
-            <ChevronRight className="w-3 h-3" />
-          </button>
-        )}
       </div>
 
       {/* Wayfinding — active section when expanded */}
@@ -330,7 +507,7 @@ function Sidebar({
           <span className="text-theme-faint mx-1">·</span>
           <span className="text-emerald-600 dark:text-emerald-400 font-medium">
             {navSections.flatMap(s => s.items).find(item =>
-              item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to),
+              isNavRouteActive(location.pathname, item.to),
             )?.label}
           </span>
         </div>
@@ -344,8 +521,8 @@ function Sidebar({
             className={`sidebar-nav-section ${section.secondary ? 'sidebar-nav-secondary' : ''}`}
             data-section={section.id}
           >
-            {sIdx > 0 && collapsed && (
-              <div className="mx-2 my-2 border-t border-sidebar/80" />
+            {sIdx > 0 && (
+              <div className={`${collapsed ? 'mx-2 my-1' : 'mx-2 my-2'} border-t border-sidebar/70`} />
             )}
             {!collapsed && (
               <div className="sidebar-section-label text-[10px] font-medium text-theme-muted tracking-wide px-2.5 mb-1 mt-2">
@@ -355,20 +532,20 @@ function Sidebar({
             <div className={`space-y-0.5 ${collapsed ? 'sidebar-dock-items' : ''}`}>
               {section.items.map(item => {
                 const Icon = item.icon;
-                const isActive = item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to);
-                const showUpdateDot = item.to === '/' && unseenUpdates && !collapsed;
-                const isNextAction = nextAction.to === item.to && !isActive;
+                const isActive = isNavItemActive(item.to);
+                const showUpdateDot = item.to === '/command' && unseenUpdates && !collapsed;
+                const isNextAction = nextActionPath === item.to && !isActive && !collapsed;
                 const dockStyle = collapsed ? getDockStyle(item.to) : undefined;
                 return (
                   <NavLink
                     key={item.to}
                     to={item.to}
                     onClick={onCloseMobile}
-                    end={item.to === '/'}
+                    end={item.to === '/' || item.to === '/command'}
                     data-dock-item={collapsed ? item.to : undefined}
                     data-dock-active={collapsed ? String(isActive) : undefined}
-                    title={!collapsed ? item.whyOpen : undefined}
-                    className={`sidebar-dock-item relative flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${collapsed ? '' : 'px-2.5 py-2'} rounded-lg text-sm font-medium group ${
+                    title={collapsed ? `${item.label} — ${item.subtitle}` : item.whyOpen}
+                    className={`sidebar-dock-item relative flex items-center ${collapsed ? 'justify-center py-1.5' : 'gap-3 px-2.5 py-2'} rounded-lg text-sm font-medium group ${
                       isActive
                         ? 'bg-emerald-50/90 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 sidebar-dock-active'
                         : 'text-cockpit-muted hover:text-cockpit dark:hover:text-gray-200 hover:bg-cockpit-track/80 dark:hover:bg-gray-800/80'
@@ -378,7 +555,7 @@ function Sidebar({
                       className={`sidebar-dock-icon-wrap inline-flex items-center justify-center ${collapsed ? 'origin-bottom' : ''}`}
                       style={dockStyle}
                     >
-                      <Icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors duration-300 ${isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-theme-muted group-hover:text-theme-secondary dark:group-hover:text-gray-300'}`} />
+                      <Icon className={`${collapsed ? 'w-5 h-5' : 'w-[18px] h-[18px]'} flex-shrink-0 transition-colors duration-300 ${isActive ? 'text-emerald-700 dark:text-emerald-400' : 'text-theme-muted group-hover:text-theme-secondary dark:group-hover:text-gray-300'}`} />
                     </span>
                     {!collapsed && (
                       <span className="sidebar-label truncate">{item.label}</span>
@@ -393,15 +570,13 @@ function Sidebar({
                     )}
                     {isNextAction && (
                       <span
-                        className={`${collapsed ? 'absolute top-1 right-1' : 'ml-auto'} w-2 h-2 rounded-full bg-emerald-500 sidebar-next-action-dot shrink-0`}
+                        className="ml-auto w-2 h-2 rounded-full bg-emerald-500 sidebar-next-action-dot shrink-0"
                         title={`Suggested next: ${nextAction.label}`}
                       />
                     )}
-                    {collapsed && showUpdateDot && (
-                      <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500" title="New platform updates" />
-                    )}
                     {collapsed && (
                       <div className="sidebar-dock-tooltip" role="tooltip">
+                        <span className="sidebar-dock-tooltip-section">{section.label}</span>
                         <span className="sidebar-dock-tooltip-title">{item.label}</span>
                         <span className="sidebar-dock-tooltip-sub">{item.subtitle}</span>
                         <span className="sidebar-dock-tooltip-why">{item.whyOpen}</span>
@@ -418,91 +593,7 @@ function Sidebar({
         ))}
       </nav>
 
-      {/* Session context strip */}
-      <div
-        className={`sidebar-session-strip border-t border-sidebar/70 px-1.5 py-2 shrink-0 ${collapsed ? '' : ''}`}
-        title={`Session ${formatSessionTime(sessionMinutes)} · ${focusLabel}`}
-      >
-        {collapsed ? (
-          <div className="sidebar-session-collapsed">
-            <SessionRing progress={sessionProgress} color={activeCert.color} />
-            <button
-              type="button"
-              onClick={toggleFocusMode}
-              className={`p-1 rounded-md transition-colors ${
-                focusMode
-                  ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15'
-                  : 'text-theme-faint hover:text-theme-muted hover:bg-cockpit-track dark:hover:bg-gray-800'
-              }`}
-              title={focusMode ? 'Focus mode on — hover sidebar for Explore' : 'Focus mode — hide Explore until hover'}
-              aria-label="Toggle focus mode"
-              aria-pressed={focusMode}
-            >
-              <Focus className="w-3 h-3" />
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 px-1">
-            <SessionRing progress={sessionProgress} color={activeCert.color} />
-            <div className="sidebar-label overflow-hidden flex-1 min-w-0">
-              <div className="text-[10px] font-medium text-theme-secondary truncate">
-                Session {formatSessionTime(sessionMinutes)}
-              </div>
-              <div className="text-[10px] text-theme-muted truncate" style={{ color: activeCert.color }}>
-                {focusLabel}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={toggleFocusMode}
-              className={`p-1 rounded-md transition-colors shrink-0 ${
-                focusMode
-                  ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/15'
-                  : 'text-theme-faint hover:text-theme-muted hover:bg-cockpit-track dark:hover:bg-gray-800'
-              }`}
-              title={focusMode ? 'Focus mode on — hover sidebar for Explore' : 'Focus mode — hide Explore until hover'}
-              aria-label="Toggle focus mode"
-              aria-pressed={focusMode}
-            >
-              <Focus className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Footer — streak + XP */}
-      <div
-        className={`sidebar-footer border-t border-sidebar/70 p-2 ${collapsed ? 'flex justify-center' : ''}`}
-        style={{ borderTopColor: `${activeCert.color}33` }}
-      >
-        <div className={`flex items-center ${collapsed ? 'justify-center' : 'gap-3 px-1'}`}>
-          <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0"
-            style={{
-              backgroundColor: currentLevel.color,
-              boxShadow: `0 0 0 2px rgb(var(--sidebar-bg)), 0 0 0 3px ${activeCert.color}66`,
-            }}
-            title={`Level ${currentLevel.level}: ${currentLevel.title} · ${state.xp} XP`}
-          >
-            {currentLevel.level}
-          </div>
-          {!collapsed && (
-            <div className="overflow-hidden flex-1 sidebar-label">
-              <div className="text-xs font-medium text-theme-secondary truncate">{currentLevel.title}</div>
-              <div className="flex items-center gap-2 text-[10px] text-theme-muted">
-                <span>{state.xp.toLocaleString()} XP</span>
-                <span
-                  className="flex items-center gap-0.5 font-medium"
-                  style={{ color: activeCert.color }}
-                >
-                  <Flame className="w-3 h-3" />
-                  {state.currentStreak}
-                </span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      <SidebarUserCluster collapsed={collapsed} onCloseMobile={onCloseMobile} />
     </aside>
   );
 }
@@ -613,19 +704,13 @@ function TopBar({
   onToggleMobileNav: () => void;
   onOpenSearch: () => void;
 }) {
-  const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const [hasUnseen, setHasUnseen] = useState(false);
-  const [aiReady, setAiReady] = useState(false);
   const [killActive, setKillActive] = useState(false);
 
   useEffect(() => {
     setHasUnseen(hasUnseenReleases());
   }, [location.pathname]);
-
-  useEffect(() => {
-    return subscribeLLMHealth(report => setAiReady(isAIReady(report)));
-  }, []);
 
   useEffect(() => subscribeKillSwitch(s => setKillActive(s.active)), []);
 
@@ -640,7 +725,7 @@ function TopBar({
   useKillSwitchShortcuts(handleEmergencyEngage);
 
   const currentPage = navSections.flatMap(s => s.items).find(item =>
-    item.to === '/' ? location.pathname === '/' : location.pathname.startsWith(item.to),
+    isNavRouteActive(location.pathname, item.to),
   );
 
   return (
@@ -683,29 +768,6 @@ function TopBar({
         >
           <Activity className="w-3.5 h-3.5" />
           <span className="hidden sm:inline">Live Feed</span>
-        </button>
-
-        <NavLink
-          to="/settings"
-          className="relative p-1.5 rounded-lg hover:bg-cockpit-track transition-colors text-theme-muted"
-          aria-label={aiReady ? 'Open settings — AI ready' : 'Open settings'}
-        >
-          <Settings className="w-4 h-4" />
-          {aiReady && (
-            <span
-              className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-theme-elevated"
-              title="AI connected"
-              aria-hidden
-            />
-          )}
-        </NavLink>
-
-        <button
-          onClick={toggleTheme}
-          className="p-1.5 rounded-lg hover:bg-cockpit-track transition-colors"
-          aria-label={theme === 'light' ? 'Enable dark mode' : 'Enable light mode'}
-        >
-          {theme === 'light' ? <Moon className="w-4 h-4 text-theme-muted" /> : <Sun className="w-4 h-4 text-yellow-400" />}
         </button>
       </div>
     </header>
@@ -790,7 +852,7 @@ function SystemIssueBanner({ issue, onDismiss }: { issue: SystemIssue; onDismiss
 function LayoutContent() {
   const { theme } = useTheme();
   const { bgColor } = usePerformance();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(readSidebarCollapsed);
   const [intelOpen, setIntelOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -845,6 +907,7 @@ function LayoutContent() {
 
         <div className="flex-1 flex overflow-hidden">
           <main className="flex-1 overflow-y-auto p-3 sm:p-5">
+            <FocusContextBar />
             <Outlet />
           </main>
 

@@ -3,7 +3,8 @@
  */
 
 import { fetchLiveIntelFeed, type IntelFeedItem } from './rssFeedService';
-import { TOPIC_HEAT_MAP } from '../data/communityIntelligence';
+import { getTopicHeatMap } from '../data/communityIntelligence';
+import { getActiveCertId } from './certContextService';
 
 export interface WeeklyIntelDigest {
   generatedAt: string;
@@ -36,8 +37,8 @@ function pickTopHeadlines(items: IntelFeedItem[], limit = 5): WeeklyIntelDigest[
     }));
 }
 
-function pickHotTopics(limit = 5): WeeklyIntelDigest['hotTopics'] {
-  return TOPIC_HEAT_MAP.slice(0, limit).map(t => ({
+function pickHotTopics(limit = 5, certId?: string): WeeklyIntelDigest['hotTopics'] {
+  return getTopicHeatMap(certId ?? getActiveCertId()).slice(0, limit).map(t => ({
     topic: t.topic,
     domain: t.domain,
     heat: t.heat,
@@ -86,10 +87,10 @@ ${heatBlock}
 Keep under 1500 words. Professional, concise, no fluff.`;
 }
 
-export async function buildWeeklyIntelDigest(forceRefresh = false): Promise<WeeklyIntelDigest> {
+export async function buildWeeklyIntelDigest(forceRefresh = false, certId?: string): Promise<WeeklyIntelDigest> {
   const feed = await fetchLiveIntelFeed({ force: forceRefresh });
   const topHeadlines = pickTopHeadlines(feed.items);
-  const hotTopics = pickHotTopics();
+  const hotTopics = pickHotTopics(5, certId);
   const generatedAt = new Date().toISOString();
   const weekLabel = getWeekLabel();
 

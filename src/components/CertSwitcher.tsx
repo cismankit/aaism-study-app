@@ -9,13 +9,13 @@ import { getContentStats } from '../data/examContent';
 import { getLabsForCert } from '../data/labs';
 import { useCert } from '../context/CertContext';
 
-function getCertDepthLabel(certId: string): { label: string; detail: string } {
+function getCertDepthLabel(certId: string): { label: string; detail: string; isDeepening: boolean } {
   const stats = getContentStats(certId);
   const labCount = getLabsForCert(certId).length;
   const q = stats.totalQuestions;
   const detail = `${q} Q · ${labCount} labs`;
-  if (q < 100) return { label: 'Deepening', detail };
-  return { label: detail, detail };
+  if (q < 100) return { label: 'Deepening', detail, isDeepening: true };
+  return { label: detail, detail, isDeepening: false };
 }
 
 const CATEGORY_ICONS: Record<CertCategory, typeof Shield> = {
@@ -125,6 +125,10 @@ export default function CertSwitcher({ compact, integrated, rail, children }: Ce
   };
 
   if (rail && children) {
+    const depth = getCertDepthLabel(activeCert.id);
+    const stats = getContentStats(activeCert.id);
+    const railTitle = `${activeCert.shortName} · ${depth.detail}`;
+
     return (
       <div ref={ref} className="sidebar-cert-rail flex justify-center">
         <button
@@ -133,7 +137,7 @@ export default function CertSwitcher({ compact, integrated, rail, children }: Ce
           className="sidebar-brand-logo-btn"
           aria-expanded={open}
           aria-haspopup="listbox"
-          title={`${activeCert.shortName} — click to switch cert`}
+          title={railTitle}
         >
           {children}
           <span
@@ -141,6 +145,12 @@ export default function CertSwitcher({ compact, integrated, rail, children }: Ce
             style={{ backgroundColor: activeCert.color }}
             aria-hidden
           />
+          <span
+            className={`sidebar-cert-depth-badge ${depth.isDeepening ? 'sidebar-cert-depth-deepening' : ''}`}
+            aria-label={depth.detail}
+          >
+            {depth.isDeepening ? '◐' : `${stats.totalQuestions}Q`}
+          </span>
         </button>
         {open && (
           <div

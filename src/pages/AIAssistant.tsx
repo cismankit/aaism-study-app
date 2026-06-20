@@ -8,9 +8,10 @@ import {
   createStudyGuide,
   loadAIConfig, 
   Message,
-  AAISM_CONTEXT 
 } from '../services/aiService';
+import { buildCertTutorContext } from '../services/tutorService';
 import { useApp } from '../context/AppContext';
+import { useCert } from '../context/CertContext';
 
 type Mode = 'chat' | 'explain' | 'generate' | 'analyze' | 'guide';
 
@@ -23,6 +24,8 @@ interface ChatMessage {
 
 export default function AIAssistant() {
   const { state } = useApp();
+  const { activeCert } = useCert();
+  const certContext = buildCertTutorContext(activeCert);
   const [mode, setMode] = useState<Mode>('chat');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -59,33 +62,36 @@ export default function AIAssistant() {
 
       switch (mode) {
         case 'explain':
-          response = await explainConcept(config, userMessage);
+          response = await explainConcept(config, userMessage, undefined, certContext, activeCert.shortName);
           break;
         case 'generate':
           const domainMatch = userMessage.match(/domain\s*(\d)/i);
           const domain = domainMatch ? parseInt(domainMatch[1]) : 1;
-          response = await generateQuestions(config, domain, 3, 'medium');
+          response = await generateQuestions(config, domain, 3, 'medium', certContext, activeCert.shortName);
           break;
         case 'analyze':
           const quizHistory = state.quizAttempts.map(a => ({
             domain: typeof a.domain === 'number' ? a.domain : 0,
             score: a.score,
           }));
-          response = await analyzeWeakAreas(config, quizHistory);
+          response = await analyzeWeakAreas(config, quizHistory, certContext);
           break;
         case 'guide':
           const guideDomainMatch = userMessage.match(/domain\s*(\d)/i);
           const guideDomain = guideDomainMatch ? parseInt(guideDomainMatch[1]) : 1;
-          response = await createStudyGuide(config, guideDomain, userMessage);
+          response = await createStudyGuide(config, guideDomain, userMessage, certContext, activeCert.shortName);
           break;
         default:
           // Regular chat
           const chatMessages: Message[] = [
-            { role: 'system', content: AAISM_CONTEXT },
+            { role: 'system', content: certContext },
             ...messages.map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
             { role: 'user', content: userMessage },
           ];
-          response = await chat(config, chatMessages);
+          response = await chat(config, chatMessages, {
+            timeoutMs: 180_000,
+            numPredict: config.provider === 'ollama' ? 8192 : undefined,
+          });
       }
 
       if (response.error) {
@@ -182,7 +188,7 @@ export default function AIAssistant() {
           <div className="h-full flex items-center justify-center text-gray-400">
             <div className="text-center">
               <Bot size={48} className="mx-auto mb-4 opacity-50" />
-              <p>Ask me anything about the AAISM exam!</p>
+              <p>Ask me anything about the {activeCert.shortName} exam!</p>
               <p className="text-sm mt-2">I can explain concepts, generate questions, and analyze your progress.</p>
             </div>
           </div>
@@ -251,7 +257,7 @@ export default function AIAssistant() {
             mode === 'generate' ? 'e.g., "Domain 2 questions" or "prompt injection"' :
             mode === 'analyze' ? 'Type "analyze" to review your progress' :
             mode === 'guide' ? 'e.g., "Domain 1" or "AI governance framework"' :
-            'Ask me anything about AAISM...'
+            `Ask me anything about ${activeCert.shortName}...`
           }
           className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           disabled={isLoading}

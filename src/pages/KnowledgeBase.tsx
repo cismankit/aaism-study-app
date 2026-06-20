@@ -8,7 +8,7 @@ import {
 import {
   topics, glossary, owaspLLM, searchKnowledgeBase, Topic, Term,
 } from '../data/knowledgeBase';
-import { searchDomainGuides, type DomainGuide } from '../data/aaismDomainGuide';
+import { type DomainGuide } from '../data/aaismDomainGuide';
 import { useCert } from '../context/CertContext';
 import { STUDY_PATHS, PLATFORM_WORKFLOWS, PLATFORM_META_SECTIONS } from '../data/platformMeta';
 import { getContentStats } from '../data/examContent';
@@ -237,7 +237,7 @@ export default function KnowledgeBase() {
   const [searchResults, setSearchResults] = useState<{
     topics: Topic[];
     terms: Term[];
-    guides: ReturnType<typeof searchDomainGuides>;
+    guides: ReturnType<typeof searchKnowledgeBase>['guides'];
   } | null>(null);
 
   useEffect(() => {
@@ -281,9 +281,8 @@ export default function KnowledgeBase() {
 
   function handleSearch() {
     if (!searchQuery.trim()) return;
-    const kb = searchKnowledgeBase(searchQuery);
-    const guides = searchDomainGuides(searchQuery);
-    setSearchResults({ ...kb, guides });
+    const kb = searchKnowledgeBase(searchQuery, activeCert.id);
+    setSearchResults(kb);
     setMainTab('search');
   }
 
@@ -292,7 +291,7 @@ export default function KnowledgeBase() {
     { id: 'topics', label: 'Topics', description: 'Curated topic summaries with key points and exam tips.' },
     { id: 'glossary', label: 'Glossary', description: 'Domain-filtered terms and definitions.' },
     { id: 'owasp', label: 'OWASP LLM', description: 'Top 10 LLM application risks and mitigations.' },
-    { id: 'platform', label: 'Platform', description: 'How AAISM features connect — workflows and study paths.' },
+    { id: 'platform', label: 'Platform', description: 'How study features connect — workflows and study paths.' },
   ];
 
   const activeTabMeta = mainTabs.find(t => t.id === mainTab);

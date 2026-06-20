@@ -12,7 +12,14 @@ import {
   getLevelFromXP,
   generateDailyChallenge 
 } from '../data/gamificationData';
-import { loadProgress, updateProgressFields, loadCertIntoContexts } from '../services/progressService';
+import {
+  loadProgress,
+  updateProgressFields,
+  getGamificationStateFromProgress,
+  notifyProgressChanged,
+  PROGRESS_STORAGE_KEY,
+} from '../services/progressService';
+import { getActiveCertId } from '../services/certContextService';
 import { useCert } from './CertContext';
 
 // Actions
@@ -147,25 +154,41 @@ function gamificationReducer(state: GamificationState, action: GamificationActio
   }
 }
 
+function readLegacyGamificationExtras(): Pick<GamificationState, 'unlockedBadges' | 'dailyChallenges'> {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return { unlockedBadges: [], dailyChallenges: [] };
+    const parsed = JSON.parse(saved) as GamificationState;
+    return {
+      unlockedBadges: parsed.unlockedBadges ?? [],
+      dailyChallenges: parsed.dailyChallenges ?? [],
+    };
+  } catch {
+    return { unlockedBadges: [], dailyChallenges: [] };
+  }
+}
+
+function hydrateGamificationState(certId: string): GamificationState {
+  loadProgress();
+  const extras = readLegacyGamificationExtras();
+  return { ...getGamificationStateFromProgress(certId), ...extras };
+}
+
 // Provider
 export function GamificationProvider({ children }: { children: ReactNode }) {
   const { activeCertId } = useCert();
   const prevCertRef = useRef(activeCertId);
-  const [state, dispatch] = useReducer(gamificationReducer, initialGamificationState);
+  const hydratedRef = useRef(false);
+  const [state, dispatch] = useReducer(
+    gamificationReducer,
+    initialGamificationState,
+    () => hydrateGamificationState(getActiveCertId()),
+  );
   const [notifications, setNotifications] = React.useState<AchievementNotification[]>([]);
 
-  // Load state from localStorage
+  // Notifications + daily challenge bootstrap (after hydrated reducer state)
   useEffect(() => {
-    loadProgress(); // ensure unified store is initialized
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        dispatch({ type: 'LOAD_STATE', payload: parsed });
-      } catch (e) {
-        console.error('Failed to load gamification state:', e);
-      }
-    }
+    hydratedRef.current = true;
 
     const savedNotifications = localStorage.getItem(NOTIFICATIONS_KEY);
     if (savedNotifications) {
@@ -176,7 +199,6 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Check for daily challenge
     const today = new Date().toDateString();
     const hasToday = state.dailyChallenges.some(c => new Date(c.date).toDateString() === today);
     if (!hasToday) {
@@ -192,6 +214,22 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Cross-tab progress sync (storage events only — avoid self-reload on same-tab saves)
+  useEffect(() => {
+    const reloadFromStore = () => {
+      dispatch({ type: 'LOAD_STATE', payload: hydrateGamificationState(activeCertId) });
+    };
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === PROGRESS_STORAGE_KEY || e.key === STORAGE_KEY) {
+        reloadFromStore();
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [activeCertId]);
+
   useEffect(() => {
     if (prevCertRef.current === activeCertId) return;
     const outgoingCert = prevCertRef.current;
@@ -200,21 +238,13 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
       totalQuizzesTaken: state.totalQuizzesTaken,
       perfectQuizzes: state.perfectQuizzes,
     }, outgoingCert);
-    const loaded = loadCertIntoContexts(activeCertId);
-    dispatch({
-      type: 'LOAD_STATE',
-      payload: {
-        ...state,
-        domainScores: loaded.domainScores,
-        totalQuizzesTaken: loaded.gamificationPartial.totalQuizzesTaken,
-        perfectQuizzes: loaded.gamificationPartial.perfectQuizzes,
-      },
-    });
+    dispatch({ type: 'LOAD_STATE', payload: hydrateGamificationState(activeCertId) });
     prevCertRef.current = activeCertId;
   }, [activeCertId]);
 
-  // Save state to localStorage
+  // Save state to localStorage (skip until hydrated to avoid overwriting with zeros on mount)
   useEffect(() => {
+    if (!hydratedRef.current) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     updateProgressFields({
       domainScores: state.domainScores,
@@ -229,6 +259,7 @@ export function GamificationProvider({ children }: { children: ReactNode }) {
       perfectQuizzes: state.perfectQuizzes,
       totalStudyMinutes: state.totalStudyMinutes,
     }, activeCertId);
+    notifyProgressChanged();
   }, [state, activeCertId]);
 
   // Save notifications
