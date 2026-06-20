@@ -3,6 +3,7 @@ import Logo from './Logo';
 import {
   APP_NAME,
   APP_VERSION,
+  APP_ICON_BADGE,
   APP_BUILD,
   APP_BUILD_DATE,
   BUNDLE_ID,
@@ -41,9 +42,13 @@ export default function AboutPanel() {
       </div>
 
       <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-        <div className="rounded-lg border border-theme bg-cockpit-track/40 px-3 py-2">
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 sm:col-span-2">
+          <dt className="text-[10px] uppercase tracking-wide text-cockpit-muted">Build stamp (matches Dock icon)</dt>
+          <dd className="font-mono text-cockpit text-lg font-semibold">{APP_ICON_BADGE}</dd>
+        </div>
+        <div className="rounded-lg border border-theme bg-cockpit-track/40 px-3 py-2 sm:col-span-2">
           <dt className="text-[10px] uppercase tracking-wide text-cockpit-muted">Version</dt>
-          <dd className="font-mono text-cockpit">{APP_VERSION}</dd>
+          <dd className="font-mono text-cockpit text-xs">{APP_VERSION}</dd>
         </div>
         <div className="rounded-lg border border-theme bg-cockpit-track/40 px-3 py-2">
           <dt className="text-[10px] uppercase tracking-wide text-cockpit-muted">Git</dt>

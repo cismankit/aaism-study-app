@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Dev-build icons: amber corner badge + version stamp on release icons.
+ * Dev-build icons: amber corner badge + git hash (matches APP_ICON_BADGE).
  * Output → src-tauri/icons-dev/ (release icons in icons/ stay clean).
  */
 import { mkdirSync, rmSync, existsSync } from 'node:fs';
@@ -8,24 +8,42 @@ import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import sharp from 'sharp';
-import { readFileSync } from 'node:fs';
+import { computeVersionInfo, iconBadgeForIconSize } from './lib/version-info.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const srcDir = join(root, 'src-tauri/icons');
 const outDir = join(root, 'src-tauri/icons-dev');
-const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
-const version = pkg.version;
-const label = `v${version.split('.').slice(0, 2).join('.')}`;
+const { iconBadge: fullBadge } = computeVersionInfo({ release: false });
 
 const STAMP_FILES = ['32x32.png', '64x64.png', '128x128.png', '128x128@2x.png', 'icon.png'];
 
+function escapeXml(text) {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 async function stampPng(inputPath, outputPath, size) {
-  const badgeW = Math.max(Math.round(size * 0.38), 24);
-  const badgeH = Math.max(Math.round(size * 0.16), 12);
-  const fontSize = Math.max(Math.round(badgeH * 0.62), 8);
+  const margin = Math.max(Math.round(size * 0.04), 1);
+  let label = escapeXml(iconBadgeForIconSize(fullBadge, size));
+  let fontSize = Math.max(Math.round(size * 0.11), 6);
+  let padX = Math.round(fontSize * 0.4);
+  let badgeH = Math.max(Math.round(fontSize * 1.3), 8);
+  let charW = fontSize * 0.55;
+  let badgeW = Math.round(label.length * charW + padX * 2);
+  const maxW = size - margin * 2;
+  const maxH = Math.max(Math.round(size * 0.38), 8);
+  if (badgeW > maxW) {
+    label = escapeXml(iconBadgeForIconSize(fullBadge, Math.min(size, 64)));
+    fontSize = Math.max(Math.round(size * 0.1), 5);
+    padX = Math.round(fontSize * 0.35);
+    badgeH = Math.min(Math.max(Math.round(fontSize * 1.25), 7), maxH);
+    charW = fontSize * 0.55;
+    badgeW = Math.min(Math.round(label.length * charW + padX * 2), maxW);
+  }
+  badgeH = Math.min(badgeH, maxH);
+  badgeW = Math.min(badgeW, maxW);
   const rx = Math.round(badgeH * 0.28);
-  const x = size - badgeW - Math.round(size * 0.04);
-  const y = size - badgeH - Math.round(size * 0.04);
+  const x = Math.max(0, size - badgeW - margin);
+  const y = Math.max(0, size - badgeH - margin);
 
   const svg = `
     <svg width="${badgeW}" height="${badgeH}" xmlns="http://www.w3.org/2000/svg">
@@ -93,14 +111,13 @@ async function main() {
 
   await buildIcns(stampedMaster);
 
-  // Windows icon: copy release (dev badge optional on .ico — skip for MVP)
   const ico = join(srcDir, 'icon.ico');
   if (existsSync(ico)) {
     const { copyFileSync } = await import('node:fs');
     copyFileSync(ico, join(outDir, 'icon.ico'));
   }
 
-  console.log(`[stamp-icon] Dev icons → icons-dev/ (${label} amber badge)`);
+  console.log(`[stamp-icon] Dev icons → icons-dev/ (badge: ${fullBadge})`);
 }
 
 main().catch((err) => {
