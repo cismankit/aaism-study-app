@@ -26,7 +26,7 @@ export default function DonateCancel() {
             Try again
           </Link>
           <Link
-            to="/"
+            to="/command"
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 border border-theme text-cockpit-muted rounded-lg text-sm font-medium hover:bg-cockpit-track transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />

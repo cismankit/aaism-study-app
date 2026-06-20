@@ -176,7 +176,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
               <div className="rounded-xl border border-emerald-500/30 bg-emerald-50/30 dark:bg-emerald-500/5 p-4">
                 <p className="text-sm font-semibold text-cockpit flex items-center gap-2">
                   <Target className="w-4 h-4 text-emerald-600" />
-                  This is your daily command center
+                  This is your daily mission
                 </p>
                 <p className="text-xs text-cockpit-muted mt-2 leading-relaxed">
                   Every day: one 25-minute mission — weak domain → read → quiz → lab.

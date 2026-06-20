@@ -534,20 +534,54 @@ export function getDomainGuide(domainId: number): DomainGuide | undefined {
   return AAISM_DOMAIN_GUIDES.find(d => d.id === domainId);
 }
 
+type SearchableGuide = DomainGuide & {
+  keyTopics?: string[];
+  examTraps?: TrapAlert[];
+  studyPath?: string[];
+};
+
+function guideMatchesQuery(guide: SearchableGuide, q: string): boolean {
+  return (
+    guide.name.toLowerCase().includes(q) ||
+    guide.shortName.toLowerCase().includes(q) ||
+    guide.overview.toLowerCase().includes(q) ||
+    guide.learningObjectives.some(obj => obj.toLowerCase().includes(q)) ||
+    guide.coreConcepts.some(
+      c =>
+        c.title.toLowerCase().includes(q) ||
+        c.summary.toLowerCase().includes(q) ||
+        c.detail.toLowerCase().includes(q),
+    ) ||
+    guide.frameworks.some(
+      f =>
+        f.name.toLowerCase().includes(q) ||
+        f.relevance.toLowerCase().includes(q),
+    ) ||
+    guide.examPatterns.some(
+      p =>
+        p.prompt.toLowerCase().includes(q) ||
+        p.answerLogic.toLowerCase().includes(q),
+    ) ||
+    guide.trapAlerts.some(
+      t =>
+        t.title.toLowerCase().includes(q) ||
+        t.trap.toLowerCase().includes(q) ||
+        t.correctApproach.toLowerCase().includes(q),
+    ) ||
+    (guide.keyTopics?.some(kt => kt.toLowerCase().includes(q)) ?? false) ||
+    (guide.examTraps?.some(
+      t =>
+        t.title.toLowerCase().includes(q) ||
+        t.trap.toLowerCase().includes(q) ||
+        t.correctApproach.toLowerCase().includes(q),
+    ) ?? false) ||
+    (guide.studyPath?.some(step => step.toLowerCase().includes(q)) ?? false) ||
+    guide.applyIt.scenario.toLowerCase().includes(q) ||
+    guide.applyIt.orgAction.toLowerCase().includes(q)
+  );
+}
+
 export function searchDomainGuides(query: string, guides: DomainGuide[] = AAISM_DOMAIN_GUIDES): DomainGuide[] {
   const q = query.toLowerCase();
-  return guides.filter(
-    guide =>
-      guide.name.toLowerCase().includes(q) ||
-      guide.shortName.toLowerCase().includes(q) ||
-      guide.overview.toLowerCase().includes(q) ||
-      guide.coreConcepts.some(
-        c =>
-          c.title.toLowerCase().includes(q) ||
-          c.summary.toLowerCase().includes(q) ||
-          c.detail.toLowerCase().includes(q)
-      ) ||
-      guide.frameworks.some(f => f.name.toLowerCase().includes(q)) ||
-      guide.trapAlerts.some(t => t.title.toLowerCase().includes(q) || t.trap.toLowerCase().includes(q))
-  );
+  return guides.filter(guide => guideMatchesQuery(guide as SearchableGuide, q));
 }

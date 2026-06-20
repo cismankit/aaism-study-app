@@ -1,10 +1,11 @@
-# Security Notes — AAISM Study App
+# Security Notes — Aegis Study App
 
-This document summarizes the security posture of this static SPA and fixes applied.
+This document summarizes the security posture of this static SPA / Tauri desktop app and fixes applied.
 
 ## Architecture
 
-- **Static SPA** — no backend; all data stays in the browser (localStorage) except LLM/RSS/proxy calls initiated from the client.
+- **Static SPA + optional Tauri shell** — no backend; all data stays in the browser (localStorage) except LLM/RSS/proxy calls initiated from the client.
+- **GitHub Pages deploy** — built from `pages-origin` (`cismankit/aaism-study-app`), served at `/aaism-study-app/`.
 - **No secrets in repo** — `.env*` files are gitignored; no API keys are committed.
 - **Central policy** — `src/data/securityPolicy.ts` defines URL validation, rate limits, forbidden prompt patterns, and secret-handling rules. `src/data/platformRegistry.ts` re-exports policy + kill-switch hooks for app-wide use.
 
@@ -27,6 +28,16 @@ This document summarizes the security posture of this static SPA and fixes appli
 - **`isAllowedHttpsUrl()`** — Supabase and integration endpoints must use HTTPS.
 - **`isAllowedCloudAiBaseUrl()`** — Groq, Anthropic, OpenAI base URLs must be HTTPS to known provider hosts.
 - Validators run in `connectorRegistry`, `aiService`, `ollamaAppService`, `rssFeedService`, `integrationsConfigService`, `memoryService`, and `careerIntelService`.
+
+### Ollama — browser vs Tauri desktop
+
+| Surface | Transport | Notes |
+|---------|-----------|-------|
+| Browser / GitHub Pages | WebView `fetch()` | Ollama only reachable when page origin is localhost (dev) or user runs Ollama locally; CSP `connect-src` whitelists `http://localhost:11434` and `http://127.0.0.1:11434`. |
+| Tauri Mac app | `@tauri-apps/plugin-http` via `ollamaFetch()` | Native HTTP bypasses WebView CORS — Ollama rejects `Origin: http://tauri.localhost` with 403 while CLI/Node succeed. |
+| Tauri scope | `capabilities/default.json` | HTTP plugin allowlist: `http://localhost:*`, `http://127.0.0.1:*` only — no broad outbound fetch. |
+
+All Ollama URLs still pass `isAllowedOllamaUrl()` before any request. Smoke tests (`scripts/run-smoke-tests.mjs`) include CORS diagnostics for `http://localhost:5173` and `http://tauri.localhost` origins.
 
 ### AI Service Hardening
 - **Rate limits** — Groq (30/min), OpenAI (20/min), Claude (20/min) via rolling window in `securityPolicy.ts`.

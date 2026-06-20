@@ -327,40 +327,47 @@ html.dark body {
   animation: pulse-dot 1.5s ease-in-out infinite;
 }
 
-/* Logo hover — shield cortex + orbital pulse */
+/* Logo hover — shield sheen + council orbit pulse */
+@keyframes logo-orbit-idle {
+  0%, 100% { opacity: 0.32; stroke-dashoffset: 0; }
+  50% { opacity: 0.48; stroke-dashoffset: 4; }
+}
+@keyframes logo-hub-pulse {
+  0%, 100% { opacity: 0.7; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
 @keyframes logo-node-pulse {
-  0%, 100% { opacity: 0.75; }
+  0%, 100% { opacity: 0.65; }
   50% { opacity: 1; }
 }
-@keyframes logo-satellite-orbit {
-  0%, 100% { opacity: 0.55; transform: translate(0, 0); }
-  50% { opacity: 1; transform: translate(-0.5px, 0.5px); }
-}
-@keyframes logo-orbit-idle {
-  0%, 100% { opacity: 0.65; }
-  50% { opacity: 0.9; }
-}
 .aegis-logo .aegis-logo-orbit {
-  animation: logo-orbit-idle 4s ease-in-out infinite;
+  animation: logo-orbit-idle 5s ease-in-out infinite;
 }
-.aegis-logo:hover .aegis-logo-node {
-  animation: logo-node-pulse 1.6s ease-in-out infinite;
+.aegis-logo .aegis-orbit-0 { animation: logo-node-pulse 3.2s ease-in-out infinite; }
+.aegis-logo .aegis-orbit-1 { animation: logo-node-pulse 3.2s ease-in-out 0.4s infinite; }
+.aegis-logo .aegis-orbit-2 { animation: logo-node-pulse 3.2s ease-in-out 0.8s infinite; }
+.aegis-logo .aegis-orbit-3 { animation: logo-node-pulse 3.2s ease-in-out 1.2s infinite; }
+.aegis-logo .aegis-orbit-4 { animation: logo-node-pulse 3.2s ease-in-out 1.6s infinite; }
+.aegis-logo:hover .aegis-logo-shield {
+  opacity: 1;
+  transition: opacity 0.35s ease;
 }
-.aegis-logo:hover .aegis-logo-ring {
-  opacity: 0.75;
-  transition: opacity 0.3s ease;
+.aegis-logo:hover .aegis-logo-hub {
+  animation: logo-hub-pulse 1.8s ease-in-out infinite;
+  transform-origin: 24px 19.4px;
+}
+.aegis-logo:hover .aegis-logo-hub-ring {
+  opacity: 0.72;
+  transition: opacity 0.35s ease;
 }
 .aegis-logo:hover .aegis-logo-orbit {
-  opacity: 1;
+  opacity: 0.55;
   animation: none;
-}
-.aegis-logo:hover .aegis-logo-satellite {
-  animation: logo-satellite-orbit 2s ease-in-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .aegis-logo .aegis-logo-orbit,
-  .aegis-logo:hover .aegis-logo-node,
-  .aegis-logo:hover .aegis-logo-satellite {
+  .aegis-logo .aegis-logo-node,
+  .aegis-logo:hover .aegis-logo-hub {
     animation: none !important;
   }
 }

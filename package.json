@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "sync:version": "node scripts/sync-version.mjs",
     "sync:tauri": "node scripts/sync-tauri-version.mjs",
+    "generate:icons": "node scripts/generate-icons.mjs",
     "stamp:icons": "node scripts/stamp-icon.mjs",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",

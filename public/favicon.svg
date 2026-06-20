@@ -1,20 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#060a10"/>
+    <linearGradient id="bg" x1="8%" y1="0%" x2="92%" y2="100%">
+      <stop offset="0%" stop-color="#030712"/>
       <stop offset="100%" stop-color="#0f172a"/>
     </linearGradient>
-    <linearGradient id="stroke" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#10b981"/>
+    <linearGradient id="stroke" x1="12%" y1="92%" x2="88%" y2="8%">
+      <stop offset="0%" stop-color="#059669"/>
       <stop offset="50%" stop-color="#2dd4bf"/>
       <stop offset="100%" stop-color="#38bdf8"/>
     </linearGradient>
+    <linearGradient id="a" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
   </defs>
   <rect width="32" height="32" rx="7" fill="url(#bg)"/>
-  <path d="M 16 5 L 25 9.5 V 17.5 C 25 22 21 25.5 16 27.5 C 11 25.5 7 22 7 17.5 V 9.5 Z" fill="none" stroke="url(#stroke)" stroke-width="0.75" stroke-linejoin="round"/>
-  <path d="M 16 11 L 20 20 H 18.2 L 17.2 17.5 H 14.8 L 13.8 20 H 12 L 16 11 Z" fill="#f8fafc"/>
-  <path d="M 15 16.5 H 17 L 16 13.5 Z" fill="url(#bg)"/>
-  <circle cx="16" cy="13.5" r="1.1" fill="url(#stroke)"/>
-  <path d="M 22.5 9 Q 26 13 25 18" fill="none" stroke="url(#stroke)" stroke-width="0.55" stroke-linecap="round"/>
-  <circle cx="25" cy="18" r="0.85" fill="#2dd4bf"/>
+  <path d="M 16 4.1 L 25.9 9.2 V 17.9 C 25.9 22.7 21.5 26.5 16 28.1 C 10.5 26.5 6.1 22.7 6.1 17.9 V 9.2 Z" fill="#061018" fill-opacity="0.85"/>
+  <path d="M 16 4.1 L 25.9 9.2 V 17.9 C 25.9 22.7 21.5 26.5 16 28.1 C 10.5 26.5 6.1 22.7 6.1 17.9 V 9.2 Z" fill="none" stroke="url(#stroke)" stroke-width="0.85" stroke-linejoin="round"/>
+  <ellipse cx="16" cy="14.1" rx="8.3" ry="5.7" fill="none" stroke="url(#stroke)" stroke-width="0.35" stroke-dasharray="1.2 1.6" opacity="0.35"/>
+  <circle cx="16" cy="8.5" r="0.7" fill="#10b981"/>
+  <circle cx="23.9" cy="12.1" r="0.7" fill="#2dd4bf"/>
+  <circle cx="8.1" cy="12.1" r="0.7" fill="#38bdf8"/>
+  <path d="M 16 9.5 L 12.1 20.5 H 13.9 L 14.9 17.6 H 17.1 L 18.1 20.5 H 19.9 L 16 9.5 Z" fill="url(#a)"/>
+  <path d="M 15.1 16.1 H 16.9 L 16 13.2 Z" fill="url(#bg)"/>
+  <circle cx="16" cy="13" r="0.9" fill="url(#stroke)"/>
 </svg>

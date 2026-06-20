@@ -2,6 +2,10 @@
 // This provides context for AI and can be used for local search
 
 import { searchDomainGuides, type DomainGuide } from './aaismDomainGuide';
+import {
+  getKnowledgeGlossaryForCert,
+  getKnowledgeTopicsForCert,
+} from './certKnowledge';
 import { getCertification } from './certifications/registry';
 
 export interface Topic {
@@ -439,7 +443,7 @@ export const owaspLLM = [
   },
 ];
 
-// Search function for knowledge base — AAISM topics/glossary; all certs search domain guides
+// Search function for knowledge base — AAISM uses curated topics/glossary; other certs derive from domain guides
 export function searchKnowledgeBase(
   query: string,
   certId: string = 'aaism',
@@ -447,21 +451,23 @@ export function searchKnowledgeBase(
   const lowerQuery = query.toLowerCase();
   const cert = getCertification(certId);
   const guides = searchDomainGuides(query, cert?.domainGuides ?? []);
+  const certTopics = getKnowledgeTopicsForCert(certId, topics);
+  const certGlossary = getKnowledgeGlossaryForCert(certId, glossary);
 
-  if (certId !== 'aaism') {
-    return { topics: [], terms: [], guides };
-  }
-
-  const matchingTopics = topics.filter(topic =>
-    topic.title.toLowerCase().includes(lowerQuery) ||
-    topic.description.toLowerCase().includes(lowerQuery) ||
-    topic.keyPoints.some(kp => kp.toLowerCase().includes(lowerQuery)) ||
-    topic.relatedTerms.some(rt => rt.toLowerCase().includes(lowerQuery))
+  const matchingTopics = certTopics.filter(
+    topic =>
+      topic.title.toLowerCase().includes(lowerQuery) ||
+      topic.description.toLowerCase().includes(lowerQuery) ||
+      topic.keyPoints.some(kp => kp.toLowerCase().includes(lowerQuery)) ||
+      topic.relatedTerms.some(rt => rt.toLowerCase().includes(lowerQuery)) ||
+      topic.examTips.some(tip => tip.toLowerCase().includes(lowerQuery)),
   );
 
-  const matchingTerms = glossary.filter(term =>
-    term.term.toLowerCase().includes(lowerQuery) ||
-    term.definition.toLowerCase().includes(lowerQuery)
+  const matchingTerms = certGlossary.filter(
+    term =>
+      term.term.toLowerCase().includes(lowerQuery) ||
+      term.definition.toLowerCase().includes(lowerQuery) ||
+      term.category.toLowerCase().includes(lowerQuery),
   );
 
   return { topics: matchingTopics, terms: matchingTerms, guides };

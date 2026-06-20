@@ -13,6 +13,7 @@ import {
   getTopicHeatMap,
   getCommunityIntelMeta,
   FORUM_SOURCES,
+  type CommunityIntelMeta,
   type TrapPattern,
   type QuestionPattern,
   type TopicHeat,
@@ -157,9 +158,15 @@ export default function IntelHub() {
         <p className="text-sm text-theme-muted -mt-2">{activeTabMeta.description}</p>
       )}
 
-      {!intelMeta.isAaismSourced && (
-        <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-sm text-amber-800 dark:text-amber-300">
-          Showing <strong>{intelMeta.sourceLabel}</strong> for {activeCert.shortName}. AAISM-specific community data is not mixed in — use Research to discover {activeCert.shortName} patterns.
+      {intelMeta.bannerMessage && (
+        <div
+          className={`p-3 rounded-xl border text-sm ${
+            intelMeta.coverage === 'curated'
+              ? 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300'
+              : 'border-orange-500/30 bg-orange-500/10 text-orange-800 dark:text-orange-300'
+          }`}
+        >
+          {intelMeta.bannerMessage}
         </div>
       )}
 
@@ -191,7 +198,12 @@ export default function IntelHub() {
       )}
 
       {activeTab === 'hot_topics' && (
-        <HotTopicsTab trendIcons={trendIcons} certShortName={activeCert.shortName} topicHeatMap={topicHeatMap} />
+        <HotTopicsTab
+          trendIcons={trendIcons}
+          certShortName={activeCert.shortName}
+          topicHeatMap={topicHeatMap}
+          intelMeta={intelMeta}
+        />
       )}
 
       {activeTab === 'traps' && (
@@ -199,6 +211,7 @@ export default function IntelHub() {
           onSelectTrap={setSelectedTrap}
           frequencyColors={frequencyColors}
           trapPatterns={trapPatterns}
+          intelMeta={intelMeta}
         />
       )}
 
@@ -404,10 +417,12 @@ function HotTopicsTab({
   trendIcons,
   certShortName,
   topicHeatMap,
+  intelMeta,
 }: {
   trendIcons: Record<string, typeof TrendingUp>;
   certShortName: string;
   topicHeatMap: TopicHeat[];
+  intelMeta: CommunityIntelMeta;
 }) {
   const { activeCert } = useCert();
   const domainNames: Record<number, string> = Object.fromEntries(
@@ -431,6 +446,11 @@ function HotTopicsTab({
         <p className="text-sm text-theme-muted mb-4">
           Topics ranked by how frequently communities report seeing them on the {certShortName} exam. Higher heat = more likely to appear.
         </p>
+        {intelMeta.coverage === 'curated' && (
+          <p className="text-xs text-amber-700 dark:text-amber-400 mb-4">
+            Starter curated set ({intelMeta.heatTopicCount} topics) — expand via Research or Domain Guides for full blueprint coverage.
+          </p>
+        )}
       </div>
 
       {topicHeatMap.length === 0 ? (
@@ -537,10 +557,12 @@ function TrapsTab({
   onSelectTrap,
   frequencyColors,
   trapPatterns,
+  intelMeta,
 }: {
   onSelectTrap: (trap: TrapPattern) => void;
   frequencyColors: Record<string, string>;
   trapPatterns: TrapPattern[];
+  intelMeta: CommunityIntelMeta;
 }) {
   const freqMap: Record<string, string> = {
     very_common: 'very_high',
@@ -558,6 +580,16 @@ function TrapsTab({
         <p className="text-sm text-red-600 dark:text-red-300 mt-1">
           Click a trap for examples and avoidance strategies.
         </p>
+        {intelMeta.coverage === 'generic' && (
+          <p className="text-xs text-orange-700 dark:text-orange-300 mt-2">
+            Showing {intelMeta.trapCount} vendor-agnostic traps — no cert-specific trap catalog yet for {intelMeta.certId.toUpperCase()}.
+          </p>
+        )}
+        {intelMeta.coverage === 'curated' && (
+          <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
+            {intelMeta.trapCount} cert-specific traps curated from domain guides — not yet at AAISM community depth.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">

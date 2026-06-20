@@ -8,6 +8,10 @@ import {
 import {
   topics, glossary, owaspLLM, searchKnowledgeBase, Topic, Term,
 } from '../data/knowledgeBase';
+import {
+  getKnowledgeGlossaryForCert,
+  getKnowledgeTopicsForCert,
+} from '../data/certKnowledge';
 import { type DomainGuide } from '../data/aaismDomainGuide';
 import { useCert } from '../context/CertContext';
 import { STUDY_PATHS, PLATFORM_WORKFLOWS, PLATFORM_META_SECTIONS } from '../data/platformMeta';
@@ -245,16 +249,25 @@ export default function KnowledgeBase() {
     if (d >= 1 && d <= maxDomain) setActiveDomain(d);
   }, [searchParams, maxDomain]);
 
+  const certTopics = useMemo(
+    () => getKnowledgeTopicsForCert(activeCert.id, topics),
+    [activeCert.id],
+  );
+  const certGlossary = useMemo(
+    () => getKnowledgeGlossaryForCert(activeCert.id, glossary),
+    [activeCert.id],
+  );
+
   useEffect(() => {
     const topicId = searchParams.get('topic');
     if (!topicId) return;
-    const match = topics.find(t => t.id === topicId);
+    const match = certTopics.find(t => t.id === topicId);
     if (match) {
       setActiveDomain(match.domain);
       setMainTab('topics');
       setSelectedTopic(match);
     }
-  }, [searchParams]);
+  }, [searchParams, certTopics]);
 
   const certGuides = activeCert.domainGuides ?? [];
   const activeGuide = certGuides.find(g => g.id === activeDomain);
@@ -270,8 +283,8 @@ export default function KnowledgeBase() {
     });
   }, [gameState.domainScores, contentStats, activeCert.domains]);
 
-  const filteredTopics = topics.filter(t => t.domain === activeDomain);
-  const filteredGlossary = glossary.filter(t => t.domain === activeDomain);
+  const filteredTopics = certTopics.filter(t => t.domain === activeDomain);
+  const filteredGlossary = certGlossary.filter(t => t.domain === activeDomain);
 
   function handleDomainChange(id: number) {
     setActiveDomain(id);

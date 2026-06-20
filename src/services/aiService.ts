@@ -27,6 +27,8 @@ import {
   testOllamaConnection,
   ollamaFetch,
 } from './ollamaAppService';
+import { getActiveCertification } from './certContextService';
+import { buildCertTutorContext } from './tutorService';
 
 const checkGroqRateLimit = createRateLimiter(RATE_LIMITS.groq.maxPerMinute);
 const checkOpenAiRateLimit = createRateLimiter(RATE_LIMITS.openai.maxPerMinute);
@@ -628,6 +630,18 @@ Key topics:
 
 const JSON_SYSTEM_HINT = `You MUST respond with valid JSON only. No markdown, no code fences, no explanation text before or after the JSON.`;
 
+/** Resolve tutor system prompt + short name from active cert (or explicit overrides). */
+function resolveCertAiContext(systemContext?: string, certShortName?: string): {
+  systemContext: string;
+  certShortName: string;
+} {
+  const cert = getActiveCertification();
+  return {
+    systemContext: systemContext ?? buildCertTutorContext(cert),
+    certShortName: certShortName ?? cert.shortName,
+  };
+}
+
 function modelExistsInRegistry(models: OllamaModel[], modelName: string): boolean {
   const names = models.map(m => m.name);
   if (names.includes(modelName)) return true;
@@ -1096,10 +1110,11 @@ export async function generateQuestions(
   domain: number,
   count: number = 5,
   difficulty: 'easy' | 'medium' | 'hard' = 'medium',
-  systemContext: string = AAISM_CONTEXT,
-  certShortName: string = 'AAISM',
+  systemContext?: string,
+  certShortName?: string,
 ): Promise<AIResponse> {
-  const prompt = `Generate ${count} ${difficulty} difficulty multiple-choice practice questions for ${certShortName} Domain ${domain}.
+  const { systemContext: ctx, certShortName: short } = resolveCertAiContext(systemContext, certShortName);
+  const prompt = `Generate ${count} ${difficulty} difficulty multiple-choice practice questions for ${short} Domain ${domain}.
 
 For each question provide:
 1. The question text
@@ -1120,7 +1135,7 @@ Format as JSON array:
 Make questions exam-realistic, testing conceptual understanding not just memorization.`;
 
   return chatJson(config, [
-    { role: 'system', content: systemContext },
+    { role: 'system', content: ctx },
     { role: 'user', content: prompt },
   ]);
 }
@@ -1129,12 +1144,13 @@ export async function explainConcept(
   config: AIConfig,
   concept: string,
   domain?: number,
-  systemContext: string = AAISM_CONTEXT,
-  certShortName: string = 'AAISM',
+  systemContext?: string,
+  certShortName?: string,
 ): Promise<AIResponse> {
+  const { systemContext: ctx, certShortName: short } = resolveCertAiContext(systemContext, certShortName);
   const domainContext = domain ? `Focus on Domain ${domain} perspective.` : '';
 
-  const prompt = `Explain this ${certShortName} exam concept in detail: "${concept}"
+  const prompt = `Explain this ${short} exam concept in detail: "${concept}"
 
 ${domainContext}
 
@@ -1142,14 +1158,14 @@ Provide:
 1. **Definition**: Clear, concise definition
 2. **Key Points**: 3-5 essential points to remember
 3. **Real-World Example**: Practical example
-4. **Exam Relevance**: Why this matters for the ${certShortName} exam
+4. **Exam Relevance**: Why this matters for the ${short} exam
 5. **Related Concepts**: Other topics this connects to
 6. **Common Exam Traps**: Misconceptions to avoid
 
 Use clear formatting with headers and bullet points.`;
 
   return chat(config, [
-    { role: 'system', content: systemContext },
+    { role: 'system', content: ctx },
     { role: 'user', content: prompt },
   ]);
 }
@@ -1157,9 +1173,10 @@ Use clear formatting with headers and bullet points.`;
 export async function analyzeWeakAreas(
   config: AIConfig,
   quizHistory: { domain: number; score: number; }[],
-  systemContext: string = AAISM_CONTEXT,
+  systemContext?: string,
 ): Promise<AIResponse> {
-  const prompt = `Analyze this quiz performance history and provide study recommendations:
+  const { systemContext: ctx, certShortName: short } = resolveCertAiContext(systemContext);
+  const prompt = `Analyze this ${short} quiz performance history and provide study recommendations:
 
 Quiz History:
 ${JSON.stringify(quizHistory, null, 2)}
@@ -1174,7 +1191,7 @@ Provide:
 Be specific and actionable.`;
 
   return chat(config, [
-    { role: 'system', content: systemContext },
+    { role: 'system', content: ctx },
     { role: 'user', content: prompt },
   ]);
 }
@@ -1183,12 +1200,13 @@ export async function createStudyGuide(
   config: AIConfig,
   domain: number,
   topic?: string,
-  systemContext: string = AAISM_CONTEXT,
-  certShortName: string = 'AAISM',
+  systemContext?: string,
+  certShortName?: string,
 ): Promise<AIResponse> {
+  const { systemContext: ctx, certShortName: short } = resolveCertAiContext(systemContext, certShortName);
   const topicFocus = topic ? `Specifically focus on: ${topic}` : '';
 
-  const prompt = `Create a comprehensive study guide for ${certShortName} Domain ${domain}.
+  const prompt = `Create a comprehensive study guide for ${short} Domain ${domain}.
 ${topicFocus}
 
 Include:
@@ -1203,7 +1221,7 @@ Include:
 Format with clear headers and organized sections.`;
 
   return chat(config, [
-    { role: 'system', content: systemContext },
+    { role: 'system', content: ctx },
     { role: 'user', content: prompt },
   ]);
 }

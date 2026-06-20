@@ -1,8 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
-  <!-- Green circular arc -->
-  <path d="M60 8C31.3 8 8 31.3 8 60s23.3 52 52 52 52-23.3 52-52S88.7 8 60 8z" stroke="#7CB342" stroke-width="10" stroke-linecap="round" fill="none" stroke-dasharray="280 50"/>
-  <!-- AAISM text -->
-  <text x="60" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1a365d">AAISM</text>
-  <!-- TM symbol -->
-  <text x="102" y="52" font-family="Arial, sans-serif" font-size="8" fill="#1a365d">™</text>
+  <defs>
+    <linearGradient id="bg" x1="8%" y1="0%" x2="92%" y2="100%">
+      <stop offset="0%" stop-color="#030712"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="stroke" x1="12%" y1="92%" x2="88%" y2="8%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="50%" stop-color="#2dd4bf"/>
+      <stop offset="100%" stop-color="#38bdf8"/>
+    </linearGradient>
+    <linearGradient id="a" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="26" fill="url(#bg)"/>
+  <path d="M 60 15.5 L 97.2 34.5 V 67.2 C 97.2 85 81.5 99.5 60 105.5 C 38.5 99.5 22.8 85 22.8 67.2 V 34.5 Z" fill="#061018" fill-opacity="0.85"/>
+  <path d="M 60 15.5 L 97.2 34.5 V 67.2 C 97.2 85 81.5 99.5 60 105.5 C 38.5 99.5 22.8 85 22.8 67.2 V 34.5 Z" fill="none" stroke="url(#stroke)" stroke-width="2.9" stroke-linejoin="round"/>
+  <ellipse cx="60" cy="53" rx="31" ry="21.5" fill="none" stroke="url(#stroke)" stroke-width="1.25" stroke-dasharray="4.5 6" opacity="0.35"/>
+  <circle cx="60" cy="32" r="2.6" fill="#10b981"/>
+  <circle cx="89.5" cy="45.5" r="2.6" fill="#14b8a6"/>
+  <circle cx="82.8" cy="74.5" r="2.6" fill="#2dd4bf"/>
+  <circle cx="37.2" cy="74.5" r="2.6" fill="#22d3ee"/>
+  <circle cx="30.5" cy="45.5" r="2.6" fill="#38bdf8"/>
+  <path d="M 60 35.5 L 45.5 77 H 52.2 L 55.8 66 H 64.2 L 67.8 77 H 74.5 L 60 35.5 Z" fill="url(#a)"/>
+  <path d="M 56.5 60.5 H 63.5 L 60 48.5 Z" fill="url(#bg)"/>
+  <circle cx="60" cy="48.5" r="3.4" fill="url(#stroke)"/>
 </svg>

@@ -1,22 +1,56 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <defs>
-    <linearGradient id="aegis-bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#060a10"/>
+    <linearGradient id="bg" x1="8%" y1="0%" x2="92%" y2="100%">
+      <stop offset="0%" stop-color="#030712"/>
+      <stop offset="55%" stop-color="#0a1628"/>
       <stop offset="100%" stop-color="#0f172a"/>
     </linearGradient>
-    <linearGradient id="aegis-stroke" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#10b981"/>
-      <stop offset="45%" stop-color="#2dd4bf"/>
+    <radialGradient id="vignette" cx="50%" cy="38%" r="58%">
+      <stop offset="0%" stop-color="#14b8a6" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="shield-fill" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#0f2847" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#061018" stop-opacity="0.92"/>
+    </linearGradient>
+    <linearGradient id="stroke" x1="12%" y1="92%" x2="88%" y2="8%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="38%" stop-color="#10b981"/>
+      <stop offset="72%" stop-color="#2dd4bf"/>
       <stop offset="100%" stop-color="#38bdf8"/>
     </linearGradient>
+    <linearGradient id="a" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="55%" stop-color="#e2e8f0"/>
+      <stop offset="100%" stop-color="#94a3b8"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3.5" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
-  <rect width="48" height="48" rx="10" fill="url(#aegis-bg)"/>
-  <path d="M 24 7 L 38 14.5 V 26.5 C 38 33 31.5 38.5 24 41 C 16.5 38.5 10 33 10 26.5 V 14.5 Z" fill="none" stroke="url(#aegis-stroke)" stroke-width="1.1" stroke-linejoin="round"/>
-  <path d="M 24 16 L 30 30 H 27.2 L 25.8 26.5 H 22.2 L 20.8 30 H 18 L 24 16 Z" fill="#f8fafc"/>
-  <path d="M 22.5 24 H 25.5 L 24 19.5 Z" fill="url(#aegis-bg)"/>
-  <circle cx="24" cy="19.5" r="1.75" fill="url(#aegis-stroke)"/>
-  <circle cx="24" cy="19.5" r="4" fill="none" stroke="url(#aegis-stroke)" stroke-width="0.55" opacity="0.4"/>
-  <path d="M 34 13 Q 40 20 37 30" fill="none" stroke="url(#aegis-stroke)" stroke-width="0.85" stroke-linecap="round"/>
-  <circle cx="37" cy="30" r="1.35" fill="#2dd4bf"/>
-  <circle cx="34" cy="13" r="0.9" fill="#38bdf8"/>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#vignette)"/>
+  <path d="M 256 66.1 L 413.8 147.2 V 285.9 C 413.8 362.7 343.5 424.3 256 450.3 C 168.5 424.3 98.2 362.7 98.2 285.9 V 147.2 Z" fill="url(#shield-fill)"/>
+  <path d="M 256 66.1 L 413.8 147.2 V 285.9 C 413.8 362.7 343.5 424.3 256 450.3 C 168.5 424.3 98.2 362.7 98.2 285.9 V 147.2 Z" fill="none" stroke="url(#stroke)" stroke-width="12.3" stroke-linejoin="round"/>
+  <path d="M 256 78.9 L 389.3 145.1" fill="none" stroke="url(#sheen)" stroke-width="5.9" stroke-linecap="round" opacity="0.7"/>
+  <g filter="url(#glow)">
+    <ellipse cx="256" cy="226.1" rx="132.3" ry="91.7" fill="none" stroke="url(#stroke)" stroke-width="5.3" stroke-dasharray="19.2 25.6" opacity="0.38"/>
+    <circle cx="256" cy="136.5" r="11.2" fill="#10b981" opacity="0.92"/>
+    <circle cx="381.8" cy="194.1" r="11.2" fill="#14b8a6" opacity="0.92"/>
+    <circle cx="354.1" cy="317.9" r="11.2" fill="#2dd4bf" opacity="0.92"/>
+    <circle cx="157.9" cy="317.9" r="11.2" fill="#22d3ee" opacity="0.92"/>
+    <circle cx="130.2" cy="194.1" r="11.2" fill="#38bdf8" opacity="0.92"/>
+  </g>
+  <path d="M 256 151.5 L 194.1 328.5 H 221.9 L 237.9 281.9 H 274.1 L 290.1 328.5 H 317.9 L 256 151.5 Z" fill="url(#a)"/>
+  <path d="M 241.1 258.1 H 270.9 L 256 207.5 Z" fill="url(#bg)"/>
+  <circle cx="256" cy="206.9" r="14.4" fill="url(#stroke)"/>
+  <circle cx="256" cy="206.9" r="29.9" fill="none" stroke="url(#stroke)" stroke-width="4.8" opacity="0.45"/>
 </svg>

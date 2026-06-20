@@ -229,29 +229,63 @@ function emptyDomainsForCert(certId: string): Domain[] {
   return initialState.domains.map(d => ({ ...d, notes: [] }));
 }
 
-function migrateNotesByCert(parsed: AppState): AppState {
-  if (parsed.notesByCert && Object.keys(parsed.notesByCert).length > 0) {
-    return parsed;
-  }
-  const notesByCert: Record<string, Domain[]> = {
-    aaism: parsed.domains ?? initialState.domains,
-  };
-  return { ...parsed, notesByCert };
+function domainsHaveNotes(domains: Domain[] | undefined): boolean {
+  return (domains ?? []).some(d => d.notes.length > 0);
 }
 
-export function loadState(): AppState {
+function migrateNotesByCert(parsed: AppState, activeCertId = 'aaism'): AppState {
+  const existing = parsed.notesByCert ?? {};
+  const legacyDomains = parsed.domains ?? initialState.domains;
+
+  if (Object.keys(existing).length === 0) {
+    return {
+      ...parsed,
+      notesByCert: { [activeCertId]: legacyDomains },
+    };
+  }
+
+  if (domainsHaveNotes(legacyDomains)) {
+    const anyBucketHasNotes = Object.values(existing).some(domainsHaveNotes);
+    const activeBucket = existing[activeCertId];
+
+    if (!anyBucketHasNotes) {
+      return {
+        ...parsed,
+        notesByCert: { ...existing, [activeCertId]: legacyDomains },
+      };
+    }
+
+    if (!domainsHaveNotes(activeBucket)) {
+      return {
+        ...parsed,
+        notesByCert: { ...existing, [activeCertId]: legacyDomains },
+      };
+    }
+  }
+
+  return { ...parsed, notesByCert: existing };
+}
+
+export function loadState(activeCertId = 'aaism'): AppState {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      const parsed = migrateNotesByCert(JSON.parse(saved) as AppState);
-      return parsed;
+      const parsed = migrateNotesByCert(JSON.parse(saved) as AppState, activeCertId);
+      return {
+        ...parsed,
+        domains: getDomainsForCertNotes(activeCertId, parsed),
+      };
     }
   } catch (e) {
     console.error('Failed to load state:', e);
   }
-  return {
+  const fresh: AppState = {
     ...initialState,
     notesByCert: { aaism: initialState.domains },
+  };
+  return {
+    ...fresh,
+    domains: getDomainsForCertNotes(activeCertId, fresh),
   };
 }
 
@@ -264,8 +298,21 @@ export function saveState(state: AppState): void {
 }
 
 export function getDomainsForCertNotes(certId: string, state: AppState): Domain[] {
-  if (state.notesByCert?.[certId]) {
-    return state.notesByCert[certId];
+  const stored = state.notesByCert?.[certId];
+  const cert = getCertification(certId);
+
+  if (stored && cert?.domains.length) {
+    return cert.domains.map(cd => {
+      const match = stored.find(d => d.id === cd.id);
+      return match
+        ? { ...match, name: cd.name, icon: cd.icon ?? match.icon ?? '📘' }
+        : { id: cd.id, name: cd.name, icon: cd.icon ?? '📘', notes: [] };
+    });
   }
+
+  if (stored) {
+    return stored;
+  }
+
   return emptyDomainsForCert(certId);
 }

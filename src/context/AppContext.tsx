@@ -18,12 +18,28 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+function patchActiveCertDomains(
+  prev: AppState,
+  certId: string,
+  patch: (domains: Domain[]) => Domain[]
+): AppState {
+  const nextDomains = patch(prev.domains);
+  return {
+    ...prev,
+    notesByCert: {
+      ...(prev.notesByCert ?? {}),
+      [certId]: nextDomains,
+    },
+    domains: nextDomains,
+  };
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const { activeCertId, activeCert } = useCert();
   const prevCertRef = useRef(activeCertId);
   const [state, setState] = useState<AppState>(() => {
     loadProgress();
-    return loadState();
+    return loadState(activeCertId);
   });
 
   useEffect(() => {
@@ -69,13 +85,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [activeCertId]);
 
   useEffect(() => {
-    saveState({
-      ...state,
-      notesByCert: {
-        ...(state.notesByCert ?? {}),
-        [activeCertId]: state.domains,
-      },
-    });
+    saveState(state);
     updateProgressFields({
       quizHistory: state.quizAttempts,
       examDate: state.examDate,
@@ -125,55 +135,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const addNote = (domainId: number, note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => {
     const now = new Date().toISOString();
+    const newNote: Note = { ...note, id: crypto.randomUUID(), createdAt: now, updatedAt: now };
     const certDomain = activeCert.domains.find(d => d.id === domainId);
-    setState(prev => {
-      let domains = prev.domains;
-      if (!domains.some(d => d.id === domainId) && certDomain) {
-        domains = [
-          ...domains,
-          {
-            id: domainId,
-            name: certDomain.name,
-            icon: certDomain.icon ?? '📘',
-            notes: [],
-          },
-        ];
-      }
-      return {
-        ...prev,
-        notesByCert: {
-          ...(prev.notesByCert ?? {}),
-          [activeCertId]: domains.map(domain =>
-            domain.id === domainId
-              ? {
-                  ...domain,
-                  notes: [
-                    ...domain.notes,
-                    { ...note, id: crypto.randomUUID(), createdAt: now, updatedAt: now },
-                  ],
-                }
-              : domain
-          ),
-        },
-        domains: domains.map(domain =>
+    setState(prev =>
+      patchActiveCertDomains(prev, activeCertId, domains => {
+        let next = domains;
+        if (!next.some(d => d.id === domainId) && certDomain) {
+          next = [
+            ...next,
+            {
+              id: domainId,
+              name: certDomain.name,
+              icon: certDomain.icon ?? '📘',
+              notes: [],
+            },
+          ];
+        }
+        return next.map(domain =>
           domain.id === domainId
-            ? {
-                ...domain,
-                notes: [
-                  ...domain.notes,
-                  { ...note, id: crypto.randomUUID(), createdAt: now, updatedAt: now },
-                ],
-              }
+            ? { ...domain, notes: [...domain.notes, newNote] }
             : domain
-        ),
-      };
-    });
+        );
+      })
+    );
   };
 
   const updateNote = (domainId: number, noteId: string, content: Partial<Note>) => {
-    setState(prev => {
-      const patchDomains = (list: Domain[]) =>
-        list.map(domain =>
+    setState(prev =>
+      patchActiveCertDomains(prev, activeCertId, domains =>
+        domains.map(domain =>
           domain.id === domainId
             ? {
                 ...domain,
@@ -184,35 +174,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 ),
               }
             : domain
-        );
-      return {
-        ...prev,
-        notesByCert: {
-          ...(prev.notesByCert ?? {}),
-          [activeCertId]: patchDomains(prev.domains),
-        },
-        domains: patchDomains(prev.domains),
-      };
-    });
+        )
+      )
+    );
   };
 
   const deleteNote = (domainId: number, noteId: string) => {
-    setState(prev => {
-      const patchDomains = (list: Domain[]) =>
-        list.map(domain =>
+    setState(prev =>
+      patchActiveCertDomains(prev, activeCertId, domains =>
+        domains.map(domain =>
           domain.id === domainId
             ? { ...domain, notes: domain.notes.filter(note => note.id !== noteId) }
             : domain
-        );
-      return {
-        ...prev,
-        notesByCert: {
-          ...(prev.notesByCert ?? {}),
-          [activeCertId]: patchDomains(prev.domains),
-        },
-        domains: patchDomains(prev.domains),
-      };
-    });
+        )
+      )
+    );
   };
 
   const setExamDate = (date: string | null) => {
@@ -220,7 +196,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const resetProgress = () => {
-    setState(initialState);
+    const clearedDomains = initialState.domains.map(d => ({ ...d, notes: [] }));
+    setState({
+      ...initialState,
+      domains: clearedDomains,
+      notesByCert: { aaism: clearedDomains },
+    });
   };
 
   return (

@@ -897,6 +897,8 @@ const CISSP_TOPIC_HEAT: TopicHeat[] = [
   { topic: 'Secure SDLC & Supply Chain', domain: 8, heat: 85, trend: 'rising', communityNotes: 'DevSecOps, code review, third-party components — growing exam weight.' },
   { topic: 'Security Assessment & Auditing', domain: 6, heat: 83, trend: 'stable', communityNotes: 'Pen test vs vuln assessment, audit evidence, compliance mapping.' },
   { topic: 'Asset Classification & Handling', domain: 2, heat: 80, trend: 'stable', communityNotes: 'Data ownership, retention, destruction, privacy regulations.' },
+  { topic: 'Cloud Security & Virtualization', domain: 3, heat: 78, trend: 'rising', communityNotes: 'Shared responsibility, hypervisor isolation, container security.' },
+  { topic: 'Physical & Personnel Security', domain: 1, heat: 76, trend: 'stable', communityNotes: 'CPTED, mantraps, background checks, separation of duties.' },
 ];
 
 const SECURITY_PLUS_TOPIC_HEAT: TopicHeat[] = [
@@ -908,6 +910,174 @@ const SECURITY_PLUS_TOPIC_HEAT: TopicHeat[] = [
   { topic: 'Identity & Access Management', domain: 3, heat: 84, trend: 'stable', communityNotes: 'MFA, federation, least privilege, account lifecycle.' },
   { topic: 'Vulnerability Management', domain: 2, heat: 82, trend: 'stable', communityNotes: 'Scanning, prioritization, patching cadence, compensating controls.' },
   { topic: 'Cloud & Virtualization Security', domain: 3, heat: 80, trend: 'rising', communityNotes: 'CSPM, container security, hybrid connectivity.' },
+  { topic: 'Social Engineering & Phishing', domain: 2, heat: 79, trend: 'stable', communityNotes: 'Phishing, vishing, smishing — mitigation pairs with user training and MFA.' },
+  { topic: 'Application & Web Attacks', domain: 2, heat: 77, trend: 'stable', communityNotes: 'SQLi, XSS, CSRF — OWASP Top 10 mitigation mapping.' },
+];
+
+const CISSP_TRAP_PATTERNS: TrapPattern[] = [
+  {
+    id: 'cissp-trap-1',
+    name: 'Technology Before Governance',
+    description: 'Choosing a technical control when the stem asks for program-level or governance action.',
+    domains: [1],
+    frequency: 'very_common',
+    example: 'Q: "Establish a security program." Wrong: "Deploy a next-gen firewall" → Right: "Conduct risk assessment and define security policy with executive sponsorship."',
+    whyStudentsFail: 'Hands-on practitioners default to tools; CISSP tests what a CISO would prioritize first.',
+    howToAvoid: 'Read for authority level — policy, risk assessment, and governance precede product selection.',
+  },
+  {
+    id: 'cissp-trap-2',
+    name: 'Eliminate vs. Manage Risk',
+    description: 'Selecting answers that claim to eliminate all risk instead of managing to acceptable levels.',
+    domains: [1],
+    frequency: 'very_common',
+    example: 'Wrong: "Implement controls to eliminate all risk" → Right: "Reduce risk to within appetite and document residual risk acceptance."',
+    whyStudentsFail: 'Absolute language feels stronger; exams reward realistic risk management.',
+    howToAvoid: 'Reject "eliminate all" distractors — residual risk always remains.',
+  },
+  {
+    id: 'cissp-trap-3',
+    name: 'RTO vs. RPO Swap',
+    description: 'Confusing recovery time objectives with recovery point (data loss) objectives.',
+    domains: [1, 7],
+    frequency: 'common',
+    example: 'Q: "How much data loss is acceptable?" Wrong: RTO answer → Right: RPO defines backup frequency / acceptable data loss window.',
+    whyStudentsFail: 'Both are BCP metrics taught together; stems usually signal one clearly if you know the definitions.',
+    howToAvoid: 'RPO = data loss (backup cadence). RTO = downtime (how fast service returns).',
+  },
+  {
+    id: 'cissp-trap-4',
+    name: 'Due Care vs. Due Diligence',
+    description: 'Picking a one-time audit when ongoing verification is required for diligence.',
+    domains: [1],
+    frequency: 'common',
+    example: 'Wrong: "Perform annual penetration test once" for diligence → Right: "Continuous monitoring, metrics, and periodic independent assessment."',
+    whyStudentsFail: 'Terms sound interchangeable; due care = act reasonably, due diligence = verify ongoing compliance.',
+    howToAvoid: 'Care = implement safeguards. Diligence = prove they keep working over time.',
+  },
+  {
+    id: 'cissp-trap-5',
+    name: 'Encryption Without Classification',
+    description: 'Encrypting everything without classification, ownership, or key management context.',
+    domains: [2, 3],
+    frequency: 'common',
+    example: 'Wrong: "Encrypt all data at rest immediately" → Right: "Classify data, define ownership, then apply encryption and key custody per sensitivity."',
+    whyStudentsFail: 'Encryption feels like the strongest technical answer regardless of data context.',
+    howToAvoid: 'Classification drives scope — match control intensity to asset sensitivity.',
+  },
+  {
+    id: 'cissp-trap-6',
+    name: 'Deprecated Crypto Algorithms',
+    description: 'Selecting legacy hashes or ciphers when modern alternatives are required.',
+    domains: [3],
+    frequency: 'common',
+    example: 'Wrong: MD5 or SHA-1 for new integrity designs → Right: SHA-256 or stronger with proper key lengths for asymmetric crypto.',
+    whyStudentsFail: 'Legacy algorithms appear in real environments; exam wants current best practice.',
+    howToAvoid: 'MD5/SHA-1/DES/3DES are distractors for new designs — prefer AES-256, SHA-256+, RSA 2048+.',
+  },
+  {
+    id: 'cissp-trap-7',
+    name: 'Vulnerability Scan vs. Pen Test',
+    description: 'Treating automated scanning as equivalent to manual penetration testing.',
+    domains: [6],
+    frequency: 'common',
+    example: 'Wrong: "Run a vulnerability scanner to validate security posture" → Right: "Penetration test with skilled testers simulating attack paths and chaining findings."',
+    whyStudentsFail: 'Both find weaknesses; only pen tests validate exploitability and business impact.',
+    howToAvoid: 'Scan = automated, breadth. Pen test = manual, depth, simulates adversary.',
+  },
+  {
+    id: 'cissp-trap-8',
+    name: 'Evidence Destruction in IR',
+    description: 'Immediate wipe or shutdown before preserving forensic evidence.',
+    domains: [7],
+    frequency: 'common',
+    example: 'Wrong: "Reimage all affected hosts immediately" → Right: "Isolate systems, preserve logs and disk images, then eradicate per chain-of-custody procedures."',
+    whyStudentsFail: 'Urgency bias — wanting to stop the attack before documenting it.',
+    howToAvoid: 'Contain without destroying evidence; eradication follows documented forensic capture.',
+  },
+];
+
+const SECURITY_PLUS_TRAP_PATTERNS: TrapPattern[] = [
+  {
+    id: 'secplus-trap-1',
+    name: 'Product vs. Principle',
+    description: 'Naming a vendor or product when the stem asks for a control type, category, or concept.',
+    domains: [1, 5],
+    frequency: 'very_common',
+    example: 'Q: "Which control type is a firewall?" Wrong: vendor name → Right: "Technical preventive control" or the relevant security principle.',
+    whyStudentsFail: 'Real-world experience is product-centric; CompTIA wants vendor-neutral terminology.',
+    howToAvoid: 'Answer with control type (technical/administrative/physical), category (preventive/detective/corrective), or CIA pillar.',
+  },
+  {
+    id: 'secplus-trap-2',
+    name: 'Confidentiality vs. Integrity',
+    description: 'Choosing encryption when the scenario describes tampering or unauthorized modification.',
+    domains: [1, 2],
+    frequency: 'very_common',
+    example: 'Wrong: "Encrypt the database" when records were altered → Right: "Hashing or digital signatures to detect unauthorized modification."',
+    whyStudentsFail: 'Encryption is the most familiar crypto control; integrity needs detection, not secrecy.',
+    howToAvoid: 'Exposure/leak = confidentiality. Tampering/alteration = integrity. Outage = availability.',
+  },
+  {
+    id: 'secplus-trap-3',
+    name: 'SaaS Shared Responsibility',
+    description: 'Assuming the cloud provider handles all security including customer IAM and data config.',
+    domains: [1, 3],
+    frequency: 'common',
+    example: 'Wrong: "Vendor secures SaaS email completely" → Right: "Customer configures MFA, DLP, retention, admin roles, and access policies."',
+    whyStudentsFail: 'Marketing claims of "secure cloud" blur the responsibility split.',
+    howToAvoid: 'You always own identity, access, and data classification — provider secures the platform layer.',
+  },
+  {
+    id: 'secplus-trap-4',
+    name: 'Malware Family Confusion',
+    description: 'Mislabeling self-propagating or extortion malware as the wrong family.',
+    domains: [2],
+    frequency: 'common',
+    example: 'Wrong: Calling a self-propagating network worm a "virus" → Right: Worms propagate independently; viruses need a host file.',
+    whyStudentsFail: 'Colloquial "virus" covers all malware; exam uses precise definitions.',
+    howToAvoid: 'Virus = host file. Worm = self-spreads. Trojan = disguised. Ransomware = encrypts for payment.',
+  },
+  {
+    id: 'secplus-trap-5',
+    name: 'Vulnerability Scan vs. Pen Test',
+    description: 'Using scanner output as proof of full security assurance.',
+    domains: [2, 4],
+    frequency: 'common',
+    example: 'Wrong: "Clean vulnerability scan means we are secure" → Right: "Pen test validates exploit paths; scanning only lists potential weaknesses."',
+    whyStudentsFail: 'Scans feel like a complete assessment; they miss logic flaws and chained exploits.',
+    howToAvoid: 'Scan = find CVEs. Pen test = prove impact with manual attack simulation.',
+  },
+  {
+    id: 'secplus-trap-6',
+    name: 'Firewall vs. WAF',
+    description: 'Expecting a stateful firewall alone to stop application-layer web attacks.',
+    domains: [3],
+    frequency: 'common',
+    example: 'Wrong: "Stateful firewall blocks SQL injection" → Right: "WAF, secure coding, input validation, and parameterized queries for OWASP threats."',
+    whyStudentsFail: 'Firewalls are the default "security device" answer for network scenarios.',
+    howToAvoid: 'L3/L4 firewall ≠ application-layer protection — match control to OSI layer.',
+  },
+  {
+    id: 'secplus-trap-7',
+    name: 'Disabling SIEM Under Alert Fatigue',
+    description: 'Turning off monitoring instead of tuning detection rules and response playbooks.',
+    domains: [4],
+    frequency: 'occasional',
+    example: 'Wrong: "Disable SIEM due to too many alerts" → Right: "Tune rules, prioritize by severity, automate tier-1 response, and refine use cases."',
+    whyStudentsFail: 'Alert volume feels like SIEM failure; exam favors operational improvement.',
+    howToAvoid: 'Never remove detective controls — tune, automate, and escalate instead.',
+  },
+  {
+    id: 'secplus-trap-8',
+    name: 'Compliance Checklist vs. Risk',
+    description: 'Assuming regulatory compliance alone equals strong security posture.',
+    domains: [5],
+    frequency: 'common',
+    example: 'Wrong: "We passed audit so we are fully protected" → Right: "Compliance is a baseline; risk assessment identifies gaps beyond checkbox requirements."',
+    whyStudentsFail: 'Compliance and security overlap but are not identical — exams test the distinction.',
+    howToAvoid: 'Compliance = minimum bar. Risk management = prioritize threats to the organization.',
+  },
 ];
 
 const GENERIC_TRAP_PATTERNS: TrapPattern[] = [
@@ -943,20 +1113,56 @@ const GENERIC_TRAP_PATTERNS: TrapPattern[] = [
   },
 ];
 
+export type CommunityIntelCoverage = 'full' | 'curated' | 'generic';
+
 export interface CommunityIntelMeta {
   certId: string;
+  coverage: CommunityIntelCoverage;
+  /** @deprecated Prefer `coverage === 'full'` */
   isAaismSourced: boolean;
   sourceLabel: string;
+  bannerMessage: string | null;
+  heatTopicCount: number;
+  trapCount: number;
 }
 
 export function getCommunityIntelMeta(certId: string): CommunityIntelMeta {
+  const heatTopicCount = getTopicHeatMap(certId).length;
+  const trapCount = getTrapPatterns(certId).length;
+
   if (certId === 'aaism') {
-    return { certId, isAaismSourced: true, sourceLabel: 'AAISM community intelligence' };
+    return {
+      certId,
+      coverage: 'full',
+      isAaismSourced: true,
+      sourceLabel: 'AAISM community intelligence',
+      bannerMessage: null,
+      heatTopicCount,
+      trapCount,
+    };
   }
+
+  if (certId === 'cissp' || certId === 'security-plus') {
+    const shortName = certId === 'cissp' ? 'CISSP' : 'Security+';
+    return {
+      certId,
+      coverage: 'curated',
+      isAaismSourced: false,
+      sourceLabel: `${shortName} curated intel (starter set)`,
+      bannerMessage: `${shortName} has a curated starter set (${heatTopicCount} heat topics, ${trapCount} cert-specific traps). This is not community-sourced at AAISM depth — use Research to expand coverage.`,
+      heatTopicCount,
+      trapCount,
+    };
+  }
+
   return {
     certId,
+    coverage: 'generic',
     isAaismSourced: false,
-    sourceLabel: `${certId.toUpperCase()} curated stubs — run Research tab for AI-discovered patterns`,
+    sourceLabel: 'Generic exam traps only',
+    bannerMessage: `No curated heat map for this cert yet (${trapCount} generic traps). AAISM community data is not mixed in — use Research to discover cert-specific patterns.`,
+    heatTopicCount,
+    trapCount,
   };
 }
 
@@ -969,6 +1175,8 @@ export function getTopicHeatMap(certId: string): TopicHeat[] {
 
 export function getTrapPatterns(certId: string): TrapPattern[] {
   if (certId === 'aaism') return TRAP_PATTERNS;
+  if (certId === 'cissp') return CISSP_TRAP_PATTERNS;
+  if (certId === 'security-plus') return SECURITY_PLUS_TRAP_PATTERNS;
   return GENERIC_TRAP_PATTERNS;
 }
 
