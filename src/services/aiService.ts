@@ -69,7 +69,7 @@ export interface ChatOptions {
 export const defaultConfigs: Record<AIProvider, Partial<AIConfig>> = {
   ollama: {
     baseUrl: 'http://localhost:11434',
-    model: 'qwen2.5:7b',
+    model: 'gemma4:latest',
   },
   groq: {
     baseUrl: 'https://api.groq.com/openai',
@@ -171,6 +171,7 @@ export function hasGemma4OnGroq(models: GroqModelOption[]): boolean {
 export const AGENT_MODEL_PREFERENCE: readonly string[] = [
   'gemma4:31b',
   'gemma4:26b',
+  'gemma4:latest',
   'gemma4:e4b',
   'gemma4:e2b',
   'qwen3.5:latest',
@@ -268,9 +269,11 @@ export function getDetectedWatchedModels(installed: OllamaModel[]): ModelCapabil
 
 /** Top offline models for AAISM Agent Discovery — Tier S first */
 export const AAISM_OFFLINE_MODELS: ModelCapability[] = [
-  { name: 'gemma4:31b', tier: 'large', jsonReliability: 98, sizeGb: '~19GB', gpuRam: '24GB+', description: 'Gemma 4 Dense — #1 for agent JSON & reasoning (Apache 2.0)', recommended: true, tierS: true },
-  { name: 'gemma4:26b', tier: 'large', jsonReliability: 96, sizeGb: '~16GB', gpuRam: '20GB+', description: 'Gemma 4 MoE — fast tokens/sec, strong structured output', recommended: true, tierS: true },
-  { name: 'gemma4:e4b', tier: 'medium', jsonReliability: 94, sizeGb: '~3GB', gpuRam: '8GB+', description: 'Gemma 4 Effective 4B — edge JSON & agentic workflows', recommended: true, tierS: true },
+  { name: 'gemma4:31b', tier: 'large', jsonReliability: 98, sizeGb: '~19GB', gpuRam: '24GB+', description: 'Gemma 4 Dense — best quality (32GB+ unified memory)', recommended: true, tierS: true },
+  { name: 'gemma4:26b', tier: 'large', jsonReliability: 96, sizeGb: '~16GB', gpuRam: '20GB+', description: 'Gemma 4 MoE — fast tokens/sec, strong structured output (24GB+)', recommended: true, tierS: true },
+  { name: 'gemma4:latest', tier: 'medium', jsonReliability: 95, sizeGb: '~9.6GB', gpuRam: '16GB+', description: 'Gemma 4 8B (latest tag) — recommended for Apple Silicon 16GB+', recommended: true, tierS: true },
+  { name: 'gemma4:e4b', tier: 'medium', jsonReliability: 94, sizeGb: '~3GB', gpuRam: '8GB+', description: 'Gemma 4 Effective 4B — best for 8GB Mac / edge JSON', recommended: true, tierS: true },
+  { name: 'glm4:latest', tier: 'medium', jsonReliability: 90, sizeGb: '~5GB', gpuRam: '8GB+', description: 'GLM-4 (Zhipu) — strong Chinese/English; GLM-5 not on Ollama yet', tierS: true },
   { name: 'gemma4:e2b', tier: 'medium', jsonReliability: 88, sizeGb: '~2GB', gpuRam: '6GB+', description: 'Gemma 4 Effective 2B — mobile/IoT, native JSON & audio', tierS: true },
   { name: 'qwen2.5:7b', tier: 'medium', jsonReliability: 94, sizeGb: '~4.4GB', gpuRam: '8GB+', description: 'Top pick — excellent JSON and reasoning', recommended: true, tierS: true },
   { name: 'qwen2.5:14b', tier: 'medium', jsonReliability: 96, sizeGb: '~8.9GB', gpuRam: '12GB+', description: 'Stronger Qwen variant, very reliable structured output', recommended: true, tierS: true },
@@ -428,7 +431,7 @@ export async function checkOllamaStatus(baseUrl = 'http://localhost:11434'): Pro
     return {
       running: false,
       models: [],
-      error: 'Ollama is not running. Start it with: ollama serve',
+      error: 'Ollama is not running. Open Settings → AI Provider and click "Open Ollama app".',
     };
   }
 }
@@ -556,7 +559,7 @@ export async function resolveOllamaModel(config: AIConfig): Promise<{ model: str
     return {
       model: config.model,
       fallbackUsed: false,
-      error: status.error ?? 'Ollama not running. Start with: ollama serve',
+      error: status.error ?? 'Ollama not running. Open Settings → AI Provider and click "Open Ollama app".',
     };
   }
 

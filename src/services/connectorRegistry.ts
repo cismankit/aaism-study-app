@@ -75,7 +75,7 @@ function defaultConnectorState(id: ConnectorId, enabled = false): ConnectorState
   const fields: Record<string, string> = {};
   def.requiredFields?.forEach(f => {
     if (f.key === 'baseUrl') fields.baseUrl = 'http://localhost:11434';
-    if (f.key === 'model') fields.model = defaultConfigs.ollama.model ?? 'qwen2.5:7b';
+    if (f.key === 'model') fields.model = defaultConfigs.ollama.model ?? 'gemma4:latest';
   });
   return { enabled, fields };
 }
@@ -108,7 +108,7 @@ function migrateFromLegacy(): ConnectorsConfig {
     enabled: !ai || ai.provider === 'ollama',
     fields: {
       baseUrl: ai?.baseUrl ?? defaultConfigs.ollama.baseUrl ?? 'http://localhost:11434',
-      model: ai?.model ?? defaultConfigs.ollama.model ?? 'qwen2.5:7b',
+      model: ai?.model ?? defaultConfigs.ollama.model ?? 'gemma4:latest',
     },
   };
 
@@ -327,7 +327,7 @@ async function testConnectorConnection(id: ConnectorId, fields: Record<string, s
       const baseUrl = fields.baseUrl || 'http://localhost:11434';
       const status = await checkOllamaStatus(baseUrl);
       if (!status.running) {
-        return { ok: false, message: status.error ?? 'Ollama not running — start with: ollama serve' };
+        return { ok: false, message: status.error ?? 'Ollama not running — click "Open Ollama app" in Local LLM Hub' };
       }
       const model = fields.model || 'qwen2.5:7b';
       const hasModel = status.models.some(m => m.name === model || m.name.startsWith(model.split(':')[0]));

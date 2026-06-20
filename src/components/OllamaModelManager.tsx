@@ -14,7 +14,8 @@ import {
   type OllamaModel,
   type ModelCapability,
 } from '../services/aiService';
-import { detectGpuHint, isLocalhost } from '../services/gpuDetection';
+import { detectGpuHint } from '../services/gpuDetection';
+import { canUseOllamaApi } from '../services/ollamaAppService';
 import {
   Download, Copy, Check, Loader2, Server, Cpu, ExternalLink,
   AlertTriangle, Star, Terminal, Sparkles, Info, Bell,
@@ -174,7 +175,7 @@ export default function OllamaModelManager({
   }, [baseUrl, localMode]);
 
   useEffect(() => {
-    setLocalMode(isLocalhost());
+    setLocalMode(canUseOllamaApi());
   }, []);
 
   useEffect(() => {
@@ -310,7 +311,7 @@ export default function OllamaModelManager({
           )
         ) : (
           <span className="text-gray-500 dark:text-gray-400">
-            GitHub Pages mode — copy commands to run locally
+            Web mode — use the Aegis Mac app or localhost for one-click pulls
           </span>
         )}
         {!localMode && (

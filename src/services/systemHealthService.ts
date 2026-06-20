@@ -49,6 +49,14 @@ export function dismissSystemIssue(id: SystemIssueId): void {
   localStorage.setItem(DISMISS_KEY, JSON.stringify([...dismissed]));
 }
 
+/** Clear a dismissed issue when the underlying problem is resolved (e.g. Ollama back online). */
+export function clearDismissedIssue(id: SystemIssueId): void {
+  const dismissed = getDismissedIds();
+  if (!dismissed.has(id)) return;
+  dismissed.delete(id);
+  localStorage.setItem(DISMISS_KEY, JSON.stringify([...dismissed]));
+}
+
 export function isIssueDismissed(id: SystemIssueId): boolean {
   return getDismissedIds().has(id);
 }
@@ -139,6 +147,11 @@ const listeners = new Set<(report: SystemHealthReport) => void>();
 
 export async function checkSystemHealth(): Promise<SystemHealthReport> {
   const llm = await checkLLMHealth();
+
+  if (llm?.overallHealthy && llm.activeProvider === 'ollama') {
+    clearDismissedIssue('ollama-offline');
+  }
+
   const issues: SystemIssue[] = [
     ...issuesFromLLM(llm),
     ...([syncIssue(), paymentIssue()].filter(Boolean) as SystemIssue[]),

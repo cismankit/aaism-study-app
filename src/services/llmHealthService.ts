@@ -45,7 +45,7 @@ async function checkOllamaHealth(baseUrl?: string, configuredModel?: string): Pr
     return {
       provider: 'ollama',
       healthy: false,
-      message: status.error ?? 'Ollama not running — start with: ollama serve',
+      message: status.error ?? 'Ollama not running — open Settings → AI Provider and click "Open Ollama app"',
       configuredModel,
       lastChecked: now,
     };
@@ -216,9 +216,13 @@ export function getFixSteps(report: LLMHealthReport | null): string[] {
 
   if (report.activeProvider === 'ollama') {
     if (!active.healthy) {
-      const steps = ['Run: ollama serve'];
+      const steps = [
+        'Open Settings → AI Provider',
+        'Click "Open Ollama app" — no Terminal needed',
+        'Use one-click Pull buttons for recommended models',
+      ];
       if (active.message.includes('not found') || active.message.includes('no models')) {
-        steps.push('Run: ollama pull llama3.1:8b');
+        steps.push('Pull Gemma 4 (8B) or Qwen 2.5 7B from the setup wizard');
       }
       if (active.configuredModel && !active.modelInstalled) {
         steps.push(`Or pull your configured model: ollama pull ${active.configuredModel}`);

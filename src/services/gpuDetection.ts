@@ -83,5 +83,11 @@ export function detectGpuHint(): GpuHint {
 export function isLocalhost(): boolean {
   if (typeof window === 'undefined') return false;
   const host = window.location.hostname;
-  return host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+  return (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '[::1]' ||
+    host.endsWith('.localhost') ||
+    host === 'tauri.localhost'
+  );
 }

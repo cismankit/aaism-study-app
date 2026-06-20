@@ -108,8 +108,10 @@ export const CONNECTOR_BY_ID = Object.fromEntries(
 ) as Record<ConnectorId, ConnectorDefinition>;
 
 export const RECOMMENDED_OLLAMA_PULLS = [
-  { name: 'llama3.1:8b', description: 'Balanced quality · 8GB RAM' },
-  { name: 'qwen2.5-coder:7b', description: 'Code & JSON · agent workflows' },
-  { name: 'qwen2.5:7b', description: 'Top pick for structured output' },
-  { name: 'gemma4:e4b', description: 'Gemma 4 edge · native JSON' },
+  { name: 'gemma4:e4b', description: 'Gemma 4 4B · best for 8GB Mac', macRam: '8GB' },
+  { name: 'gemma4:latest', description: 'Gemma 4 8B · recommended 16GB Mac', macRam: '16GB' },
+  { name: 'gemma4:31b', description: 'Gemma 4 31B · best quality, 32GB+ only', macRam: '32GB' },
+  { name: 'qwen2.5:7b', description: 'Top pick for structured JSON output', macRam: '8GB' },
+  { name: 'llama3.1:8b', description: 'Balanced quality · proven fallback', macRam: '8GB' },
+  { name: 'deepseek-r1:7b', description: 'Reasoning-focused · complex agent steps', macRam: '8GB' },
 ] as const;
