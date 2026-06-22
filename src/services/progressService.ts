@@ -454,3 +454,43 @@ export function getTodayActivityCounts(certId?: string): {
     missions: (slice.missionLog ?? []).filter(m => m.completedAt.startsWith(today)).length,
   };
 }
+
+export interface ReadinessTrendPoint {
+  date: string;
+  label: string;
+  /** Composite readiness proxy 0–100 for that day */
+  score: number;
+}
+
+/** Daily readiness trend from quiz scores + mission activity over the last N days. */
+export function getReadinessTrend(certId?: string, days = 7): ReadinessTrendPoint[] {
+  const id = certId ?? getActiveCertId();
+  const slice = getCertSlice(id);
+  const snap = loadProgress();
+  const streakBonus = Math.min(snap.streak.current, 30) / 30 * 20;
+
+  const points: ReadinessTrendPoint[] = [];
+  const today = new Date();
+
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    const dayLabel = i === 0 ? 'Today' : i === 1 ? 'Yesterday' : d.toLocaleDateString(undefined, { weekday: 'short' });
+
+    const dayQuizzes = slice.quizHistory.filter(q => q.date.startsWith(iso));
+    const dayMissions = (slice.missionLog ?? []).filter(m => m.completedAt.startsWith(iso));
+
+    let score = 0;
+    if (dayQuizzes.length > 0) {
+      const avgQuiz = Math.round(dayQuizzes.reduce((s, q) => s + q.score, 0) / dayQuizzes.length);
+      score = Math.round(avgQuiz * 0.7 + (dayMissions.length > 0 ? 20 : 0) + streakBonus * 0.3);
+    } else if (dayMissions.length > 0) {
+      score = Math.round(40 + streakBonus * 0.5);
+    }
+
+    points.push({ date: iso, label: dayLabel, score: Math.min(100, score) });
+  }
+
+  return points;
+}

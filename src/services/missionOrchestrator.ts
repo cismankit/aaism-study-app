@@ -15,7 +15,7 @@ import { getDomainsForCert } from '../data/examContent';
 import { fetchLiveIntelFeed, type IntelFeedItem } from './rssFeedService';
 import { relevanceToConfidence } from '../utils/quizProvenance';
 import { getDomainGuide } from '../data/aaismDomainGuide';
-import { getTopicHeatMap } from '../data/communityIntelligence';
+import { getTopicHeatMap, getTrapPatterns } from '../data/communityIntelligence';
 import {
   MISSION_HANDOFF_ORDER,
   getLearnWorkEarnAgent,
@@ -56,6 +56,13 @@ export interface IntelHeadline {
   isLive: boolean;
 }
 
+export interface MissionTrapBrief {
+  name: string;
+  description: string;
+  howToAvoid: string;
+  domainId: number;
+}
+
 export interface StudyMissionPlan {
   id: string;
   goal: MissionGoal;
@@ -66,6 +73,8 @@ export interface StudyMissionPlan {
   lab: LabDefinition | null;
   intelHeadlines: IntelHeadline[];
   communityHeat: CommunityHeatItem[];
+  /** Today's cert-specific trap from Intel Hub — feeds mission intel step */
+  dailyTrap: MissionTrapBrief | null;
   quizQuestions: ExamQuestion[];
   intelBrief: string;
   investBrief: string;
@@ -151,6 +160,25 @@ function pickCommunityHeat(certId: string, domainId: number, count = 3): Communi
     .sort((a, b) => b.heat - a.heat)
     .slice(0, count)
     .map(t => ({ topic: t.topic, heat: t.heat, trend: t.trend }));
+}
+
+/** Pick today's cert trap for mission intel — rotates by calendar day, prefers focus domain. */
+function pickDailyTrap(certId: string, domainId: number): MissionTrapBrief | null {
+  const traps = getTrapPatterns(certId);
+  if (traps.length === 0) return null;
+
+  const domainTraps = traps.filter(t => t.domains.includes(domainId));
+  const pool = domainTraps.length > 0 ? domainTraps : traps;
+  const dayIndex = Math.floor(Date.now() / 86_400_000) % pool.length;
+  const trap = pool[dayIndex];
+  const primaryDomain = trap.domains.find(d => d === domainId) ?? trap.domains[0] ?? domainId;
+
+  return {
+    name: trap.name,
+    description: trap.description,
+    howToAvoid: trap.howToAvoid,
+    domainId: primaryDomain,
+  };
 }
 
 function buildIntelBrief(headlines: IntelHeadline[], domainName: string): string {
@@ -410,6 +438,7 @@ export async function orchestrateStudyMission(
   const missionLab = pickLabForDomain(cert.id, domainId);
   const missionQuiz = pickQuizQuestions(domainId, 5);
   const intelHeadlines = await pickIntelHeadlines(domainId, 2);
+  const dailyTrap = pickDailyTrap(cert.id, domainId);
 
   checkAbort();
   const investSummary = await runPillarStep(
@@ -457,7 +486,11 @@ export async function orchestrateStudyMission(
   const connectSummary = await runPillarStep(
     'connect',
     `Connect intel for D${domainId}: Headlines: ${intelHeadlines.map(h => h.title).join('; ') || 'none'}. ` +
-    `Community heat: ${communityHeat.map(h => `${h.topic}(${h.heat})`).join(', ') || 'none'}. One paragraph brief.`,
+    `Community heat: ${communityHeat.map(h => `${h.topic}(${h.heat})`).join(', ') || 'none'}. ` +
+    (dailyTrap
+      ? `Today's trap from Intel Hub: "${dailyTrap.name}" — ${dailyTrap.description}. Avoid: ${dailyTrap.howToAvoid}. `
+      : '') +
+    `One paragraph brief weaving trap + headlines.`,
     certContext,
     handoffs,
     callbacks,
@@ -496,6 +529,7 @@ export async function orchestrateStudyMission(
     lab: missionLab,
     intelHeadlines,
     communityHeat,
+    dailyTrap,
     quizQuestions: missionQuiz,
     intelBrief,
     investBrief,

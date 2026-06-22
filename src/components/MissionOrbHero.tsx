@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import MissionOrbFallback, { type OrbDomain } from './MissionOrbFallback';
+import { getCertOrbPalette } from '../constants/orbVisuals';
 
 export type { OrbDomain };
 
 interface MissionOrbHeroProps {
+  certId: string;
   readiness: number;
   domains: OrbDomain[];
   className?: string;
 }
-
-const DOMAIN_COLORS = ['#10b981', '#06b6d4', '#8b5cf6', '#f59e0b', '#ec4899', '#6366f1', '#14b8a6', '#f97316'];
 
 function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(() =>
@@ -29,9 +29,10 @@ function usePrefersReducedMotion(): boolean {
   return reduced;
 }
 
-export default function MissionOrbHero({ readiness, domains, className = '' }: MissionOrbHeroProps) {
+export default function MissionOrbHero({ certId, readiness, domains, className = '' }: MissionOrbHeroProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const reducedMotion = usePrefersReducedMotion();
+  const palette = getCertOrbPalette(certId);
 
   useEffect(() => {
     if (reducedMotion || !containerRef.current || domains.length === 0) return;
@@ -55,17 +56,17 @@ export default function MissionOrbHero({ readiness, domains, className = '' }: M
 
     const ambient = new THREE.AmbientLight(0xffffff, 0.35);
     scene.add(ambient);
-    const keyLight = new THREE.DirectionalLight(0x10b981, 1.2);
+    const keyLight = new THREE.DirectionalLight(new THREE.Color(palette.core), 1.2);
     keyLight.position.set(4, 6, 5);
     scene.add(keyLight);
-    const rimLight = new THREE.PointLight(0x06b6d4, 0.8, 20);
+    const rimLight = new THREE.PointLight(new THREE.Color(palette.particle), 0.8, 20);
     rimLight.position.set(-3, 1, -2);
     scene.add(rimLight);
 
     const coreGeo = new THREE.IcosahedronGeometry(0.55, 1);
     const coreMat = new THREE.MeshStandardMaterial({
-      color: 0x10b981,
-      emissive: 0x064e3b,
+      color: new THREE.Color(palette.core),
+      emissive: new THREE.Color(palette.coreEmissive),
       emissiveIntensity: 0.6 + readiness / 200,
       metalness: 0.4,
       roughness: 0.25,
@@ -75,14 +76,14 @@ export default function MissionOrbHero({ readiness, domains, className = '' }: M
 
     const coreGlow = new THREE.Mesh(
       new THREE.SphereGeometry(0.85, 24, 24),
-      new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.08 }),
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(palette.core), transparent: true, opacity: 0.08 }),
     );
     scene.add(coreGlow);
 
     const orbitGroup = new THREE.Group();
     scene.add(orbitGroup);
 
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.06, wireframe: true });
+    const ringMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(palette.ring), transparent: true, opacity: 0.06, wireframe: true });
     const ring1 = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.01, 8, 80), ringMat);
     ring1.rotation.x = Math.PI / 2.3;
     orbitGroup.add(ring1);
@@ -102,7 +103,7 @@ export default function MissionOrbHero({ readiness, domains, className = '' }: M
     }
 
     const nodes: DomainNode[] = domains.map((d, i) => {
-      const color = new THREE.Color(DOMAIN_COLORS[i % DOMAIN_COLORS.length]);
+      const color = new THREE.Color(palette.domainColors[i % palette.domainColors.length]);
       const size = d.isFocus ? 0.22 : 0.14;
       const geo = new THREE.SphereGeometry(size, 16, 16);
       const mat = new THREE.MeshStandardMaterial({
@@ -142,7 +143,7 @@ export default function MissionOrbHero({ readiness, domains, className = '' }: M
     const particleGeo = new THREE.BufferGeometry();
     particleGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     const particleMat = new THREE.PointsMaterial({
-      color: 0x06b6d4,
+      color: new THREE.Color(palette.particle),
       size: 0.04,
       transparent: true,
       opacity: 0.65,
@@ -212,16 +213,17 @@ export default function MissionOrbHero({ readiness, domains, className = '' }: M
       particleMat.dispose();
       container.removeChild(renderer.domElement);
     };
-  }, [reducedMotion, domains, readiness]);
+  }, [reducedMotion, domains, readiness, certId]);
 
   if (reducedMotion || domains.length === 0) {
-    return <MissionOrbFallback readiness={readiness} domains={domains} className={className} />;
+    return <MissionOrbFallback certId={certId} readiness={readiness} domains={domains} className={className} />;
   }
 
   return (
     <div
       ref={containerRef}
       className={`relative w-full min-h-[220px] max-h-[280px] rounded-2xl overflow-hidden border border-emerald-500/15 bg-gradient-to-br from-slate-950/80 via-emerald-950/20 to-slate-900/80 ${className}`}
+      style={{ borderColor: `${palette.core}26` }}
       aria-hidden
     />
   );

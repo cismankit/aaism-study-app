@@ -38,6 +38,7 @@ interface PillarRing {
 }
 
 interface MissionLandingProps {
+  certId: string;
   certShortName: string;
   readiness: number;
   streak: number;
@@ -51,8 +52,9 @@ interface MissionLandingProps {
   streakWeek: boolean[];
   missionDoneToday: boolean;
   suggestedGoal: MissionGoal;
+  goalOptions: MissionGoal[];
   recentMissions: MissionLogEntry[];
-  onStartMission: () => void;
+  onStartMission: (goal: MissionGoal) => void;
   error?: string | null;
 }
 
@@ -126,6 +128,7 @@ const PILLARS = [
 ] as const;
 
 export default function MissionLanding({
+  certId,
   certShortName,
   readiness,
   streak,
@@ -139,6 +142,7 @@ export default function MissionLanding({
   streakWeek,
   missionDoneToday,
   suggestedGoal,
+  goalOptions,
   recentMissions,
   onStartMission,
   error,
@@ -231,10 +235,10 @@ export default function MissionLanding({
 
         <div className="relative px-4 sm:px-5 pb-4">
           {reducedMotion ? (
-            <MissionOrbFallback readiness={readiness} domains={domains} />
+            <MissionOrbFallback certId={certId} readiness={readiness} domains={domains} />
           ) : (
-            <Suspense fallback={<MissionOrbFallback readiness={readiness} domains={domains} />}>
-              <MissionOrbHero readiness={readiness} domains={domains} />
+            <Suspense fallback={<MissionOrbFallback certId={certId} readiness={readiness} domains={domains} />}>
+              <MissionOrbHero certId={certId} readiness={readiness} domains={domains} />
             </Suspense>
           )}
           {focusLabel && (
@@ -273,7 +277,7 @@ export default function MissionLanding({
           variant="panel"
         />
 
-        <div className="rounded-xl border border-emerald-500/40 bg-emerald-50/30 dark:bg-emerald-500/5 p-4">
+        <div className="rounded-xl border border-emerald-500/40 bg-emerald-50/30 dark:bg-emerald-500/5 p-4 space-y-3">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
@@ -288,14 +292,34 @@ export default function MissionLanding({
             </div>
             <button
               type="button"
-              onClick={onStartMission}
+              onClick={() => onStartMission(suggestedGoal)}
               className="shrink-0 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-md shadow-emerald-600/25 flex items-center gap-2 transition-all hover:scale-[1.02]"
             >
               <Target className="w-4 h-4" />
               {missionDoneToday ? 'Run again' : 'Start mission'}
             </button>
           </div>
-          {error && <p className="text-xs text-red-600 dark:text-red-400 mt-3">{error}</p>}
+
+          {goalOptions.length > 1 && (
+            <div className="flex flex-wrap gap-2 pt-1 border-t border-emerald-500/20">
+              <span className="text-[10px] text-theme-muted w-full">Or pick a {certShortName} goal:</span>
+              {goalOptions.slice(0, 4).map(g => (
+                <button
+                  key={`${g.type}-${g.domainId ?? 'all'}`}
+                  type="button"
+                  onClick={() => onStartMission(g)}
+                  className={`text-[11px] px-3 py-1.5 rounded-lg border transition-colors ${
+                    g.label === suggestedGoal.label
+                      ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+                      : 'border-theme bg-theme-elevated text-cockpit-muted hover:border-emerald-500/30'
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
         </div>
       </section>
 

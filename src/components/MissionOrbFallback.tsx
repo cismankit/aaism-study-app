@@ -1,3 +1,5 @@
+import { getCertOrbPalette } from '../constants/orbVisuals';
+
 export interface OrbDomain {
   id: number;
   shortName: string;
@@ -5,19 +7,20 @@ export interface OrbDomain {
   isFocus?: boolean;
 }
 
-const DOMAIN_COLORS = ['#10b981', '#06b6d4', '#8b5cf6', '#f59e0b', '#ec4899', '#6366f1', '#14b8a6', '#f97316'];
-
 interface MissionOrbFallbackProps {
+  certId?: string;
   readiness: number;
   domains: OrbDomain[];
   className?: string;
 }
 
 export default function MissionOrbFallback({
+  certId = 'aaism',
   readiness,
   domains,
   className = '',
 }: MissionOrbFallbackProps) {
+  const palette = getCertOrbPalette(certId);
   const focus = domains.find(d => d.isFocus) ?? domains[0];
   return (
     <div
@@ -27,19 +30,19 @@ export default function MissionOrbFallback({
       <svg viewBox="0 0 400 280" className="w-full h-full">
         <defs>
           <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#10b981" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+            <stop offset="0%" stopColor={palette.core} stopOpacity="0.9" />
+            <stop offset="100%" stopColor={palette.core} stopOpacity="0" />
           </radialGradient>
         </defs>
-        <ellipse cx="200" cy="140" rx="150" ry="52" fill="none" stroke="rgba(16,185,129,0.15)" strokeWidth="1" strokeDasharray="4 6" />
-        <ellipse cx="200" cy="140" rx="115" ry="78" fill="none" stroke="rgba(6,182,212,0.12)" strokeWidth="1" />
+        <ellipse cx="200" cy="140" rx="150" ry="52" fill="none" stroke={`${palette.ring}26`} strokeWidth="1" strokeDasharray="4 6" />
+        <ellipse cx="200" cy="140" rx="115" ry="78" fill="none" stroke={`${palette.particle}1f`} strokeWidth="1" />
         {domains.map((d, i) => {
           const angle = (i / domains.length) * Math.PI * 2 - Math.PI / 2;
           const rx = d.isFocus ? 115 : 150;
           const ry = d.isFocus ? 78 : 52;
           const x = 200 + rx * Math.cos(angle);
           const y = 140 + ry * Math.sin(angle);
-          const color = DOMAIN_COLORS[i % DOMAIN_COLORS.length];
+          const color = palette.domainColors[i % palette.domainColors.length];
           return (
             <g key={d.id}>
               <circle cx={x} cy={y} r={d.isFocus ? 14 : 9} fill={color} fillOpacity={0.85} />
@@ -50,7 +53,7 @@ export default function MissionOrbFallback({
           );
         })}
         <circle cx="200" cy="140" r="36" fill="url(#coreGlow)" />
-        <circle cx="200" cy="140" r="28" fill="none" stroke="#10b981" strokeWidth="2" strokeOpacity="0.6" />
+        <circle cx="200" cy="140" r="28" fill="none" stroke={palette.core} strokeWidth="2" strokeOpacity="0.6" />
         <text x="200" y="136" textAnchor="middle" fill="#fff" fontSize="18" fontWeight="bold" fontFamily="system-ui">
           {readiness}%
         </text>
@@ -58,7 +61,7 @@ export default function MissionOrbFallback({
           READINESS
         </text>
         {focus && (
-          <text x="200" y="258" textAnchor="middle" fill="rgba(16,185,129,0.7)" fontSize="10" fontFamily="system-ui">
+          <text x="200" y="258" textAnchor="middle" fill={`${palette.core}b3`} fontSize="10" fontFamily="system-ui">
             Focus · {focus.shortName} · {focus.avg}%
           </text>
         )}

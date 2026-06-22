@@ -42,6 +42,7 @@ import {
 } from '../services/intelDigestService';
 import ConfidenceBadge from '../components/ConfidenceBadge';
 import DailyLoopStrip from '../components/DailyLoopStrip';
+import ReadinessSparkline from '../components/ReadinessSparkline';
 import { buildReadinessConfidence } from '../services/confidenceService';
 import { getDailyLoopSteps, getFocusContext } from '../services/sidebarJourneyService';
 
@@ -451,6 +452,9 @@ export default function CommandCenter() {
                 <div className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 tracking-widest uppercase">Readiness</div>
                 <div className="text-5xl font-bold text-cockpit tabular-nums">{hudValue}%</div>
                 <div className="text-xs text-cockpit-muted mt-1">{currentLevel.title}</div>
+                <div className="mt-2 px-2">
+                  <ReadinessSparkline certId={activeCert.id} />
+                </div>
                 <div className="flex items-center justify-center gap-1.5 mt-1.5 flex-wrap">
                   <span className="text-[9px] text-cockpit-subtle">
                     {readinessConfidence.method}

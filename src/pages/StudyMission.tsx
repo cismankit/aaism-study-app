@@ -13,6 +13,7 @@ import { getLevelFromXP } from '../data/gamificationData';
 import {
   orchestrateStudyMission,
   getSuggestedMissionGoal,
+  getMissionGoalOptions,
   type MissionGoal,
   type AgentHandoff,
   type StudyMissionPlan,
@@ -29,6 +30,7 @@ import {
   getFocusContext,
   hasMissionCompletedToday,
 } from '../services/sidebarJourneyService';
+import AgentCouncilStrip from '../components/AgentCouncilStrip';
 import { dismissMissionNudge } from '../services/productTierService';
 
 type Phase = 'pick-goal' | 'orchestrating' | 'active' | 'complete';
@@ -72,6 +74,7 @@ export default function StudyMission() {
   const abortRef = useRef<AbortController | null>(null);
 
   const suggestedGoal = getSuggestedMissionGoal(activeCert.id);
+  const goalOptions = useMemo(() => getMissionGoalOptions(activeCert.id), [activeCert.id, appState.quizAttempts]);
   const recentMissions = getMissionLog(activeCert.id).slice(-3).reverse();
   const missionDoneToday = hasMissionCompletedToday(activeCert.id);
   const streakAtRisk = gameState.currentStreak > 0 && !missionDoneToday && phase !== 'complete';
@@ -165,6 +168,7 @@ export default function StudyMission() {
 
       {phase === 'pick-goal' && (
         <MissionLanding
+          certId={activeCert.id}
           certShortName={activeCert.shortName}
           readiness={readiness}
           streak={gameState.currentStreak}
@@ -178,26 +182,20 @@ export default function StudyMission() {
           streakWeek={streakWeek}
           missionDoneToday={missionDoneToday}
           suggestedGoal={suggestedGoal}
+          goalOptions={goalOptions}
           recentMissions={recentMissions}
-          onStartMission={() => startMission(suggestedGoal)}
+          onStartMission={startMission}
           error={error}
         />
       )}
 
       {phase === 'orchestrating' && (
-        <div className="rounded-xl border border-cyan-500/30 bg-cyan-50/30 dark:bg-cyan-500/5 p-8 flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
-          <p className="text-sm font-medium text-cockpit">Building your mission…</p>
-          <div className="flex items-center gap-2 text-xs text-theme-muted flex-wrap justify-center">
-            {handoffs.map((h, i) => (
-              <span key={h.agent}>
-                {i > 0 && ' → '}
-                <span className={h.status === 'done' ? 'text-emerald-600' : h.status === 'running' ? 'text-cyan-600' : ''}>
-                  {h.agentName}
-                </span>
-              </span>
-            ))}
+        <div className="rounded-xl border border-cyan-500/30 bg-cyan-50/30 dark:bg-cyan-500/5 p-6 space-y-4">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
+            <p className="text-sm font-medium text-cockpit">Building your mission…</p>
           </div>
+          <AgentCouncilStrip handoffs={handoffs} variant="orchestration" />
         </div>
       )}
 
@@ -227,7 +225,8 @@ export default function StudyMission() {
             </p>
             <div className="grid sm:grid-cols-3 gap-2">
               <Link
-                to={`/study?tab=quiz&domain=${plan.domainId}`}
+                to="/study?tab=quiz"
+                state={{ weakDomain: plan.domainId }}
                 className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg border border-theme hover:border-emerald-500/40 text-xs font-medium text-cockpit"
               >
                 <span className="flex items-center gap-1.5">

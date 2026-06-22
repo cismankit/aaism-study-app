@@ -394,6 +394,22 @@ export default function MissionDashboard({ plan, handoffs, onComplete }: Mission
     if (currentTask === 'intel') {
       return (
         <div className="space-y-2">
+          {plan.dailyTrap && (
+            <div className="rounded-lg border border-red-500/30 bg-red-50/30 dark:bg-red-500/10 p-2.5 space-y-1">
+              <p className="text-[10px] font-semibold text-red-700 dark:text-red-400 flex items-center gap-1">
+                <Radar className="w-3 h-3" /> Intel · Today&apos;s trap (D{plan.dailyTrap.domainId})
+              </p>
+              <p className="text-xs font-semibold text-cockpit">{plan.dailyTrap.name}</p>
+              <p className="text-[11px] text-theme-muted">{plan.dailyTrap.description}</p>
+              <p className="text-[10px] text-emerald-700 dark:text-emerald-400">
+                Beat it: {plan.dailyTrap.howToAvoid}
+              </p>
+              <Link to="/intel" className="text-[10px] text-red-600 dark:text-red-400 hover:underline inline-flex items-center gap-0.5">
+                Full trap catalog in Intel Hub
+                <ExternalLink className="w-3 h-3" />
+              </Link>
+            </div>
+          )}
           {plan.communityHeat.length > 0 && (
             <div className="rounded-lg border border-orange-500/30 bg-orange-50/30 dark:bg-orange-500/10 p-2.5 space-y-1">
               <p className="text-[10px] font-semibold text-orange-700 dark:text-orange-400 flex items-center gap-1">

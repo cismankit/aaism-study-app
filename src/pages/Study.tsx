@@ -42,6 +42,7 @@ import {
   ClipboardList,
   Merge
 } from 'lucide-react';
+import DomainProgressStrip from '../components/DomainProgressStrip';
 import Tutor from './Tutor';
 import RemediationPanel from '../components/RemediationPanel';
 
@@ -79,13 +80,20 @@ export default function Study() {
     }
   }, [searchParams]);
 
-  // Handle navigation state from Command Center domain readiness
+  const [focusDomainId, setFocusDomainId] = useState<number | undefined>();
+
+  // Handle navigation state from Command Center domain readiness or mission handoff
   useEffect(() => {
-    const state = location.state as { startQuiz?: boolean; domainId?: number; questionCount?: number } | null;
+    const state = location.state as { startQuiz?: boolean; domainId?: number; questionCount?: number; weakDomain?: number } | null;
     if (state?.startQuiz) {
       setActiveTab('quiz');
       setQuizBootstrap({ domainId: state.domainId, questionCount: state.questionCount });
       window.history.replaceState({}, document.title);
+    }
+    if (state?.weakDomain && Number.isFinite(state.weakDomain)) {
+      setFocusDomainId(state.weakDomain);
+    } else if (state?.domainId && Number.isFinite(state.domainId)) {
+      setFocusDomainId(state.domainId);
     }
   }, [location.state]);
 
@@ -102,6 +110,7 @@ export default function Study() {
           {toast}
         </div>
       )}
+      <DomainProgressStrip focusDomainId={focusDomainId} className="mb-4 max-w-5xl mx-auto w-full" />
       {/* Floating Tab Navigation */}
       <div className="flex justify-center mb-8">
         <div className="flex gap-1 bg-theme-elevated/80 backdrop-blur-lg p-1.5 rounded-2xl border border-theme/50 dark:border-gray-700/50 shadow-xl">

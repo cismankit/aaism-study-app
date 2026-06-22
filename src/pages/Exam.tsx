@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ClipboardList, ChevronRight, CheckCircle, XCircle, RotateCcw,
+  ClipboardList, ChevronRight, RotateCcw,
   Flag, Pause, Play, Clock, BarChart3,
 } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
@@ -16,8 +16,9 @@ import { useCert } from '../context/CertContext';
 import {
   EXAM_MAX_PAUSES,
 } from '../constants/examConfig';
+import ExamProofRing from '../components/ExamProofRing';
 import {
-  addExamAttempt, getPassThreshold, type DomainBreakdown,
+  addExamAttempt, getPassThreshold, getReadinessScore, type DomainBreakdown,
 } from '../services/progressService';
 
 interface ShuffledQuestion extends ExamQuestion {
@@ -99,6 +100,7 @@ export default function Exam() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const passThreshold = getPassThreshold();
+  const readinessPreview = getReadinessScore(activeCert.id);
 
   useEffect(() => {
     if (examState === 'setup') setBgColor('white');
@@ -210,9 +212,14 @@ export default function Exam() {
         />
 
         <div className="mt-6 bg-theme-elevated rounded-xl p-8 border border-theme text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <ClipboardList className="text-white" size={32} />
-          </div>
+          <ExamProofRing
+            value={passThreshold}
+            totalSeconds={examDurationSeconds}
+            label="Pass bar"
+            sublabel={`${readinessPreview}% readiness`}
+            variant="setup"
+            className="mx-auto mb-6"
+          />
 
           <div className="grid grid-cols-3 gap-4 mb-6 max-w-md mx-auto">
             <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
@@ -301,7 +308,14 @@ export default function Exam() {
                   <Pause className="w-4 h-4" />
                 </button>
               )}
-              <div className={`px-3 py-1.5 rounded-lg font-mono font-bold text-sm ${
+              <ExamProofRing
+                value={Math.round((answered / questions.length) * 100)}
+                totalSeconds={examDurationSeconds}
+                remainingSeconds={timeRemaining}
+                variant="active"
+                size={56}
+              />
+              <div className={`px-3 py-1.5 rounded-lg font-mono font-bold text-sm hidden sm:block ${
                 timeRemaining < 600
                   ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 animate-pulse'
                   : timeRemaining < 1800
@@ -399,13 +413,13 @@ export default function Exam() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-theme-elevated rounded-xl p-8 border border-theme text-center">
-        <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
-          passed ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'
-        }`}>
-          {passed
-            ? <CheckCircle className="text-green-600 dark:text-green-400" size={40} />
-            : <XCircle className="text-red-600 dark:text-red-400" size={40} />}
-        </div>
+        <ExamProofRing
+          value={score}
+          totalSeconds={examDurationSeconds}
+          variant="result"
+          passed={passed}
+          className="mx-auto mb-4"
+        />
 
         <div className={`inline-block px-4 py-1 rounded-full text-sm font-bold mb-3 ${
           passed

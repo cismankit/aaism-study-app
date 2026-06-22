@@ -38,13 +38,13 @@ export const releaseFeed: ReleaseEntry[] = [
     tags: ['command-center', 'changelog'],
   },
   {
-    id: 'rel-2026-06-13',
-    version: '1.4.0',
-    title: 'Content Studio & Gemma 4 clarity',
+    id: 'rel-2026-06-20',
+    version: '1.5.0',
+    title: 'Differentiated visuals & mission intel traps',
     description:
-      'New /studio route generates LinkedIn posts, YouTube scripts, threads, and READMEs from study intel. Gemma 4 FAQ explains Ollama availability with auto-detect for new tags.',
-    shippedAt: '2026-06-13',
-    tags: ['content-studio', 'ollama', 'gemma4'],
+      'Three.js orbital hero stays on Mission only — Command gets 2D readiness + 7-day sparkline, Practice gets domain strip, Exam gets proof ring. Cert-specific orb palettes, agent council live status, goal picker, and Intel Hub traps feed mission intel step.',
+    shippedAt: '2026-06-20',
+    tags: ['mission', 'command-center', 'visual', 'build-966fb81'],
   },
 ];
 
@@ -67,6 +67,16 @@ export function getLatestRelease(): ReleaseEntry | null {
   return releaseFeed.reduce((latest, entry) =>
     entry.shippedAt > latest.shippedAt ? entry : latest,
   );
+}
+
+export const LAST_SEEN_BUILD_KEY = 'aaism_last_seen_build';
+
+export function getReleasesSinceBuild(buildHash: string): ReleaseEntry[] {
+  const idx = releaseFeed.findIndex(r => r.tags?.includes(`build-${buildHash}`));
+  if (idx === -1) {
+    return releaseFeed.slice(-3);
+  }
+  return releaseFeed.slice(idx + 1);
 }
 
 export function getNewReleasesSince(lastSeenId: string | null): ReleaseEntry[] {
