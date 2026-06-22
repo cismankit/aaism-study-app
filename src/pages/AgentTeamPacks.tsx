@@ -267,7 +267,7 @@ export default function AgentTeamPacks() {
     <div className="space-y-6 max-w-6xl mx-auto">
       <PageHeader
         title="Agentic Team Packs"
-        subtitle={`Prompt → Run → get cert-aware results for ${activeCert.shortName}. Each step calls your configured LLM and returns confidence + source type.`}
+        subtitle={`Simulated multi-step agent runs — BYOK LLM. Cert-aware prompts for ${activeCert.shortName}; outputs are AI-generated, not verified.`}
         icon={Users}
         iconClassName="text-emerald-500"
       />

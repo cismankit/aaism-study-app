@@ -464,8 +464,8 @@ export default function CramMode() {
         <Trophy size={32} className="mx-auto text-yellow-500 mb-2" />
         <h3 className="font-bold text-lg">You've Got This!</h3>
         <p className="text-sm text-theme-muted mt-1 max-w-lg mx-auto">
-          The AAISM pass score is 450/800 (~56%). Focus on understanding the ISACA mindset: governance first, 
-          business alignment always, and risk-based thinking. When in doubt, pick the most strategic answer.
+          Pass threshold in this app is 65% (ISACA uses a scaled 450/800 score — see official exam guide).
+          Focus on the ISACA mindset: governance first, business alignment always, and risk-based thinking.
         </p>
         <div className="flex justify-center gap-4 mt-3 text-xs">
           <span className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full">D1: 31%</span>

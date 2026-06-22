@@ -95,7 +95,7 @@ export default function CareerIntel() {
     <div className="max-w-3xl mx-auto space-y-4">
       <PageHeader
         title="Career Intel"
-        subtitle={`Public-data career OSINT aligned with ${activeCert.shortName} — ethical, paste-only research`}
+        subtitle={`Simulated career OSINT — BYOK AI on pasted public data. Aligned with ${activeCert.shortName}; not live scraping.`}
         icon={Briefcase}
       />
 

@@ -734,28 +734,30 @@ function ProductTierSettings() {
 
   return (
     <div className="bg-theme-elevated rounded-xl p-5 border border-theme">
-      <h3 className="font-semibold text-cockpit mb-2">Explore tools</h3>
+      <h3 className="font-semibold text-cockpit mb-2">Explorer tier tools</h3>
       <p className="text-sm text-cockpit-muted mb-3">
-        Team Packs, Content Studio, OSINT Arsenal, and more unlock after{' '}
+        Team Packs, Content Studio, OSINT Arsenal, and more unlock into the Explorer catalog after{' '}
         {progress.missionsNeeded} missions or {progress.daysNeeded} days.
         {unlocked && !showAll && ' You qualify — tools are available.'}
       </p>
       <p className="text-xs text-theme-faint mb-3">
         Progress: {progress.missions}/{progress.missionsNeeded} missions · day {progress.days + 1}/{progress.daysNeeded}
       </p>
-      <label className="flex items-center gap-2 text-sm text-cockpit cursor-pointer">
-        <input
-          type="checkbox"
-          checked={showAll}
-          onChange={e => {
-            setShowAll(e.target.checked);
-            setShowAllToolsOverride(e.target.checked);
-            window.location.reload();
-          }}
-          className="rounded border-gray-300"
-        />
-        Show all tools (skip unlock gate)
-      </label>
+      {import.meta.env.DEV && (
+        <label className="flex items-center gap-2 text-sm text-cockpit cursor-pointer">
+          <input
+            type="checkbox"
+            checked={showAll}
+            onChange={e => {
+              setShowAll(e.target.checked);
+              setShowAllToolsOverride(e.target.checked);
+              window.location.reload();
+            }}
+            className="rounded border-gray-300"
+          />
+          Show all tools (dev bypass — skip unlock gate)
+        </label>
+      )}
     </div>
   );
 }

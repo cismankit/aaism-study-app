@@ -48,8 +48,8 @@ export default function AboutPanel() {
             About {APP_NAME}
           </h3>
           <p className="text-sm text-cockpit-muted mt-1">
-            Multi-cert study, ops drills, intel feeds, and AI-assisted exam prep — one command
-            center for certification and security operations practice.
+            Unofficial AAISM prep companion — not affiliated with ISACA. Multi-cert study, ops drills,
+            intel feeds, and BYOK AI-assisted exam prep in one command center.
           </p>
         </div>
       </div>

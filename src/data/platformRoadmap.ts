@@ -105,8 +105,8 @@ export const PLATFORM_ROADMAP: RoadmapItem[] = [
   {
     id: 'payments-mvp',
     title: 'Payments MVP',
-    summary: 'In-app Stripe/Razorpay checkout config, hosted URLs, success/cancel return pages, and security callouts.',
-    status: 'shipped',
+    summary: 'Checkout URL config and return pages exist — live Stripe/Razorpay webhooks and entitlements not wired yet.',
+    status: 'partial',
   },
   {
     id: 'integrations-settings',

@@ -21,7 +21,7 @@ export default function Privacy() {
         icon={Shield}
         iconClassName="text-emerald-500"
         title="Data & Privacy Policy"
-        subtitle="What AAISM stores locally, what leaves your browser, and how RSS intel is fetched."
+        subtitle="What Aegis stores locally, what leaves your browser, and how RSS intel is fetched."
       />
 
       <section className="bg-theme-elevated rounded-xl border border-theme p-5 space-y-3">
@@ -30,7 +30,7 @@ export default function Privacy() {
           Browser localStorage
         </h2>
         <p className="text-sm text-cockpit-muted">
-          AAISM is a client-side study app. Progress, settings, agent leads, and votes are stored in your browser — not on AAISM servers. Clearing site data resets everything.
+          Aegis is a client-side study app. Progress, settings, agent leads, and votes are stored in your browser — not on Aegis servers. Clearing site data resets everything.
         </p>
         <ul className="text-xs space-y-1.5 font-mono text-theme-muted">
           {STORAGE_KEYS.map(({ key, desc }) => (
@@ -52,10 +52,10 @@ export default function Privacy() {
           <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" className="text-emerald-600 underline inline-flex items-center gap-0.5">
             Groq <ExternalLink className="w-3 h-3" />
           </a>{' '}
-          or local Ollama. API keys live in <code className="text-xs bg-cockpit-track px-1 rounded">{AI_CONFIG_STORAGE_KEY}</code> and are never transmitted to AAISM infrastructure.
+          or local Ollama. API keys live in <code className="text-xs bg-cockpit-track px-1 rounded">{AI_CONFIG_STORAGE_KEY}</code> and are never transmitted to Aegis infrastructure.
         </p>
         <p className="text-sm text-cockpit-muted">
-          Do not use AAISM on shared computers with API keys saved. Use Ollama for fully offline, private inference.
+          Do not use Aegis on shared computers with API keys saved. Use Ollama for fully offline, private inference.
         </p>
       </section>
 
@@ -68,7 +68,7 @@ export default function Privacy() {
           Live Intel Feed fetches curated security RSS sources via public read-only proxies (e.g. rss2json.com) from your browser. Headlines and summaries are cached locally under <code className="text-xs bg-cockpit-track px-1 rounded">aaism_rss_cache</code> for up to 30 minutes. No account or tracking is required.
         </p>
         <p className="text-sm text-cockpit-muted">
-          &quot;Generate 3 exam Qs&quot; sends the selected headline + summary to your configured LLM — not to AAISM servers.
+          &quot;Generate 3 exam Qs&quot; sends the selected headline + summary to your configured LLM — not to Aegis servers.
         </p>
       </section>
 

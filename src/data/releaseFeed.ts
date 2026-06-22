@@ -8,43 +8,16 @@ export interface ReleaseEntry {
   tags?: string[];
 }
 
+/** Versions align with package.json — no fictional future semver */
 export const releaseFeed: ReleaseEntry[] = [
   {
-    id: 'rel-2026-06-01',
-    version: '1.2.0',
-    title: 'Regional donation tabs & support hub',
-    description:
-      'Donate page now supports India (UPI/Razorpay), US (PayPal/Stripe), Europe (Wise/SEPA), and global crypto. Support page links to GitHub Issues.',
-    shippedAt: '2026-06-01',
-    tags: ['donations', 'support'],
-  },
-  {
-    id: 'rel-2026-06-10',
-    version: '1.3.0',
-    title: 'Feature request flow with OTA updates',
-    description:
-      'Submit feature ideas in-app, pay by tier, and track status on My Updates. Shipped features appear in your personal release feed.',
-    shippedAt: '2026-06-10',
-    tags: ['feature-request', 'ota', 'payments'],
-    featureRequestIds: ['demo-boost-001'],
-  },
-  {
-    id: 'rel-2026-06-12',
-    version: '1.3.1',
-    title: 'Command Center "What\'s New" banner',
-    description:
-      'See platform-wide changelog highlights when new releases ship. Dismissible banner tracks last-seen release in localStorage.',
-    shippedAt: '2026-06-12',
-    tags: ['command-center', 'changelog'],
-  },
-  {
     id: 'rel-2026-06-20',
-    version: '1.5.0',
-    title: 'Differentiated visuals & mission intel traps',
+    version: '1.0.0',
+    title: 'Aegis MVP — mission loop & multi-cert beta',
     description:
-      'Three.js orbital hero stays on Mission only — Command gets 2D readiness + 7-day sparkline, Practice gets domain strip, Exam gets proof ring. Cert-specific orb palettes, agent council live status, goal picker, and Intel Hub traps feed mission intel step.',
+      'Mission-first daily loop, Command Center readiness HUD, practice + timed exam, Intel Hub, Ops Lab, and cert switcher with AAISM depth plus preview tracks.',
     shippedAt: '2026-06-20',
-    tags: ['mission', 'command-center', 'visual', 'build-966fb81'],
+    tags: ['mission', 'command-center', 'mvp', 'build-966fb81'],
   },
 ];
 

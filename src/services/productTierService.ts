@@ -11,7 +11,8 @@ export type GatedFeatureId =
   | 'osint-arsenal'
   | 'scenario-lab';
 
-export const PRO_FEATURES: GatedFeatureId[] = [
+/** Explorer tier — unlocked by mission momentum, not billing */
+export const EXPLORER_TIER_FEATURES: GatedFeatureId[] = [
   'team-packs',
   'content-studio',
   'donate',
@@ -80,6 +81,7 @@ export function isWithinFirstWeek(): boolean {
 }
 
 export function getShowAllToolsOverride(): boolean {
+  if (!import.meta.env.DEV) return false;
   return localStorage.getItem(SHOW_ALL_TOOLS_KEY) === 'true';
 }
 
@@ -117,7 +119,7 @@ export function getUnlockProgress(): {
 }
 
 export function getUnlockedFeatures(): Set<GatedFeatureId> {
-  if (isFullCatalogUnlocked()) return new Set(PRO_FEATURES);
+  if (isFullCatalogUnlocked()) return new Set(EXPLORER_TIER_FEATURES);
   return new Set();
 }
 
@@ -127,7 +129,7 @@ export function isFeatureUnlocked(featureId: GatedFeatureId): boolean {
 
 export function isRouteGated(pathname: string): boolean {
   if (isFullCatalogUnlocked()) return false;
-  for (const featureId of PRO_FEATURES) {
+  for (const featureId of EXPLORER_TIER_FEATURES) {
     const routes = FEATURE_ROUTE_MAP[featureId];
     if (routes.some(r => r === pathname || (r !== '/' && pathname.startsWith(r)))) {
       return true;
@@ -137,7 +139,7 @@ export function isRouteGated(pathname: string): boolean {
 }
 
 export function getFeatureIdForRoute(pathname: string): GatedFeatureId | null {
-  for (const featureId of PRO_FEATURES) {
+  for (const featureId of EXPLORER_TIER_FEATURES) {
     const routes = FEATURE_ROUTE_MAP[featureId];
     if (routes.some(r => r === pathname || (r !== '/' && pathname.startsWith(r)))) {
       return featureId;

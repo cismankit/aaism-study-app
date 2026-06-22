@@ -9,12 +9,32 @@ import { getContentStats } from '../data/examContent';
 import { getLabsForCert } from '../data/labs';
 import { useCert } from '../context/CertContext';
 
-function getCertDepthLabel(certId: string): { label: string; detail: string; isDeepening: boolean } {
+function isPreviewCert(certId: string): boolean {
+  const cert = CERTIFICATIONS.find(c => c.id === certId);
+  return cert?.status === 'preview';
+}
+
+function getCertDepthLabel(certId: string): { label: string; detail: string; isDeepening: boolean; tooltip?: string } {
   const stats = getContentStats(certId);
   const labCount = getLabsForCert(certId).length;
   const q = stats.totalQuestions;
   const detail = `${q} Q · ${labCount} labs`;
-  if (q < 100) return { label: 'Deepening', detail, isDeepening: true };
+  if (isPreviewCert(certId)) {
+    return {
+      label: 'Preview',
+      detail,
+      isDeepening: true,
+      tooltip: 'Unofficial study track — preview content, not affiliated with the cert body',
+    };
+  }
+  if (q < 100) {
+    return {
+      label: 'Deepening',
+      detail,
+      isDeepening: true,
+      tooltip: 'Question bank still growing — core domains covered, more items shipping',
+    };
+  }
   return { label: detail, detail, isDeepening: false };
 }
 
@@ -85,11 +105,14 @@ function CertDropdown({
                     </div>
                     <div className="text-[10px] text-theme-muted truncate">{cert.vendor}</div>
                   </div>
-                  <span className={`text-[9px] px-1.5 py-0.5 rounded-full shrink-0 font-medium ${
-                    depth.label === 'Deepening'
-                      ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400'
-                      : 'bg-cockpit-track text-theme-muted'
-                  }`}>
+                  <span
+                    className={`text-[9px] px-1.5 py-0.5 rounded-full shrink-0 font-medium ${
+                      depth.label === 'Deepening' || depth.label === 'Preview'
+                        ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-400'
+                        : 'bg-cockpit-track text-theme-muted'
+                    }`}
+                    title={depth.tooltip}
+                  >
                     {depth.label}
                   </span>
                   {selected && <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}

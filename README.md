@@ -1,5 +1,7 @@
 # 🎯 AAISM Exam Preparation Workspace
 
+> **Interactive app:** [Aegis](https://cismankit.github.io/aaism-study-app/) (`aaism-study-app`) is the unofficial multi-cert study companion — mission loop, practice, timed exam sim, Intel Hub, and BYOK AI. AAISM is the primary cert track; not affiliated with ISACA.
+
 > **ISACA Artificial Intelligence Security Manager (AAISM) Certification**
 
 This workspace is your comprehensive study hub for preparing for the AAISM certification exam.

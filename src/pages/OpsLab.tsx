@@ -65,7 +65,7 @@ export default function OpsLab() {
     <div className="max-w-7xl mx-auto space-y-6">
       <PageHeader
         title="Ops Lab"
-        subtitle="Hands-on command, analysis, and decision drills — cert-aware practice beyond MCQs"
+        subtitle="Simulated hands-on drills — cert-aware practice beyond MCQs. AI validation uses your configured keys (BYOK)."
         icon={Terminal}
       />
 

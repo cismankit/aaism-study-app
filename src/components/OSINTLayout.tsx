@@ -906,9 +906,14 @@ function LayoutContent() {
         <PwaInstallBanner />
 
         <div className="flex-1 flex overflow-hidden">
-          <main className="flex-1 overflow-y-auto p-3 sm:p-5">
+          <main className="flex-1 overflow-y-auto p-3 sm:p-5 flex flex-col">
             <FocusContextBar />
-            <Outlet />
+            <div className="flex-1">
+              <Outlet />
+            </div>
+            <footer className="mt-6 pt-4 border-t border-theme/60 text-center text-[10px] text-theme-faint leading-relaxed">
+              {PLATFORM_NAME} is an unofficial study companion — not affiliated with ISACA, (ISC)², CompTIA, or other cert bodies.
+            </footer>
           </main>
 
           {intelOpen && (

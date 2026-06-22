@@ -177,6 +177,9 @@ export default function MissionLanding({
             <p className="text-sm text-cockpit-muted max-w-lg">
               Your certification journey in one daily loop. Mission teaches, Practice drills, Exam proves — not three tabs, one path.
             </p>
+            <p className="text-[11px] text-amber-700/90 dark:text-amber-400/90 max-w-lg">
+              Unofficial AAISM prep companion — not affiliated with ISACA. Verify all content against official exam materials.
+            </p>
 
             {/* Duolingo-style streak path */}
             <div className="flex items-center gap-3 pt-1">

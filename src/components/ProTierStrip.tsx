@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 import {
-  PRO_TIER_HEADLINE,
+  PRO_WAITLIST_HEADLINE,
   PRO_TIER_CTA,
   PRO_FEATURES_LIST,
   FREE_FEATURES_LIST,
@@ -18,7 +18,10 @@ export default function ProTierStrip({ compact, showFreeCompare }: ProTierStripP
       <div className="flex items-start gap-3">
         <Sparkles className="w-5 h-5 text-violet-500 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm text-cockpit">{PRO_TIER_HEADLINE}</p>
+          <p className="font-semibold text-sm text-cockpit">{PRO_WAITLIST_HEADLINE}</p>
+          <p className="text-[11px] text-cockpit-muted mt-1">
+            Paid billing is not live yet — Explorer tier unlocks tools as you build momentum.
+          </p>
           {!compact && (
             <ul className="mt-2 space-y-1">
               {PRO_FEATURES_LIST.map(item => (
@@ -45,10 +48,10 @@ export default function ProTierStrip({ compact, showFreeCompare }: ProTierStripP
             </div>
           )}
           <Link
-            to="/settings"
+            to="/feature-request"
             className="inline-flex mt-3 text-xs font-medium text-violet-700 dark:text-violet-400 hover:underline"
           >
-            {PRO_TIER_CTA} → Integrations
+            {PRO_TIER_CTA} →
           </Link>
         </div>
       </div>

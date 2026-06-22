@@ -19,9 +19,9 @@ export default function FeatureGate({ children }: { children: React.ReactNode })
       <div className="w-12 h-12 rounded-xl bg-cockpit-track flex items-center justify-center mx-auto">
         <Lock className="w-6 h-6 text-theme-muted" />
       </div>
-      <h2 className="text-lg font-bold text-cockpit">Unlocks as you build momentum</h2>
+      <h2 className="text-lg font-bold text-cockpit">Explorer tier — unlocks with momentum</h2>
       <p className="text-sm text-cockpit-muted">
-        <span className="capitalize">{label}</span> opens after{' '}
+        <span className="capitalize">{label}</span> is part of the Explorer catalog. It unlocks after{' '}
         <strong>{progress.missionsNeeded} missions</strong> or{' '}
         <strong>{progress.daysNeeded} days</strong> — focus on your daily mission first.
       </p>

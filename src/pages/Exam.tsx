@@ -10,7 +10,7 @@ import { usePerformance } from '../components/OSINTLayout';
 import { useApp } from '../context/AppContext';
 import { useGamification } from '../context/GamificationContext';
 import {
-  getExamSimulation, ExamQuestion,
+  getExamSimulation, ExamQuestion, getContentStats,
 } from '../data/examContent';
 import { useCert } from '../context/CertContext';
 import {
@@ -84,6 +84,9 @@ export default function Exam() {
   const examQuestionCount = activeCert.examFormat?.questions ?? 90;
   const examDurationSeconds = (activeCert.examFormat?.minutes ?? 150) * 60;
   const certDomains = activeCert.domains;
+  const bankSize = getContentStats(activeCert.id).totalQuestions;
+  const deliveredQuestionCount = Math.min(examQuestionCount, bankSize);
+  const bankShortfall = bankSize < examQuestionCount;
 
   const [examState, setExamState] = useState<ExamState>('setup');
   const [questions, setQuestions] = useState<ShuffledQuestion[]>([]);
@@ -206,7 +209,11 @@ export default function Exam() {
       <div className="max-w-2xl mx-auto">
         <PageHeader
           title={`${activeCert.shortName} Timed Exam`}
-          subtitle={`${activeCert.vendor} simulation — ${examQuestionCount} questions, ${activeCert.examFormat?.minutes ?? 150} minutes, no hints`}
+          subtitle={
+            bankShortfall
+              ? `${activeCert.vendor} simulation — ${deliveredQuestionCount} of ${examQuestionCount} practice items available · ${activeCert.examFormat?.minutes ?? 150} min timer (official format)`
+              : `${activeCert.vendor} simulation — ${examQuestionCount} questions, ${activeCert.examFormat?.minutes ?? 150} minutes, no hints`
+          }
           icon={ClipboardList}
           iconClassName="text-red-500"
         />
@@ -223,8 +230,15 @@ export default function Exam() {
 
           <div className="grid grid-cols-3 gap-4 mb-6 max-w-md mx-auto">
             <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
-              <div className="text-2xl font-bold text-cockpit">{examQuestionCount}</div>
-              <div className="text-xs text-theme-muted">Questions</div>
+              <div className="text-2xl font-bold text-cockpit">
+                {deliveredQuestionCount}
+                {bankShortfall && (
+                  <span className="text-sm font-normal text-theme-muted">/{examQuestionCount}</span>
+                )}
+              </div>
+              <div className="text-xs text-theme-muted">
+                {bankShortfall ? 'Practice items' : 'Questions'}
+              </div>
             </div>
             <div className="bg-theme-muted dark:bg-gray-700 rounded-lg p-3">
               <div className="text-2xl font-bold text-cockpit">{activeCert.examFormat?.minutes ?? 150}</div>
@@ -235,6 +249,13 @@ export default function Exam() {
               <div className="text-xs text-theme-muted">Pass Score</div>
             </div>
           </div>
+
+          {bankShortfall && (
+            <p className="text-xs text-amber-700 dark:text-amber-400 mb-4 max-w-md mx-auto">
+              Bank has {bankSize} items — this run delivers {deliveredQuestionCount}. Timer matches the official{' '}
+              {activeCert.examFormat?.minutes ?? 150}-minute format, not scaled to item count.
+            </p>
+          )}
 
           <ul className="text-left text-sm text-cockpit-muted space-y-2 mb-6 max-w-md mx-auto">
             <li className="flex items-center gap-2"><Flag className="w-4 h-4 text-amber-500" /> Flag questions for review</li>

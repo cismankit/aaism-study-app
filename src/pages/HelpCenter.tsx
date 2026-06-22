@@ -26,9 +26,9 @@ const faqs: FAQItem[] = [
       'Gemma 4 (Apr 2026, Apache 2.0) is on Ollama with native JSON output and function calling — ideal for Agent Discovery. Pull gemma4:e4b for edge/agent JSON work or gemma4:31b for best quality. See the Google Gemma 4 blog and Settings → Offline Model Manager for pull commands.',
   },
   {
-    question: 'What is AAISM?',
+    question: 'What is Aegis?',
     answer:
-      'AAISM is an AI Security Intelligence study platform built for AAISM exam prep. It combines practice questions, scenario labs, agent discovery workflows, playbooks, and intel feeds in one OSINT-themed workspace.',
+      'Aegis is a multi-cert study and ops command app — unofficial exam prep companion with practice, missions, intel feeds, and BYOK AI. AAISM is the primary cert track; other tracks are beta previews.',
   },
   {
     question: 'Do I need an account or internet connection?',
@@ -53,7 +53,7 @@ const faqs: FAQItem[] = [
   {
     question: 'Is this affiliated with ISACA or the official AAISM exam?',
     answer:
-      'No. AAISM Study App is an independent community project. Always verify against official ISACA materials and exam policies.',
+      'No. Aegis is an independent community project — not affiliated with ISACA, (ISC)², CompTIA, or other cert bodies. Always verify against official materials and exam policies.',
   },
   {
     question: 'Can I use AAISM on iPhone?',
@@ -177,13 +177,13 @@ function IphoneInstallSection() {
       </div>
       <div className="bg-theme-elevated rounded-xl border border-emerald-500/25 p-5 osint-widget space-y-4">
         <p className="text-sm text-cockpit-muted">
-          AAISM works as a home-screen app on iPhone and iPad — no App Store required. Use <strong>Safari</strong> for the best install experience.
+          Aegis works as a home-screen app on iPhone and iPad — no App Store required. Use <strong>Safari</strong> for the best install experience.
         </p>
         <ol className="text-sm text-cockpit-muted space-y-2 list-decimal list-inside">
           <li>Open <a href="https://cismankit.github.io/aaism-study-app/" className="text-emerald-600 dark:text-emerald-400 hover:underline" target="_blank" rel="noopener noreferrer">cismankit.github.io/aaism-study-app</a> in Safari</li>
           <li>Tap the <strong>Share</strong> button (square with arrow) at the bottom toolbar</li>
           <li>Scroll the share sheet and tap <strong>Add to Home Screen</strong></li>
-          <li>Confirm the name <strong>AAISM</strong> and tap <strong>Add</strong></li>
+          <li>Confirm the name <strong>Aegis</strong> and tap <strong>Add</strong></li>
           <li>Launch from your home screen — runs full-screen like a native app</li>
         </ol>
         <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-800 dark:text-amber-200">
@@ -205,7 +205,7 @@ export default function HelpCenter() {
       <PageHeader
         icon={HelpCircle}
         title="Help Center"
-        subtitle="Getting started, FAQs, and exam prep — bugs and features go to Support or Feature Request."
+        subtitle="Aegis — getting started, FAQs, and exam prep. Bugs and features go to Support or Feature Request."
       />
 
       {/* Getting Started */}

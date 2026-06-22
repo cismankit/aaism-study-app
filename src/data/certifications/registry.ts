@@ -107,7 +107,7 @@ export const CERTIFICATIONS: Certification[] = [
     examFormat: { questions: 100, minutes: 120, passingScore: 70 },
     description: 'AI-focused security certification bridging ML engineering and enterprise security operations.',
     color: '#06b6d4',
-    status: 'active',
+    status: 'preview',
     domainGuides: CAIS_DOMAIN_GUIDES,
   },
   {
@@ -125,7 +125,7 @@ export const CERTIFICATIONS: Certification[] = [
     examFormat: { questions: 75, minutes: 90, passingScore: 70 },
     description: 'Blockchain security certification covering smart contracts, consensus attacks, and key custody.',
     color: '#f59e0b',
-    status: 'active',
+    status: 'preview',
     domainGuides: CBSP_DOMAIN_GUIDES,
   },
   {
@@ -140,7 +140,7 @@ export const CERTIFICATIONS: Certification[] = [
     examFormat: { questions: 60, minutes: 90, passingScore: 70 },
     description: 'Emerging quantum security track — qubits, QKD basics, and NIST post-quantum migration planning.',
     color: '#8b5cf6',
-    status: 'active',
+    status: 'preview',
     domainGuides: QIST_DOMAIN_GUIDES,
   },
 ];
